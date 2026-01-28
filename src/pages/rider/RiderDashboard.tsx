@@ -235,15 +235,6 @@ export default function RiderDashboard() {
     }
   }, [user]);
 
-  // Load active deliveries and stats when riderProfileId is available
-  useEffect(() => {
-    if (riderProfileId) {
-      loadActiveDeliveries();
-      loadRecentDeliveries();
-      loadRiderStats();
-    }
-  }, [riderProfileId, loadActiveDeliveries, loadRecentDeliveries, loadRiderStats]);
-
   const loadActiveDeliveries = useCallback(async () => {
     if (!riderProfileId) return;
     setLoadingActive(true);
@@ -305,6 +296,15 @@ export default function RiderDashboard() {
       setLoadingStats(false);
     }
   }, [riderProfileId]);
+
+  // Load active deliveries and stats when riderProfileId is available
+  useEffect(() => {
+    if (riderProfileId) {
+      loadActiveDeliveries();
+      loadRecentDeliveries();
+      loadRiderStats();
+    }
+  }, [riderProfileId, loadActiveDeliveries, loadRecentDeliveries, loadRiderStats]);
 
   // Mock profile data for now
   const profile = {
