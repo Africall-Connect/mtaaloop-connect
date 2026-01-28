@@ -1,57 +1,37 @@
-import { z } from 'zod';
-
-// Environment variables schema
-const envSchema = z.object({
-  VITE_SUPABASE_URL: z.string().url().optional(), // Commented out for now
-  VITE_SUPABASE_ANON_KEY: z.string().min(1).optional(), // Commented out for now
-  VITE_GOOGLE_MAPS_API_KEY: z.string().min(1).optional(), // Commented out for now
-  VITE_ENABLE_PWA: z.string().transform(val => val === '1').optional(), // Commented out for now
-  VITE_LOCATION_UPDATE_MS_ACTIVE: z.string().transform(val => parseInt(val)).optional(), // Commented out for now
-  VITE_LOCATION_UPDATE_MS_ON_DELIVERY: z.string().transform(val => parseInt(val)).optional(), // Commented out for now
-  VITE_LOCATION_UPDATE_MS_IDLE: z.string().transform(val => parseInt(val)).optional(), // Commented out for now
-  VITE_DEFAULT_LOCATION_RETENTION_DAYS: z.string().transform(val => parseInt(val)).optional(), // Commented out for now
-  VITE_ENABLE_PUSH_NOTIFICATIONS: z.string().transform(val => val === '1').optional(), // Commented out for now
-  VITE_ENABLE_MPESA: z.string().transform(val => val === '1').optional(), // Commented out for now
-  VITE_MPESA_ENV: z.enum(['sandbox', 'production']).optional(), // Commented out for now
-  VITE_MPESA_CONSUMER_KEY: z.string().optional(),
-  VITE_MPESA_CONSUMER_SECRET: z.string().optional(),
-  VITE_MPESA_SHORTCODE: z.string().optional(),
-  VITE_MPESA_PASSKEY: z.string().optional(),
-});
-
-// Parse and validate environment variables
-const env = envSchema.parse(import.meta.env);
-
-// Export validated environment
+// Hardcoded configuration for client-side (publishable) keys
 export const config = {
   supabase: {
-    url: env.VITE_SUPABASE_URL,
-    anonKey: env.VITE_SUPABASE_ANON_KEY,
+    url: 'https://oxehayneipjiozpuxlnv.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94ZWhheW5laXBqaW96cHV4bG52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2NDU0NTgsImV4cCI6MjA3NzIyMTQ1OH0.y3K9yTkJ0EMlqtxb_qUStRntsywv14fB-pDLN4w84jk',
+  },
+  pusher: {
+    key: '92acec48c588575d855e',
+    cluster: 'eu',
   },
   googleMaps: {
-    apiKey: env.VITE_GOOGLE_MAPS_API_KEY,
+    apiKey: undefined,
   },
   pwa: {
-    enabled: env.VITE_ENABLE_PWA,
+    enabled: false,
   },
   location: {
     updateMs: {
-      active: env.VITE_LOCATION_UPDATE_MS_ACTIVE,
-      onDelivery: env.VITE_LOCATION_UPDATE_MS_ON_DELIVERY,
-      idle: env.VITE_LOCATION_UPDATE_MS_IDLE,
+      active: 5000,
+      onDelivery: 3000,
+      idle: 30000,
     },
-    retentionDays: env.VITE_DEFAULT_LOCATION_RETENTION_DAYS,
+    retentionDays: 90,
   },
   notifications: {
-    pushEnabled: env.VITE_ENABLE_PUSH_NOTIFICATIONS,
+    pushEnabled: false,
   },
   mpesa: {
-    enabled: env.VITE_ENABLE_MPESA,
-    env: env.VITE_MPESA_ENV,
-    consumerKey: env.VITE_MPESA_CONSUMER_KEY,
-    consumerSecret: env.VITE_MPESA_CONSUMER_SECRET,
-    shortcode: env.VITE_MPESA_SHORTCODE,
-    passkey: env.VITE_MPESA_PASSKEY,
+    enabled: false,
+    env: 'sandbox' as const,
+    consumerKey: undefined,
+    consumerSecret: undefined,
+    shortcode: undefined,
+    passkey: undefined,
   },
 } as const;
 

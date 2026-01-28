@@ -14,13 +14,8 @@ export function PusherProvider({ children }: { children: React.ReactNode }) {
   const [pusher, setPusher] = useState<Pusher | null>(null);
 
   useEffect(() => {
-    const pusherKey = import.meta.env.VITE_PUSHER_KEY;
-    const pusherCluster = import.meta.env.VITE_PUSHER_CLUSTER;
-
-    if (!pusherKey || !pusherCluster) {
-      console.warn('Pusher credentials not configured. Real-time features will be disabled.');
-      return;
-    }
+    const pusherKey = '92acec48c588575d855e';
+    const pusherCluster = 'eu';
 
     try {
       const pusherInstance = new Pusher(pusherKey, {
