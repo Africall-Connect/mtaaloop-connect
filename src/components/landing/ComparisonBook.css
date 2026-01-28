@@ -1,0 +1,56 @@
+.comparison-book-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem 0;
+  }
+  
+.comparison-book {
+    display: flex;
+    width: 100%;
+    max-width: 900px; /* Increased width for a more substantial book */
+    height: auto;
+    min-height: 450px; /* Increased height */
+    position: relative;
+    perspective: 1500px;
+  }
+  
+  .book-page {
+    width: 50%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Changed to space-between */
+    align-items: center;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    border: 1px solid rgba(0,0,0,0.1);
+    background-color: #fff; /* Base color for pages */
+  }
+  
+  .left-page {
+    border-top-left-radius: 1rem; /* More rounded corners */
+    border-bottom-left-radius: 1rem;
+  }
+  
+  .right-page {
+    border-top-right-radius: 1rem; /* More rounded corners */
+    border-bottom-right-radius: 1rem;
+  }
+  
+  .problem-page {
+    background-color: #e5e7eb; /* Duller background */
+    color: #4b5563;
+  }
+  
+  .solution-page {
+    background-image: linear-gradient(to right, #fde68a 0%, #fca5a5 100%); /* Warmer, more playful gradient */
+    color: #78350f;
+  }
+  
+  .book-spine {
+    width: 20px;
+    height: 100%;
+    background-color: #d1d5db;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+  }

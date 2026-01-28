@@ -1,122 +1,235 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* MTAA Loop Connect - Vibrant Community Marketplace Design System */
+@tailwind screens;
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here.
+All colors MUST be HSL.
+*/
 
 @layer base {
   :root {
-    /* Core Background & Text */
-    --background: 0 0% 98%;
-    --foreground: 240 10% 10%;
+    /* MtaaLoop Digital Village Color System */
+    --background: 0 0% 100%;
+    --foreground: 215 25% 15%;
 
-    /* Cards & Surfaces */
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 10%;
+    --card-foreground: 215 25% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 10%;
+    --popover-foreground: 215 25% 15%;
 
-    /* Primary - Vibrant Coral/Orange */
-    --primary: 12 90% 58%;
+    /* Vibrant Blue - Primary Brand */
+    --primary: 220 90% 55%;
     --primary-foreground: 0 0% 100%;
+    --primary-hover: 220 90% 50%;
+    --primary-glow: 220 90% 65%;
 
-    /* Secondary - Teal Accent */
-    --secondary: 172 66% 50%;
-    --secondary-foreground: 0 0% 100%;
+    /* Vibrant Blue Accents */
+    --secondary: 220 70% 92%;
+    --secondary-foreground: 220 90% 25%;
 
-    /* Muted backgrounds */
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
 
-    /* Accent - Purple Pop */
-    --accent: 262 83% 58%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 25 85% 60%;
+    --accent-foreground: 215 25% 15%;
 
-    /* Success - Green */
+    /* Status Colors */
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
 
-    /* Warning - Amber */
+    --live: 15 85% 55%;
+    --live-foreground: 0 0% 100%;
+
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    /* Destructive */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Borders & Inputs */
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 12 90% 58%;
+    /* Premium & Special */
+    --premium: 45 86% 56%;
+    --premium-foreground: 0 0% 100%;
+
+    --gold: 38 92% 50%;
+    --gold-foreground: 215 25% 15%;
+
+    /* EXACT MtaaLoop Colors from External Project */
+    --mtaaloop-coral: 5 78% 70%;
+    --mtaaloop-coral-foreground: 0 0% 100%;
+    --mtaaloop-teal: 177 45% 55%;
+    --mtaaloop-teal-foreground: 0 0% 100%;
+    --mtaaloop-online: 142 76% 36%;
+    --mtaaloop-notification: 221 83% 53%;
+
+    /* UI Elements */
+    --border: 220 25% 85%;
+    --input: 220 25% 85%;
+    --ring: 220 90% 55%;
 
     --radius: 0.75rem;
 
-    /* Sidebar */
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 12 90% 58%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 96%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 12 90% 58%;
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(220 90% 55%) 0%, hsl(220 90% 50%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(220 90% 55%) 0%, hsl(210 85% 60%) 100%);
+    --gradient-card: linear-gradient(to top, hsla(220 90% 55% / 0.1) 0%, transparent 100%);
+    --gradient-glass: linear-gradient(135deg, hsla(0 0% 100% / 0.1) 0%, hsla(0 0% 100% / 0.05) 100%);
 
-    /* Custom Marketplace Tokens */
-    --gradient-start: 12 90% 58%;
-    --gradient-end: 262 83% 58%;
-    --category-products: 12 90% 58%;
-    --category-services: 172 66% 50%;
+    /* Transitions */
+    --transition-quick: 150ms cubic-bezier(0.33, 1, 0.68, 1);
+    --transition-normal: 300ms cubic-bezier(0.33, 1, 0.68, 1);
+    --transition-smooth: 500ms cubic-bezier(0.65, 0, 0.35, 1);
+    --transition-bounce: 500ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    /* Shadows */
+    --shadow-sm: 0 2px 4px hsla(220 90% 55% / 0.05);
+    --shadow-md: 0 4px 12px hsla(220 90% 55% / 0.1);
+    --shadow-lg: 0 10px 30px hsla(220 90% 55% / 0.15);
+    --shadow-glow: 0 0 40px hsla(220 90% 55% / 0.2);
   }
 
   .dark {
-    --background: 240 10% 6%;
-    --foreground: 0 0% 95%;
+    --background: 15 15% 8%;
+    --foreground: 15 10% 95%;
 
-    --card: 240 10% 10%;
-    --card-foreground: 0 0% 95%;
+    --card: 15 15% 10%;
+    --card-foreground: 15 10% 95%;
 
-    --popover: 240 10% 10%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 15 15% 10%;
+    --popover-foreground: 15 10% 95%;
 
-    --primary: 12 90% 58%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 220 90% 60%;
+    --primary-foreground: 15 15% 8%;
+    --primary-hover: 220 90% 65%;
 
-    --secondary: 172 66% 50%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 220 40% 15%;
+    --secondary-foreground: 220 90% 70%;
 
-    --muted: 240 6% 18%;
-    --muted-foreground: 220 9% 65%;
+    --muted: 15 15% 12%;
+    --muted-foreground: 15 10% 70%;
 
-    --accent: 262 83% 58%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 25 85% 65%;
+    --accent-foreground: 15 15% 8%;
 
-    --success: 142 71% 45%;
-    --success-foreground: 0 0% 100%;
+    --border: 220 40% 15%;
+    --input: 220 40% 15%;
+    --ring: 220 90% 60%;
+  }
+}
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+@layer utilities {
+  /* Custom animations */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
 
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 0 0% 100%;
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
 
-    --border: 240 6% 20%;
-    --input: 240 6% 20%;
-    --ring: 12 90% 58%;
+  .animate-slide-up {
+    animation: slide-up 0.5s ease-out;
+  }
 
-    --sidebar-background: 240 10% 8%;
-    --sidebar-foreground: 0 0% 90%;
-    --sidebar-primary: 12 90% 58%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 6% 15%;
-    --sidebar-accent-foreground: 0 0% 90%;
-    --sidebar-border: 240 6% 20%;
-    --sidebar-ring: 12 90% 58%;
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
 
-    --gradient-start: 12 90% 58%;
-    --gradient-end: 262 83% 58%;
-    --category-products: 12 90% 58%;
-    --category-services: 172 66% 50%;
+  .animate-scale-in {
+    animation: scale-in 0.4s ease-out;
+  }
+
+  .animate-bounce-in {
+    animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  /* Animation delays */
+  .animation-delay-100 { animation-delay: 0.1s; }
+  .animation-delay-200 { animation-delay: 0.2s; }
+  .animation-delay-300 { animation-delay: 0.3s; }
+  .animation-delay-400 { animation-delay: 0.4s; }
+  .animation-delay-500 { animation-delay: 0.5s; }
+  .animation-delay-600 { animation-delay: 0.6s; }
+  .animation-delay-700 { animation-delay: 0.7s; }
+  .animation-delay-800 { animation-delay: 0.8s; }
+  .animation-delay-900 { animation-delay: 0.9s; }
+  .animation-delay-1000 { animation-delay: 1.0s; }
+  .animation-delay-1100 { animation-delay: 1.1s; }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 20px hsla(220 90% 55% / 0.3);
+      transform: scale(1);
+    }
+    50% {
+      box-shadow: 0 0 40px hsla(220 90% 55% / 0.5);
+      transform: scale(1.02);
+    }
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes bounce-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.3);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+    70% {
+      transform: scale(0.9);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Gradient text */
+  .text-gradient {
+    background: var(--gradient-hero);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Glass morphism */
+  .glass {
+    background: var(--gradient-glass);
+    backdrop-filter: blur(10px);
+    border: 1px solid hsla(0 0% 100% / 0.1);
   }
 }
 
@@ -126,19 +239,6 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
-  }
-}
-
-@layer utilities {
-  .gradient-primary {
-    background: linear-gradient(135deg, hsl(var(--gradient-start)), hsl(var(--gradient-end)));
-  }
-
-  .gradient-text {
-    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    @apply bg-background text-foreground;
   }
 }

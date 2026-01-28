@@ -1,0 +1,1 @@
+Good the first part is done. Now lets go to the next step. Now when in AvailableDeliveries.tsx button Accept Delivery the handleAccept const is done. This works well for normal orders For the premium orders I want a different logic. When 

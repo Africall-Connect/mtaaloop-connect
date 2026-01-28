@@ -1,0 +1,21 @@
+# Supabase Configuration
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Google Maps API
+VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+
+# Feature Flags
+VITE_ENABLE_PWA=1
+VITE_LOCATION_UPDATE_MS_ACTIVE=5000
+VITE_LOCATION_UPDATE_MS_ON_DELIVERY=3000
+VITE_LOCATION_UPDATE_MS_IDLE=30000
+VITE_DEFAULT_LOCATION_RETENTION_DAYS=90
+VITE_ENABLE_PUSH_NOTIFICATIONS=0
+VITE_ENABLE_MPESA=1
+VITE_MPESA_ENV=sandbox
+
+# MPesa Configuration (for Edge Functions)
+VITE_MPESA_CONSUMER_KEY=your_mpesa_consumer_key
+VITE_MPESA_CONSUMER_SECRET=your_mpesa_consumer_secret
+VITE_MPESA_SHORTCODE=your_mpesa_shortcode
