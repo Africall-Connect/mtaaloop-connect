@@ -67,16 +67,6 @@ export default function VendorBookingManagement() {
   const [slots, setSlots] = useState<BookingSlot[]>([]);
   const [slotLoading, setSlotLoading] = useState(false);
 
-  useEffect(() => {
-    checkCategories();
-  }, [checkCategories]);
-
-  useEffect(() => {
-    if (hasCategories) {
-      fetchBookings();
-    }
-  }, [hasCategories, fetchBookings]);
-
   const checkCategories = useCallback(async () => {
     try {
       setCheckingCategories(true);
@@ -142,6 +132,16 @@ export default function VendorBookingManagement() {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    checkCategories();
+  }, [checkCategories]);
+
+  useEffect(() => {
+    if (hasCategories) {
+      fetchBookings();
+    }
+  }, [hasCategories, fetchBookings]);
 
   const filtered = bookings.filter(
     (b) =>
