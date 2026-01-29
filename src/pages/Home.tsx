@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { 
   Search, ShoppingBag, UtensilsCrossed, Pill, Sparkles, 
   Home as HomeIcon, Droplet, MapPin, Star, Clock, TrendingUp, 
-  Wine, Hotel, Package, Trash2, Users 
+  Wine, Hotel, Package, Trash2, Users, Zap, Crown 
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -12,12 +12,34 @@ import { Badge } from "@/components/ui/badge";
 import { ApartmentSwitcher } from "@/components/ApartmentSwitcher";
 import { useApartment } from "@/contexts/ApartmentContext";
 import { useCart } from "@/contexts/CartContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { VendorProfile } from "@/types/database";
 import { VendorSpotlight } from "@/components/VendorSpotlight";
+import { SubscriptionBadge } from "@/components/subscription/SubscriptionBadge";
 
-// Official 10 categories + Trash Collection
+// Official 10 categories + Trash Collection + Quick Services
 const allCategories = [
+  // 🗑️ PRIORITY #1 - Trash Collection at top
+  {
+    icon: Trash2,
+    name: "Trash Collection",
+    subtitle: "Quick doorstep pickup - KSh 30",
+    link: "/trash-collection",
+    gradient: "from-emerald-600 to-teal-700",
+    image: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=500&q=80",
+    isPriority: true
+  },
+  // ⚡ NEW - Quick Services Hub
+  {
+    icon: Zap,
+    name: "Quick Services",
+    subtitle: "Cleaning, Dishes, Laundry & More",
+    link: "/quick-services",
+    gradient: "from-purple-500 to-pink-500",
+    image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=500&q=80",
+    isNew: true
+  },
   {
     icon: UtensilsCrossed,
     name: "Food & Drinks",
@@ -97,14 +119,6 @@ const allCategories = [
     link: "/categories/pharmacy",
     gradient: "from-sky-500 to-cyan-400",
     image: "https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=500&q=80"
-  },
-  {
-    icon: Trash2,
-    name: "Trash Collection",
-    subtitle: "Quick doorstep pickup - KSh 30",
-    link: "/trash-collection",
-    gradient: "from-emerald-600 to-teal-700",
-    image: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=500&q=80"
   },
 ];
 
@@ -333,10 +347,11 @@ const Home = () => {
     fetchCategoriesWithVendors();
   }, [currentApartment]);
 
-  // Filter to only show categories with data (+ always show Trash Collection)
+  // Filter to only show categories with data (+ always show Trash Collection and Quick Services)
   const displayedCategories = allCategories.filter(cat => 
     categoriesWithData.includes(cat.name) || 
-    cat.name === "Trash Collection"
+    cat.name === "Trash Collection" ||
+    cat.name === "Quick Services"
   );
 
   const handleSearch = (e: React.FormEvent) => {

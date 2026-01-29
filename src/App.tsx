@@ -8,6 +8,7 @@ import { CartProvider } from "./contexts/CartContext";
 import { ApartmentProvider } from "./contexts/ApartmentContext";
 import { AddressProvider } from "./contexts/AddressContext";
 import { GamificationProvider } from "./contexts/GamificationContext";
+import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { RoleRouter } from "./components/RoleRouter";
 import Index from "./pages/Index";
@@ -163,7 +164,14 @@ import SupportLiveChat from "./pages/SupportLiveChat";
 import TrashCollection from "./pages/TrashCollection";
 import TrashTracking from "./pages/TrashTracking";
 import ComplianceDashboard from "./pages/ComplianceDashboard";
-
+import MtaaLoopPlus from "./pages/MtaaLoopPlus";
+import QuickServices from "./pages/QuickServices";
+import OshaViombo from "./pages/services/OshaViombo";
+import QuickCleaning from "./pages/services/QuickCleaning";
+import LaundrySorting from "./pages/services/LaundrySorting";
+import QuickMealPrep from "./pages/services/QuickMealPrep";
+import PackageCollection from "./pages/services/PackageCollection";
+import ErrandsService from "./pages/services/ErrandsService";
 
 const queryClient = new QueryClient();
 
@@ -173,12 +181,13 @@ const App = () => (
       <ApartmentProvider>
         <CartProvider>
           <AddressProvider>
-            <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-      <GlobalLayout>
-        <Routes>
+            <SubscriptionProvider>
+              <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+        <GlobalLayout>
+          <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/auth/signup" element={<Signup />} />
@@ -229,6 +238,46 @@ const App = () => (
             <Route path="/trash-collection" element={
               <ProtectedRoute>
                 <TrashCollection />
+              </ProtectedRoute>
+            } />
+            <Route path="/mtaaloop-plus" element={
+              <ProtectedRoute>
+                <MtaaLoopPlus />
+              </ProtectedRoute>
+            } />
+            <Route path="/quick-services" element={
+              <ProtectedRoute>
+                <QuickServices />
+              </ProtectedRoute>
+            } />
+            <Route path="/services/osha-viombo" element={
+              <ProtectedRoute>
+                <OshaViombo />
+              </ProtectedRoute>
+            } />
+            <Route path="/services/quick-cleaning" element={
+              <ProtectedRoute>
+                <QuickCleaning />
+              </ProtectedRoute>
+            } />
+            <Route path="/services/laundry-sorting" element={
+              <ProtectedRoute>
+                <LaundrySorting />
+              </ProtectedRoute>
+            } />
+            <Route path="/services/quick-meal-prep" element={
+              <ProtectedRoute>
+                <QuickMealPrep />
+              </ProtectedRoute>
+            } />
+            <Route path="/services/package-collection" element={
+              <ProtectedRoute>
+                <PackageCollection />
+              </ProtectedRoute>
+            } />
+            <Route path="/services/errands" element={
+              <ProtectedRoute>
+                <ErrandsService />
               </ProtectedRoute>
             } />
             <Route path="/payment/callback" element={<PaymentCallbackPage />} />
@@ -661,7 +710,8 @@ const App = () => (
           </Routes>
         </GlobalLayout>
         </BrowserRouter>
-            </TooltipProvider>
+              </TooltipProvider>
+            </SubscriptionProvider>
           </AddressProvider>
         </CartProvider>
       </ApartmentProvider>

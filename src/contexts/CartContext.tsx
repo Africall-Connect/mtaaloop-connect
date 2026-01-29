@@ -60,9 +60,37 @@ interface CartContextType {
   getVendorTotal: (vendorId: string) => number;
   getVendorItemCount: (vendorId: string) => number;
   getSelectedCount: () => number;
+  calculateDeliveryFee: (isWithinBuilding?: boolean) => number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+
+/**
+ * Calculate delivery fee based on:
+ * - Base: KSh 40 (within building) or KSh 100 (outside)
+ * - Item count surcharge: +30 (11-20), +50 (21-30), +80 (31+)
+ * - Multi-vendor surcharge: +20 (2 vendors), +40 (3+ vendors)
+ */
+const calculateDeliveryFeeLogic = (items: CartItem[], isWithinBuilding: boolean = true): number => {
+  if (items.length === 0) return 0;
+  
+  const baseFee = isWithinBuilding ? 40 : 100;
+  
+  // Item count surcharge
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  let itemSurcharge = 0;
+  if (totalItems > 30) itemSurcharge = 80;
+  else if (totalItems > 20) itemSurcharge = 50;
+  else if (totalItems > 10) itemSurcharge = 30;
+  
+  // Multi-vendor surcharge
+  const uniqueVendors = new Set(items.map(item => item.vendorId)).size;
+  let vendorSurcharge = 0;
+  if (uniqueVendors >= 3) vendorSurcharge = 40;
+  else if (uniqueVendors === 2) vendorSurcharge = 20;
+  
+  return baseFee + itemSurcharge + vendorSurcharge;
+};
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -323,6 +351,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         getVendorTotal,
         getVendorItemCount,
         getSelectedCount,
+        calculateDeliveryFee: (isWithinBuilding = true) => calculateDeliveryFeeLogic(items, isWithinBuilding),
       }}
     >
       {children}
