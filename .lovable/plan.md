@@ -1,240 +1,303 @@
 
-# Pharmacy Vendor Portal Design Plan
+# Order Tracking Status Messaging Redesign
 
 ## Overview
 
-This plan creates a specialized vendor portal for **Pharmacy** vendors (`business_type == 'pharmacy'`). Pharmacies are unique because they require a **hybrid model** that combines:
-- **Inventory products** (medicines, supplements, personal care)
-- **Booking services** (consultations, health checks)
-
-We need to:
-1. Update the database trigger to use the new streamlined category system
-2. Create a new PharmacyView for customer-facing pages
-3. Update the vendor dashboard to handle the pharmacy operational type
-4. Ensure the CategoryManagement works correctly for pharmacy vendors
+This plan redesigns the order tracking status messaging in `src/pages/OrderTracking.tsx` to provide category-appropriate wording for all 9 main categories. Currently, only "Liquor Store" and "Pharmacy" have tailored messaging, but customers ordering toiletries, groceries, or home services should not see "Preparing your food."
 
 ---
 
-## Part 1: Database Trigger Update
+## The Problem
 
-The current trigger maps 30+ business types to operational categories. It needs to be updated to match our new streamlined 9-category structure.
+When a customer orders:
+- **Toiletries** from Living Essentials → sees "Preparing your food" ❌
+- **Gas Delivery** from Utilities & Services → sees "Preparing your food" ❌  
+- **Cleaning Service** from Home Services → sees "Preparing your food" ❌
 
-### New Trigger SQL
-
-```sql
-CREATE OR REPLACE FUNCTION public.assign_vendor_operational_category()
- RETURNS trigger
- LANGUAGE plpgsql
-AS $function$
-BEGIN
-  -- default to inventory
-  NEW.operational_category := 'inventory';
-
-  CASE NEW.business_type
-    -- INVENTORY categories (4)
-    WHEN 'food-drinks' THEN NEW.operational_category := 'inventory';
-    WHEN 'living-essentials' THEN NEW.operational_category := 'inventory';
-    WHEN 'groceries-food' THEN NEW.operational_category := 'inventory';
-    WHEN 'restaurant' THEN NEW.operational_category := 'inventory';
-
-    -- SERVICE categories (2)
-    WHEN 'utilities-services' THEN NEW.operational_category := 'service';
-    WHEN 'home-services' THEN NEW.operational_category := 'service';
-
-    -- BOOKING categories (2)
-    WHEN 'beauty-spa' THEN NEW.operational_category := 'booking';
-    WHEN 'accommodation' THEN NEW.operational_category := 'booking';
-
-    -- PHARMACY (special hybrid type)
-    WHEN 'pharmacy' THEN NEW.operational_category := 'pharmacy';
-    
-    -- Legacy fallbacks (for existing data)
-    WHEN 'groceries-essentials' THEN NEW.operational_category := 'inventory';
-    WHEN 'liquor-store' THEN NEW.operational_category := 'inventory';
-    WHEN 'fashion-clothing' THEN NEW.operational_category := 'inventory';
-    WHEN 'electronics-gadgets' THEN NEW.operational_category := 'inventory';
-    WHEN 'minimart' THEN NEW.operational_category := 'inventory';
-    WHEN 'home-services' THEN NEW.operational_category := 'service';
-    WHEN 'repairs-maintenance' THEN NEW.operational_category := 'service';
-    WHEN 'health-wellness' THEN NEW.operational_category := 'booking';
-    WHEN 'beauty-spa' THEN NEW.operational_category := 'booking';
-    ELSE NEW.operational_category := 'inventory';
-  END CASE;
-
-  RETURN NEW;
-END;
-$function$;
-```
-
-You will need to run this in your Supabase SQL editor to update the trigger.
+This creates a confusing and unprofessional user experience.
 
 ---
 
-## Part 2: Create Pharmacy View Component
+## New Category-Specific Messaging Structure
 
-A new view that displays both products and booking services in a tabbed/sectioned layout.
+### Mapping Table: Category → Status Messages
 
-### File: `src/pages/vendor/views/PharmacyView.tsx`
-
-The PharmacyView will:
-- Show a **Tabs** interface with "Products" and "Consultations" tabs
-- Products tab displays inventory items (medicines, supplements, etc.)
-- Consultations tab displays bookable services with calendar/slot selection
-- Use existing cart context for both product purchases and booking appointments
-
-### Component Structure
-
-```text
-+-------------------------------------------------------+
-|  💊 Shop Products  |  📅 Book Consultation           |
-+-------------------------------------------------------+
-|                                                       |
-|  [Tab Content - Either Products Grid or Booking UI]  |
-|                                                       |
-+-------------------------------------------------------+
-```
+| Category | Icon | "Preparing" Title | "Preparing" Description | Notification Title |
+|----------|------|-------------------|-------------------------|-------------------|
+| **Food & Drinks** | 👨‍🍳 | Preparing your order | Your delicious order is being prepared with care | Cooking Started! |
+| **Restaurant** | 👨‍🍳 | Preparing your meal | Your meal is being freshly prepared | Cooking Started! |
+| **Living Essentials** | 🧴 | Packing your items | Your items are being carefully packed | Packing Started! |
+| **Groceries & Food** | 🛒 | Packing your groceries | Your groceries are being carefully packed | Packing Started! |
+| **Utilities & Services** | 🔧 | Preparing your service | Your service request is being prepared | Service Preparing! |
+| **Home Services** | 🏠 | Preparing your service | Your home service is being arranged | Service Preparing! |
+| **Beauty & Spa** | 💅 | Preparing your appointment | Your appointment is being prepared | Appointment Ready! |
+| **Accommodation** | 🏨 | Preparing your stay | Your accommodation is being prepared | Booking Confirmed! |
+| **Pharmacy** | 💊 | Preparing your medication | Your medication is being carefully prepared | Medication Ready! |
 
 ---
 
-## Part 3: Update VendorHome.tsx
+## Technical Implementation
 
-Add pharmacy support to render the new PharmacyView when `operational_category === 'pharmacy'`.
+### Step 1: Create a Helper Configuration Object
 
-### Changes to VendorHome.tsx
-
-Add import for PharmacyView and conditional rendering:
+Create a new configuration object that maps categories to their messaging details:
 
 ```typescript
-import { PharmacyView } from "./views/PharmacyView";
+// Category-specific messaging configuration
+const CATEGORY_MESSAGING = {
+  // Inventory Categories
+  "Food & Drinks": {
+    icon: "👨‍🍳",
+    preparingTitle: "Preparing your order",
+    preparingDescription: "Your delicious order is being prepared with care",
+    notificationTitle: "Cooking Started! 👨‍🍳",
+    timelineLabel: "Preparing Your Order",
+    deliveredMessage: "Enjoy your meal!",
+  },
+  "Restaurant": {
+    icon: "👨‍🍳",
+    preparingTitle: "Preparing your meal",
+    preparingDescription: "Your meal is being freshly prepared",
+    notificationTitle: "Cooking Started! 👨‍🍳",
+    timelineLabel: "Preparing Your Meal",
+    deliveredMessage: "Enjoy your meal!",
+  },
+  "Living Essentials": {
+    icon: "🧴",
+    preparingTitle: "Packing your items",
+    preparingDescription: "Your items are being carefully packed",
+    notificationTitle: "Packing Started! 📦",
+    timelineLabel: "Packing Your Items",
+    deliveredMessage: "Enjoy your items!",
+  },
+  "Groceries & Food": {
+    icon: "🛒",
+    preparingTitle: "Packing your groceries",
+    preparingDescription: "Your groceries are being carefully packed",
+    notificationTitle: "Packing Started! 🛒",
+    timelineLabel: "Packing Your Groceries",
+    deliveredMessage: "Enjoy your groceries!",
+  },
+  // Service Categories
+  "Utilities & Services": {
+    icon: "🔧",
+    preparingTitle: "Preparing your service",
+    preparingDescription: "Your service request is being prepared",
+    notificationTitle: "Service Preparing! 🔧",
+    timelineLabel: "Preparing Your Service",
+    deliveredMessage: "Service complete!",
+  },
+  "Home Services": {
+    icon: "🏠",
+    preparingTitle: "Preparing your service",
+    preparingDescription: "Your home service is being arranged",
+    notificationTitle: "Service Preparing! 🏠",
+    timelineLabel: "Arranging Your Service",
+    deliveredMessage: "Service complete!",
+  },
+  // Booking Categories
+  "Beauty & Spa": {
+    icon: "💅",
+    preparingTitle: "Preparing your appointment",
+    preparingDescription: "Your appointment is being prepared",
+    notificationTitle: "Appointment Ready! 💅",
+    timelineLabel: "Preparing Your Appointment",
+    deliveredMessage: "Thank you for your visit!",
+  },
+  "Accommodation": {
+    icon: "🏨",
+    preparingTitle: "Preparing your stay",
+    preparingDescription: "Your accommodation is being prepared",
+    notificationTitle: "Booking Confirmed! 🏨",
+    timelineLabel: "Preparing Your Stay",
+    deliveredMessage: "Enjoy your stay!",
+  },
+  // Pharmacy (Hybrid)
+  "Pharmacy": {
+    icon: "💊",
+    preparingTitle: "Preparing your medication",
+    preparingDescription: "Your medication is being carefully prepared",
+    notificationTitle: "Medication Ready! 💊",
+    timelineLabel: "Preparing Your Medication",
+    deliveredMessage: "Take care of yourself!",
+  },
+  // Legacy support
+  "Liquor Store": {
+    icon: "🍷",
+    preparingTitle: "Preparing your drinks",
+    preparingDescription: "Your drinks are being prepared",
+    notificationTitle: "Drinks Preparing! 🍷",
+    timelineLabel: "Preparing Your Drinks",
+    deliveredMessage: "Enjoy responsibly!",
+  },
+};
 
-// In render section, add:
-{vendor.operational_category === 'pharmacy' && <PharmacyView vendor={vendor} products={products} />}
+// Default fallback for unknown categories
+const DEFAULT_MESSAGING = {
+  icon: "📦",
+  preparingTitle: "Preparing your order",
+  preparingDescription: "Your order is being prepared",
+  notificationTitle: "Order Preparing! 📦",
+  timelineLabel: "Preparing Your Order",
+  deliveredMessage: "Enjoy!",
+};
 ```
 
----
+### Step 2: Create Helper Function
 
-## Part 4: Update NewVendorDashboard.tsx
-
-Add pharmacy-specific quick actions and navigation buttons.
-
-### Changes
-
-1. Add pharmacy type to VendorProfile interface
-2. Add conditional quick action buttons for pharmacy vendors:
-   - "Products" button (for inventory management)
-   - "Consultations" button (for booking management)
-3. Show both product and booking management in dashboard
-
----
-
-## Part 5: Create Pharmacy-Specific Management Page (Optional Enhancement)
-
-A combined management page for pharmacy vendors that shows:
-- Product inventory (medicines, supplies)
-- Consultation bookings
-- Prescription requests (future feature)
-
-### File: `src/pages/vendor/PharmacyManagement.tsx`
-
-This page will be a tabbed interface combining:
-- ProductManagement functionality
-- VendorBookingManagement functionality
-
----
-
-## Files to Create/Modify
-
-| File | Action | Description |
-|------|--------|-------------|
-| `src/pages/vendor/views/PharmacyView.tsx` | **CREATE** | Customer-facing pharmacy view with products + consultations |
-| `src/pages/vendor/VendorHome.tsx` | MODIFY | Add pharmacy case to conditional rendering |
-| `src/pages/vendor/NewVendorDashboard.tsx` | MODIFY | Add pharmacy quick actions |
-| `src/App.tsx` | MODIFY | Add route for pharmacy management page |
-| Database Trigger | UPDATE | Run SQL to update `assign_vendor_operational_category()` |
-
----
-
-## Technical Implementation Details
-
-### 1. PharmacyView Component Structure
+Create a helper function to get the messaging config for a category:
 
 ```typescript
-interface PharmacyViewProps {
-  vendor: VendorWithProducts;
-  products: Product[];
-}
-
-export function PharmacyView({ vendor, products }: PharmacyViewProps) {
-  const [activeTab, setActiveTab] = useState<'products' | 'consultations'>('products');
-  
-  // Split products by item_type
-  const inventoryProducts = products.filter(p => p.item_type !== 'booking');
-  const bookingProducts = products.filter(p => p.item_type === 'booking');
-  
-  return (
-    <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <TabsList>
-        <TabsTrigger value="products">💊 Shop Products</TabsTrigger>
-        <TabsTrigger value="consultations">📅 Book Consultation</TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="products">
-        {/* Inventory grid similar to InventoryView */}
-      </TabsContent>
-      
-      <TabsContent value="consultations">
-        {/* Booking UI similar to BookingView */}
-      </TabsContent>
-    </Tabs>
-  );
-}
+const getCategoryMessaging = (category: string | null | undefined) => {
+  if (!category) return DEFAULT_MESSAGING;
+  return CATEGORY_MESSAGING[category] || DEFAULT_MESSAGING;
+};
 ```
 
-### 2. Product Type Distinction
+### Step 3: Update `getStatusLabel()` Function (Lines 456-486)
 
-Pharmacy products will use the `item_type` field:
-- `item_type: 'inventory'` → Regular products (medicines, supplies)
-- `item_type: 'booking'` → Consultation services
+Replace the hardcoded category checks with the helper:
 
-### 3. Subcategory Mapping for Pharmacy
+```typescript
+const getStatusLabel = (status: string, isPremium = false) => {
+  if (isPremium) {
+    // ... existing premium logic unchanged
+  }
+  
+  const messaging = getCategoryMessaging(orderData?.category);
+  
+  switch (status) {
+    case "pending": return "Waiting for vendor to accept";
+    case "accepted": return "Vendor accepted your order";
+    case "preparing": return messaging.preparingTitle;
+    case "ready": return "Ready for pickup";
+    case "in_transit": return "Out for delivery";
+    case "delivered": return "Delivered";
+    case "cancelled": return "Order cancelled";
+    default: return "Processing order";
+  }
+};
+```
 
-From the categories.ts file, pharmacy subcategories are:
-- **Booking**: Consultation
-- **Inventory**: Prescription Medicine, Over-the-Counter Medicine, Family Planning, First Aid Supplies, Vitamins & Supplements, Baby Care, Personal Hygiene, Medical Devices
+### Step 4: Update Status Card Icon (Lines 1045-1054)
 
-### 4. Cart Integration
+Replace hardcoded emoji logic:
 
-Both product purchases and booking appointments use the existing CartContext:
-- Products: Standard cart item with price and quantity
-- Bookings: Cart item with `bookingDetails: { slot_start, slot_end }`
+```typescript
+<span className="text-4xl">
+  {orderStatus === "pending"
+    ? "⏰"
+    : orderStatus === "accepted" || orderStatus === "preparing"
+    ? getCategoryMessaging(orderData?.category).icon
+    : "🚴"}
+</span>
+```
+
+### Step 5: Update Status Description (Lines 1059-1067)
+
+Replace hardcoded description:
+
+```typescript
+<p className="text-muted-foreground mb-2">
+  {orderStatus === "pending" && "Your order will be confirmed shortly"}
+  {orderStatus === "accepted" && "The vendor is preparing your order"}
+  {orderStatus === "preparing" && getCategoryMessaging(orderData?.category).preparingDescription}
+  {orderStatus === "ready" && "Your order is ready for pickup"}
+  {orderStatus === "in_transit" && "Arriving soon"}
+</p>
+```
+
+### Step 6: Update Timeline Steps (Lines 1119-1137)
+
+Replace the "preparing" step with dynamic messaging:
+
+```typescript
+{
+  label: getCategoryMessaging(orderData?.category).timelineLabel,
+  status: "preparing",
+  done: ["preparing", "ready", "in_transit", "delivered"].includes(orderStatus),
+  icon: getCategoryMessaging(orderData?.category).icon,
+  description: getCategoryMessaging(orderData?.category).preparingDescription
+},
+```
+
+### Step 7: Update Realtime Notifications (Lines 154-185)
+
+Make notifications category-aware:
+
+```typescript
+// In the realtime subscription handler
+const messaging = getCategoryMessaging(orderData?.category);
+const statusMessages: Record<string, { title: string; description: string; emoji: string }> = {
+  accepted: {
+    title: "Order Confirmed! 🎉",
+    description: "The vendor has accepted your order and will start soon.",
+    emoji: "✅"
+  },
+  preparing: {
+    title: messaging.notificationTitle,
+    description: messaging.preparingDescription,
+    emoji: messaging.icon
+  },
+  // ... other statuses remain generic
+};
+```
 
 ---
 
-## User Experience Flow
+## Files to Modify
 
-### Customer View (VendorHome → PharmacyView)
-
-1. Customer visits pharmacy vendor page
-2. Sees two tabs: "Shop Products" and "Book Consultation"
-3. **Shop Products**: Browse medicines by subcategory, add to cart
-4. **Book Consultation**: Select service type, pick date/time slot, add to cart
-5. Checkout handles both product orders and booking confirmations
-
-### Vendor Dashboard (NewVendorDashboard)
-
-1. Vendor logs in, sees pharmacy-specific dashboard
-2. Quick actions show both "Products" and "Consultations" buttons
-3. Can manage inventory products via ProductManagement
-4. Can manage consultation slots via VendorBookingManagement
-5. Analytics show combined metrics for both
+| File | Changes |
+|------|---------|
+| `src/pages/OrderTracking.tsx` | Add CATEGORY_MESSAGING config, getCategoryMessaging() helper, update 6 locations that display status text |
 
 ---
 
-## Implementation Priority
+## Implementation Summary
 
-1. **Step 1**: Update database trigger (SQL - manual step)
-2. **Step 2**: Create PharmacyView component
-3. **Step 3**: Update VendorHome.tsx to use PharmacyView
-4. **Step 4**: Update NewVendorDashboard.tsx for pharmacy actions
-5. **Step 5**: Add App.tsx route (if creating dedicated management page)
-6. **Step 6**: Test end-to-end flow
+1. **Add** `CATEGORY_MESSAGING` object with all 9+ categories (around line 67, after imports)
+2. **Add** `DEFAULT_MESSAGING` fallback object
+3. **Add** `getCategoryMessaging()` helper function
+4. **Update** `getStatusLabel()` to use helper
+5. **Update** status card icon to use helper
+6. **Update** status description to use helper
+7. **Update** timeline "preparing" step to use helper
+8. **Update** realtime notification to use helper
+
+---
+
+## Example User Experiences After Implementation
+
+### Living Essentials (Toiletries)
+- **Icon**: 🧴
+- **Title**: "Packing your items"
+- **Description**: "Your items are being carefully packed"
+- **Timeline**: "Packing Your Items"
+
+### Utilities & Services (Gas Delivery)
+- **Icon**: 🔧
+- **Title**: "Preparing your service"
+- **Description**: "Your service request is being prepared"
+- **Timeline**: "Preparing Your Service"
+
+### Beauty & Spa (Hair Salon)
+- **Icon**: 💅
+- **Title**: "Preparing your appointment"
+- **Description**: "Your appointment is being prepared"
+- **Timeline**: "Preparing Your Appointment"
+
+---
+
+## Legacy Support
+
+The configuration includes "Liquor Store" for backwards compatibility with existing orders that may have this category value in the database.
+
+---
+
+## Benefits
+
+1. **Professional UX** - Customers see contextually appropriate messaging
+2. **Maintainable** - Single configuration object for all categories
+3. **Extensible** - Easy to add new categories in the future
+4. **Type-safe** - Clear structure prevents messaging errors
+5. **Fallback** - Unknown categories still get reasonable messaging
