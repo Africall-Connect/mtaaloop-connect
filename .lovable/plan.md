@@ -1,139 +1,128 @@
 
+# Home Page Categories: Data Filtering and Route Fixes
 
-# Home Page Redesign Plan
+## Problem Summary
 
-## Overview
+1. **Categories without data**: The "What are you looking for?" section shows all 11 categories, even those that may have no vendors/products
+2. **404 errors**: Clicking on categories like `/living-essentials`, `/groceries-food`, `/liquor-store`, `/utilities-services`, `/restaurant`, `/accommodation` leads to 404 because no routes exist for these paths
+3. **Inconsistent routing**: Some categories use static pages (`/food-drinks`), some use database pages (`/food-drinks-db`), and the dynamic route (`/categories/:category`) exists but is not being used by Home.tsx
 
-This plan redesigns the Home.tsx page to:
-1. Remove the "5 minute delivery", "Hyperlocal", and "Building Vendors" feature cards at the bottom
-2. Reduce the header height (currently uses h-20 for logo which is too tall)
-3. Update the "What are you looking for?" section to use only the 10 official categories
-4. Rename "Popular Vendors Near You" to "MtaaLoop Minimart" (since it's your own store)
-5. Improve mobile responsiveness for PWA compatibility
+## Solution Overview
 
----
+### Part 1: Add Missing Routes to App.tsx
 
-## Part 1: Remove Bottom Feature Cards
+Add routes for all 10 official categories that point to the dynamic `CategoryPage` component, which already has the logic to fetch vendors by category name.
 
-### Current State (Lines 2265-2285)
-The page has 3 cards at the bottom:
-- "5-15 Min Delivery"
-- "Building Vendors"
-- "Hyperlocal"
+| Category Link | Route to Add |
+|---------------|--------------|
+| `/living-essentials` | CategoryPage |
+| `/groceries-food` | CategoryPage |
+| `/restaurant` | CategoryPage |
+| `/liquor-store` | CategoryPage |
+| `/utilities-services` | CategoryPage |
+| `/beauty-spa` | (already exists, but static) → CategoryPage |
+| `/accommodation` | CategoryPage |
+| `/pharmacy` | (needs new route) → CategoryPage |
 
-### Action
-**DELETE** the entire "Quick Access Features" section (lines 2264-2285).
+### Part 2: Update CategoryPage Slug Mapping
 
----
+The `src/pages/categories/[category].tsx` file has a `slugToCategoryName` function that needs to include all 10 categories:
 
-## Part 2: Reduce Header Height
-
-### Current State (Lines 546-613)
-The header uses:
-- Logo: `h-20 w-20` (80px x 80px) - too large
-- Text: `text-2xl` - appropriate
-- Padding: `py-4` - reasonable
-
-### Changes
-- Reduce logo from `h-20 w-20` to `h-10 w-10` (40px)
-- Adjust padding to `py-3` for a more compact header
-- Make location info more compact on mobile
-
-### New Header Structure
-
-```text
-+--------------------------------------------------+
-| [Logo 40px] Mtaaloop       [Connect] [Cart] [User]|
-|             📍 Location - Change                  |
-+--------------------------------------------------+
+```typescript
+const slugToCategoryName = (slug: string | undefined): string => {
+  if (!slug) return '';
+  const mapping: Record<string, string> = {
+    // Current mappings
+    'food-drinks': 'Food & Drinks',
+    'shopping': 'Shopping',
+    'health-wellness': 'Health & Wellness',
+    'beauty-spa': 'Beauty & Spa',
+    'home-services': 'Home Services',
+    'transport-car': 'Transport & Car',
+    'living-essentials': 'Living Essentials',
+    'special-occasions': 'Special Occasions',
+    // NEW mappings to add
+    'groceries-food': 'Groceries & Food',
+    'restaurant': 'Restaurant',
+    'liquor-store': 'Liquor Store',
+    'utilities-services': 'Utilities & Services',
+    'accommodation': 'Accommodation',
+    'pharmacy': 'Pharmacy',
+  };
+  return mapping[slug] || slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
 ```
 
----
+### Part 3: Update Home.tsx Category Links
 
-## Part 3: Update Categories to Official 10
+Change the category links in Home.tsx to use the dynamic route pattern `/categories/:category` instead of the flat routes:
 
-### Current State (Lines 293-541)
-The page has **30+ categories** including many that don't exist in the official category system:
-- Auto Services ❌
-- Repairs & Maintenance ❌
-- Fashion & Clothing ❌
-- Electronics & Gadgets ❌
-- Fitness & Sports ❌
-- Education & Tutoring ❌
-- Event & Entertainment ❌
-- Professional Services ❌
-- Pet Services ❌
-- Home & Garden ❌
-- Books & Stationery ❌
-- Baby & Kids ❌
-- Transport & Logistics ❌
-- Security Services ❌
-- Religious Services ❌
-- Creative Services ❌
-- Construction Services ❌
-- Agriculture & Farming ❌
-- Trash Collection ❌ (keep as special service)
-- Wedding Services ❌
-- Special Occasions ❌
+| Current Link | New Link |
+|--------------|----------|
+| `/food-drinks` | `/categories/food-drinks` |
+| `/living-essentials` | `/categories/living-essentials` |
+| `/groceries-food` | `/categories/groceries-food` |
+| `/restaurant` | `/categories/restaurant` |
+| `/liquor-store` | `/categories/liquor-store` |
+| `/utilities-services` | `/categories/utilities-services` |
+| `/home-services` | `/categories/home-services` |
+| `/beauty-spa` | `/categories/beauty-spa` |
+| `/accommodation` | `/categories/accommodation` |
+| `/pharmacy` | `/categories/pharmacy` |
 
-### Official Categories (10 total)
-| Category | Icon | Subtitle | Link | Gradient |
-|----------|------|----------|------|----------|
-| Food & Drinks | UtensilsCrossed | Fast Food, Traditional & More | /food-drinks | from-orange-500 to-red-500 |
-| Living Essentials | Package | Toiletries, Cleaning & Household | /living-essentials | from-cyan-500 to-blue-500 |
-| Groceries & Food | ShoppingBag | Fresh Produce, Meat & Dairy | /groceries-food | from-green-500 to-emerald-500 |
-| Restaurant | UtensilsCrossed | Dine-in & Custom Menus | /restaurant | from-amber-500 to-orange-500 |
-| Liquor Store | Wine | Beer, Wine, Spirits & More | /liquor-store | from-red-600 to-rose-500 |
-| Utilities & Services | Droplet | Gas & Water Delivery | /utilities-services | from-blue-600 to-sky-500 |
-| Home Services | HomeIcon | Cleaning, Laundry & Electrical | /home-services | from-teal-500 to-green-500 |
-| Beauty & Spa | Sparkles | Hair, Nails, Massage & More | /beauty-spa | from-pink-500 to-purple-500 |
-| Accommodation | Hotel | Guest Houses, Airbnb & Rentals | /accommodation | from-indigo-500 to-violet-500 |
-| Pharmacy | Pill | Medicines, Consultations & Care | /pharmacy | from-sky-500 to-cyan-400 |
+### Part 4: Filter Categories to Only Show Those with Data
 
-### Special Service (Keep)
-- **Trash Collection** - keep as a special utility service that's always available
+Add a database query to check which categories have vendors, then filter the displayed categories:
 
----
+```typescript
+// In Home.tsx
+const [categoriesWithData, setCategoriesWithData] = useState<string[]>([]);
 
-## Part 4: Rename "Popular Vendors Near You" to MtaaLoop Minimart Section
+useEffect(() => {
+  const fetchCategoriesWithData = async () => {
+    // Get distinct category names from vendor_categories that have active vendors
+    const { data } = await supabase
+      .from('vendor_categories')
+      .select('name, vendor_profiles!inner(is_approved, is_active)')
+      .eq('vendor_profiles.is_approved', true)
+      .eq('vendor_profiles.is_active', true);
+    
+    if (data) {
+      const uniqueCategories = [...new Set(data.map(d => d.name))];
+      setCategoriesWithData(uniqueCategories);
+    }
+  };
+  
+  fetchCategoriesWithData();
+}, []);
 
-### Current State (Lines 855-870)
-Section titled "Popular Vendors Near You" but contains MtaaLoop-owned stores.
+// Filter categories to only show those with data (+ always show Trash Collection)
+const displayedCategories = categories.filter(cat => 
+  categoriesWithData.includes(cat.name) || cat.name === "Trash Collection"
+);
+```
 
-### Changes
-- Rename section to "MtaaLoop Essentials" or "Our Shops" 
-- Keep the MtaaLoop Mart card as the primary focus
-- Remove the massive list of 40+ "MtaaLoop X" stores (lines 873-2131) - this is excessive and clutters the page
-- Show only 3-4 key MtaaLoop services
+### Part 5: Update CategoryPage to Fetch from Database
+
+The current `CategoryPage` uses static vendor data from `src/data/vendors.ts`. Update it to query `vendor_categories` and `vendor_profiles` from the database instead.
 
 ---
 
-## Part 5: Mobile Responsiveness Improvements
+## Files to Modify
 
-### Issues to Fix
-1. **Header**: Too tall on mobile, buttons cramped
-2. **Search**: Works well, keep as-is
-3. **Categories Grid**: 1 column on mobile is good, but cards are too tall
-4. **Welcome Section**: Text too large on mobile
-
-### Mobile-First Improvements
-
-| Element | Current | New Mobile |
-|---------|---------|------------|
-| Header Logo | h-20 w-20 | h-8 w-8 (mobile), h-10 w-10 (desktop) |
-| Header Padding | py-4 | py-2 (mobile), py-3 (desktop) |
-| Welcome H1 | text-3xl md:text-4xl | text-xl md:text-3xl |
-| Category Cards | h-40 | h-32 (mobile), h-40 (desktop) |
-| Category Grid | 1/2/3 cols | Horizontal scroll on mobile |
-| MtaaLoop Section | Vertical grid | Horizontal scroll on mobile |
+| File | Changes |
+|------|---------|
+| `src/pages/Home.tsx` | 1. Update category links to use `/categories/` prefix. 2. Add state + useEffect to fetch categories with data. 3. Filter displayed categories |
+| `src/pages/categories/[category].tsx` | 1. Add missing slug mappings. 2. Update fetch logic to query database instead of static data |
+| `src/App.tsx` | Clean up old static category routes (optional) |
 
 ---
 
-## Implementation Details
+## Detailed Implementation
 
-### File: `src/pages/Home.tsx`
+### Step 1: Update Home.tsx Category Links
 
-#### 1. Update Categories Array (Replace lines 293-541)
+Change all category links from flat paths to dynamic route pattern:
 
 ```typescript
 const categories = [
@@ -141,287 +130,175 @@ const categories = [
     icon: UtensilsCrossed,
     name: "Food & Drinks",
     subtitle: "Fast Food, Traditional, Cafes & More",
-    link: "/food-drinks",
+    link: "/categories/food-drinks",  // Changed from "/food-drinks"
     gradient: "from-orange-500 to-red-500",
-    image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=80"
+    image: "..."
   },
-  {
-    icon: Package,
-    name: "Living Essentials",
-    subtitle: "Toiletries, Cleaning & Household",
-    link: "/living-essentials",
-    gradient: "from-cyan-500 to-blue-500",
-    image: "https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=500&q=80"
-  },
-  {
-    icon: ShoppingBag,
-    name: "Groceries & Food",
-    subtitle: "Fresh Produce, Meat, Dairy & Snacks",
-    link: "/groceries-food",
-    gradient: "from-green-500 to-emerald-500",
-    image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&q=80"
-  },
-  {
-    icon: UtensilsCrossed,
-    name: "Restaurant",
-    subtitle: "Dine-in Experience & Custom Menus",
-    link: "/restaurant",
-    gradient: "from-amber-500 to-orange-500",
-    image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&q=80"
-  },
-  {
-    icon: Wine,
-    name: "Liquor Store",
-    subtitle: "Beer, Wine, Spirits & Beverages",
-    link: "/liquor-store",
-    gradient: "from-red-600 to-rose-500",
-    image: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=500&q=80"
-  },
-  {
-    icon: Droplet,
-    name: "Utilities & Services",
-    subtitle: "Gas & Water Delivery",
-    link: "/utilities-services",
-    gradient: "from-blue-600 to-sky-500",
-    image: "https://images.unsplash.com/photo-1585687433448-e0d7cba3c0a5?w=500&q=80"
-  },
-  {
-    icon: HomeIcon,
-    name: "Home Services",
-    subtitle: "Cleaning, Laundry & Electrical",
-    link: "/home-services",
-    gradient: "from-teal-500 to-green-500",
-    image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=500&q=80"
-  },
-  {
-    icon: Sparkles,
-    name: "Beauty & Spa",
-    subtitle: "Hair, Nails, Massage & Makeup",
-    link: "/beauty-spa",
-    gradient: "from-pink-500 to-purple-500",
-    image: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=500&q=80"
-  },
-  {
-    icon: Hotel,
-    name: "Accommodation",
-    subtitle: "Guest Houses, Airbnb & Rentals",
-    link: "/accommodation",
-    gradient: "from-indigo-500 to-violet-500",
-    image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500&q=80"
-  },
-  {
-    icon: Pill,
-    name: "Pharmacy",
-    subtitle: "Medicines, Consultations & Care",
-    link: "/pharmacy",
-    gradient: "from-sky-500 to-cyan-400",
-    image: "https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=500&q=80"
-  },
-  // Special Service - Keep Trash Collection
-  {
-    icon: Trash2,
-    name: "Trash Collection",
-    subtitle: "Quick doorstep pickup - KSh 30",
-    link: "/trash-collection",
-    gradient: "from-emerald-600 to-teal-700",
-    image: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=500&q=80"
-  },
+  // ... update all other categories similarly
 ];
 ```
 
-#### 2. Update Header (Lines 547-613)
+### Step 2: Add Category Data Filtering in Home.tsx
 
-```tsx
-<header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b shadow-sm">
-  <div className="container px-4 py-2 md:py-3">
-    <div className="flex items-center justify-between">
-      {/* Logo & Location */}
-      <div className="flex items-center gap-2 md:gap-3">
-        <img 
-          src="/logo.png" 
-          alt="Mtaaloop Logo" 
-          className="h-8 w-8 md:h-10 md:w-10 object-contain" 
-        />
-        <div>
-          <span className="text-lg md:text-xl font-bold text-primary">Mtaaloop</span>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <MapPin className="w-3 h-3 hidden sm:block" />
-            <span className="font-medium text-foreground truncate max-w-[120px] sm:max-w-none">
-              {currentApartment?.name || "Select Location"}
-            </span>
-            <button onClick={() => setApartmentModalOpen(true)} className="text-primary hover:underline ml-1">
-              Change
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      {/* Action Buttons */}
-      <div className="flex items-center gap-1 md:gap-2">
-        {/* Hide Connect on mobile to save space */}
-        <Button variant="ghost" size="sm" className="hidden md:flex items-center gap-2" onClick={() => navigate('/mtaaloop')}>
-          <Users className="h-4 w-4" />
-          <span>Connect</span>
-        </Button>
-        <Link to="/cart">
-          <Button variant="ghost" size="icon" className="relative h-9 w-9">
-            <ShoppingBag className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              {getItemCount()}
-            </span>
-          </Button>
-        </Link>
-        <Link to="/account">
-          <Button variant="ghost" size="icon" className="h-9 w-9">
-            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-              {userAvatar ? (
-                <img src={userAvatar} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-sm">👤</span>
-              )}
-            </div>
-          </Button>
-        </Link>
-      </div>
-    </div>
-  </div>
-</header>
+```typescript
+const [categoriesWithData, setCategoriesWithData] = useState<string[]>([]);
+const [loadingCategories, setLoadingCategories] = useState(true);
+
+useEffect(() => {
+  const fetchCategoriesWithVendors = async () => {
+    try {
+      // Query vendor_categories joined with vendor_profiles to find categories that have active vendors
+      const { data, error } = await supabase
+        .from('vendor_categories')
+        .select(`
+          name,
+          vendor_id,
+          vendor_profiles!inner(is_approved, is_active)
+        `)
+        .eq('is_active', true);
+
+      if (error) throw error;
+
+      // Also check business_type from vendor_profiles for vendors without categories table entries
+      const { data: vendorData } = await supabase
+        .from('vendor_profiles')
+        .select('business_type, category')
+        .eq('is_approved', true)
+        .eq('is_active', true);
+
+      // Map business_type slugs to category names
+      const businessTypeToCategory: Record<string, string> = {
+        'food-drinks': 'Food & Drinks',
+        'living-essentials': 'Living Essentials',
+        'groceries-food': 'Groceries & Food',
+        'restaurant': 'Restaurant',
+        'liquor-store': 'Liquor Store',
+        'utilities-services': 'Utilities & Services',
+        'home-services': 'Home Services',
+        'beauty-spa': 'Beauty & Spa',
+        'accommodation': 'Accommodation',
+        'pharmacy': 'Pharmacy',
+      };
+
+      const categoriesFromVendorCategories = data?.map(d => d.name) || [];
+      const categoriesFromBusinessType = vendorData?.map(v => 
+        businessTypeToCategory[v.business_type] || v.category
+      ).filter(Boolean) || [];
+
+      const allCategories = [...new Set([
+        ...categoriesFromVendorCategories,
+        ...categoriesFromBusinessType
+      ])];
+
+      setCategoriesWithData(allCategories);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      // On error, show all categories as fallback
+      setCategoriesWithData(categories.map(c => c.name));
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  fetchCategoriesWithVendors();
+}, []);
+
+// Filter to only show categories with data
+const displayedCategories = categories.filter(cat => 
+  categoriesWithData.includes(cat.name) || 
+  cat.name === "Trash Collection" // Always show Trash Collection
+);
 ```
 
-#### 3. Update Welcome Section (Lines 616-624)
+### Step 3: Update CategoryPage Slug Mapping
 
-```tsx
-<div className="mb-6">
-  <h1 className="text-xl md:text-3xl font-bold mb-1">
-    Welcome to Mtaaloop
-  </h1>
-  <p className="text-muted-foreground text-sm md:text-base">
-    Everything you need, delivered to your doorstep
-  </p>
-</div>
+In `src/pages/categories/[category].tsx`, update the mapping:
+
+```typescript
+const slugToCategoryName = (slug: string | undefined): string => {
+  if (!slug) return '';
+  const mapping: Record<string, string> = {
+    'food-drinks': 'Food & Drinks',
+    'living-essentials': 'Living Essentials',
+    'groceries-food': 'Groceries & Food',
+    'restaurant': 'Restaurant',
+    'liquor-store': 'Liquor Store',
+    'utilities-services': 'Utilities & Services',
+    'home-services': 'Home Services',
+    'beauty-spa': 'Beauty & Spa',
+    'accommodation': 'Accommodation',
+    'pharmacy': 'Pharmacy',
+    // Legacy mappings for backward compatibility
+    'shopping': 'Shopping',
+    'health-wellness': 'Health & Wellness',
+    'transport-car': 'Transport & Car',
+    'special-occasions': 'Special Occasions',
+  };
+  return mapping[slug] || slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
 ```
 
-#### 4. Simplify MtaaLoop Section (Replace lines 855-2131)
+### Step 4: Update CategoryPage to Query Database
 
-Rename from "Popular Vendors Near You" to "MtaaLoop Essentials" and show only 3-4 key stores:
+Replace the static vendor data fetch with database queries:
 
-```tsx
-{/* MtaaLoop Essentials Section */}
-<div className="mb-8">
-  <div className="flex items-center justify-between mb-4">
-    <div>
-      <h2 className="text-xl md:text-2xl font-bold">MtaaLoop Essentials</h2>
-      <p className="text-sm text-muted-foreground">
-        Our shops, always available for you
-      </p>
-    </div>
-  </div>
-  
-  {/* Horizontal scrollable on mobile */}
-  <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory md:grid md:grid-cols-3 md:overflow-visible">
-    {/* MtaaLoop Mart */}
-    <Card className="min-w-[280px] md:min-w-0 snap-start group overflow-hidden cursor-pointer hover:shadow-xl transition-all" onClick={() => navigate('/mtaaloop-mart')}>
-      <div className="relative h-32 md:h-40 overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5">
-        <div className="w-full h-full flex items-center justify-center text-5xl">🛒</div>
-        <Badge className="absolute top-3 right-3 bg-green-600">🟢 Open</Badge>
-      </div>
-      <div className="p-4">
-        <h3 className="font-bold text-lg group-hover:text-primary">MtaaLoop Mart</h3>
-        <p className="text-sm text-muted-foreground">Your one-stop shop for essentials</p>
-      </div>
-    </Card>
+```typescript
+const fetchVendors = React.useCallback(async () => {
+  try {
+    setLoading(true);
+
+    // Query vendors that match this category
+    // Option 1: Via vendor_categories table
+    const { data: categoryMatches } = await supabase
+      .from('vendor_categories')
+      .select(`
+        vendor_id,
+        vendor_subcategories(name)
+      `)
+      .eq('name', categoryName)
+      .eq('is_active', true);
+
+    // Option 2: Via vendor_profiles.business_type
+    const businessTypeSlug = category; // e.g., "food-drinks"
     
-    {/* MtaaLoop Pharmacy */}
-    <Card className="min-w-[280px] md:min-w-0 snap-start group overflow-hidden cursor-pointer hover:shadow-xl transition-all" onClick={() => navigate('/mtaaloop-pharmacy')}>
-      <div className="relative h-32 md:h-40 overflow-hidden bg-gradient-to-br from-cyan-500/20 to-sky-500/5">
-        <div className="w-full h-full flex items-center justify-center text-5xl">💊</div>
-        <Badge className="absolute top-3 right-3 bg-green-600">🟢 Open</Badge>
-      </div>
-      <div className="p-4">
-        <h3 className="font-bold text-lg group-hover:text-primary">MtaaLoop Pharmacy</h3>
-        <p className="text-sm text-muted-foreground">Medicine & health consultations</p>
-      </div>
-    </Card>
-    
-    {/* MtaaLoop Gas */}
-    <Card className="min-w-[280px] md:min-w-0 snap-start group overflow-hidden cursor-pointer hover:shadow-xl transition-all" onClick={() => navigate('/mtaaloop-gas')}>
-      <div className="relative h-32 md:h-40 overflow-hidden bg-gradient-to-br from-orange-500/20 to-amber-500/5">
-        <div className="w-full h-full flex items-center justify-center text-5xl">🔥</div>
-        <Badge className="absolute top-3 right-3 bg-green-600">🟢 Open</Badge>
-      </div>
-      <div className="p-4">
-        <h3 className="font-bold text-lg group-hover:text-primary">MtaaLoop Gas</h3>
-        <p className="text-sm text-muted-foreground">LPG refills & cooking gas</p>
-      </div>
-    </Card>
-  </div>
-</div>
-```
+    const { data: vendors } = await supabase
+      .from('vendor_profiles')
+      .select(`
+        id, business_name, slug, logo_url, cover_image_url, 
+        tagline, rating, delivery_time, delivery_fee, is_open,
+        latitude, longitude
+      `)
+      .eq('is_approved', true)
+      .eq('is_active', true)
+      .or(`business_type.eq.${businessTypeSlug},category.eq.${categoryName}`)
+      .order('rating', { ascending: false });
 
-#### 5. Delete Quick Access Features (Lines 2264-2285)
-
-Remove the entire section with "5-15 Min Delivery", "Building Vendors", and "Hyperlocal" cards.
-
-#### 6. Mobile-Optimized Category Grid
-
-```tsx
-{/* Categories */}
-<div className="mb-8">
-  <div className="flex items-center justify-between mb-4">
-    <h2 className="text-xl md:text-2xl font-bold">What are you looking for?</h2>
-  </div>
-  
-  {/* Mobile: 2 columns, Desktop: 3 columns */}
-  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-    {categories.map((category) => (
-      <Link key={category.name} to={category.link}>
-        <Card className="group relative overflow-hidden h-28 md:h-40 cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 border-2 hover:border-primary/50">
-          {/* Background Image */}
-          <div 
-            className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-110"
-            style={{ backgroundImage: `url(${category.image})` }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30" />
-          
-          {/* Content */}
-          <div className="relative p-3 md:p-4 h-full flex flex-col justify-end">
-            <div className={`w-8 h-8 md:w-12 md:h-12 rounded-lg bg-white/20 backdrop-blur-sm p-1.5 md:p-2 mb-2`}>
-              <category.icon className="w-full h-full text-white" />
-            </div>
-            <h3 className="text-sm md:text-base font-bold text-white line-clamp-1">
-              {category.name}
-            </h3>
-            <p className="text-xs text-white/80 line-clamp-1 hidden md:block">
-              {category.subtitle}
-            </p>
-          </div>
-        </Card>
-      </Link>
-    ))}
-  </div>
-</div>
+    // ... rest of processing
+  } catch (error) {
+    console.error('Error loading vendors:', error);
+  } finally {
+    setLoading(false);
+  }
+}, [categoryName, category]);
 ```
 
 ---
 
 ## Summary of Changes
 
-| Section | Action | Impact |
-|---------|--------|--------|
-| **Header** | Reduce logo to h-8/h-10, compact padding | 50% height reduction |
-| **Welcome** | Smaller text on mobile | Better mobile fit |
-| **Categories** | Replace 30+ with 11 official categories | Clean, accurate taxonomy |
-| **Category Grid** | 2 cols mobile, 3 cols desktop, shorter cards | Mobile optimized |
-| **MtaaLoop Section** | Rename to "MtaaLoop Essentials", keep 3-4 stores | Focused, not cluttered |
-| **Feature Cards** | DELETE "5-15 Min Delivery", "Hyperlocal", "Building Vendors" | Cleaner bottom |
-| **Minimarts Section** | Keep as-is (lines 806-853) | Shows nearby minimarts |
+| Change | Purpose |
+|--------|---------|
+| Update Home.tsx category links | Use dynamic route `/categories/food-drinks` instead of static `/food-drinks` |
+| Add category filtering in Home.tsx | Only show categories that have vendors with products |
+| Update CategoryPage slug mapping | Map all 10 official category slugs to their display names |
+| Update CategoryPage fetch logic | Query database instead of static vendor data |
+| Keep Trash Collection always visible | Special service that should always be accessible |
 
 ---
 
-## Technical Notes
+## After Implementation
 
-1. **Import Updates**: Remove unused icons, add `Package` for Living Essentials
-2. **File Size**: Reduces from ~2300 lines to ~800 lines (remove 40+ hardcoded MtaaLoop cards)
-3. **Mobile First**: All breakpoints use `md:` prefix for desktop enhancements
-4. **PWA Ready**: Compact header, touch-friendly cards, horizontal scroll for mobile
-
+1. Categories without vendor data will be hidden from the Home page
+2. Clicking any category will navigate to `/categories/{slug}` which works
+3. The CategoryPage will show vendors from the database for that category
+4. Trash Collection remains always visible as a special service
