@@ -1,259 +1,132 @@
 
-
-# Fix Remaining TypeScript Errors
+# Responsiveness Improvements for Product Review & Cancel Order Features
 
 ## Overview
 
-This plan addresses TypeScript errors across multiple files related to:
-1. **Block-scoped variable used before declaration** - `useCallback` functions must be defined before they're referenced in `useEffect` dependency arrays
-2. **Unknown type issues** - Variables typed as `unknown` need proper type assertions or interface definitions
-3. **Missing properties on interfaces** - Type definitions need to be updated to include all used properties
-4. **Type comparison issues** - Operational category type doesn't include 'pharmacy' in some interfaces
+After reviewing the codebase, I found several responsiveness issues primarily in the Reviews page and minor improvements needed in the Cancel Order dialog. The Order Tracking page is already well-structured but has a few areas for enhancement.
 
 ---
 
-## Error Categories
+## Current State Analysis
 
-| Category | Files Affected | Count |
-|----------|----------------|-------|
-| Block-scoped variable before declaration | 11 files | ~30 errors |
-| Unknown type issues | 5 files | ~25 errors |
-| Missing interface properties | 3 files | ~10 errors |
-| Type comparison | 1 file | 1 error |
+| Component | Responsiveness Status | Issues |
+|-----------|----------------------|--------|
+| Reviews Page (`account/Reviews.tsx`) | ⚠️ Needs improvement | Fixed font sizes, no grid on desktop, no responsive padding |
+| Cancel Order Dialog | ✅ Mostly good | Minor text wrapping in placeholder |
+| Order Tracking Page | ✅ Good | Action buttons could stack better |
+| My Orders Page | ✅ Good | Works well on all devices |
+| ReviewsSection Component | ⚠️ Acceptable | Review cards could be optimized |
 
 ---
 
-## Detailed Changes
+## Changes Required
 
-### 1. OrderTracking.tsx (Lines 409-416, 970-986)
+### 1. Reviews Page (`src/pages/account/Reviews.tsx`)
 
-**Problem**: `order` parameter typed as `Record<string, unknown>` causes type errors when accessing properties.
+**Current Issues:**
+- Title is fixed `text-3xl` - too large on mobile
+- Cards have fixed `p-4` padding
+- No grid layout for larger screens
+- Star rating icons don't scale
 
-**Fix**: Cast/assert types properly when accessing order properties.
+**Proposed Changes:**
 
 ```typescript
-// Line 409: Change parameter type
-const loadExistingOrder = async (order: OrderData) => {
-  console.log("[loadExistingOrder] order =", order);
-  setOrderData({
-    ...order,
-    items: order.order_items ?? [],
-  });
-  setOrderStatus(order.status);
-  updateProgressFromStatus(order.status);
-  // ...
-};
+// Responsive title
+<h1 className="text-2xl md:text-3xl font-bold">⭐ My Reviews</h1>
 
-// Lines 970-986: Cast reviewData properties to numbers
-{"⭐".repeat(Number(reviewData.food_rating) || 0)}
-{"☆".repeat(5 - (Number(reviewData.food_rating) || 0))}
-// Same for delivery_rating
-// And for comment: String(reviewData.comment) or reviewData.comment as string
+// Responsive grid for review cards on larger screens
+<div className="space-y-4 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
+  {reviews.map((review) => (
+    <Card key={review.id} className="p-3 md:p-4">
+      ...
+    </Card>
+  ))}
+</div>
+
+// Responsive star sizing
+<Star className="h-4 w-4 md:h-5 md:w-5 ..." />
 ```
 
 ---
 
-### 2. Estate Pages - Fix useCallback Order
+### 2. Cancel Order Dialog Improvements (`src/pages/OrderTracking.tsx`)
 
-**Files**: 
-- `EstateDashboard.tsx`
-- `Notifications.tsx`
-- `Analytics.tsx`
+**Current Issues:**
+- Long placeholder text in textarea may look cramped on small screens
+- Warning box text could be smaller on mobile
 
-**Problem**: `useEffect` references `useCallback` functions before they're declared.
+**Proposed Changes:**
 
-**Fix**: Move all `useCallback` definitions BEFORE any `useEffect` that references them.
-
-**Pattern to apply**:
 ```typescript
-// WRONG ORDER (causes error):
-useEffect(() => {
-  fetchData();
-}, [fetchData]); // Error: used before declaration
+// Shorter, clearer placeholder
+<Textarea
+  placeholder="Why are you cancelling?"
+  ...
+/>
 
-const fetchData = useCallback(() => { ... }, []);
+// Responsive text in warning box
+<div className="bg-destructive/10 p-2 md:p-3 rounded-lg text-xs md:text-sm ...">
+  <p className="font-medium mb-1 text-destructive text-sm md:text-base">⚠️ Please note:</p>
+  ...
+</div>
 
-// CORRECT ORDER:
-const fetchData = useCallback(() => { ... }, []);
-
-useEffect(() => {
-  fetchData();
-}, [fetchData]); // Works!
-```
-
-**EstateDashboard.tsx changes**:
-1. Move `fetchStats` before line 50
-2. Move `fetchEstateData` before line 50
-3. Move `setupRealtimeSubscriptions` before line 59
-
-**Notifications.tsx changes**:
-1. Move `fetchNotifications` before line 28
-2. Move `setupRealtimeSubscription` before line 28
-
----
-
-### 3. Rider Pages - Fix useCallback Order
-
-**Files**:
-- `RiderAnalytics.tsx`
-- `RiderCommunications.tsx`
-- `RiderCustomerManagement.tsx`
-- `RiderDashboard.tsx`
-
-**RiderAnalytics.tsx**: Move `fetchInsightsData` before line 19
-
-**RiderCommunications.tsx**: 
-1. Move `fetchConversations` before line 51
-2. Move `setupRealtimeSubscription` before line 51
-3. Move `fetchMessages` before line 58
-
-**RiderCustomerManagement.tsx**:
-1. Move `fetchCustomers` before line 40
-2. Add proper typing for `customerMap`:
-```typescript
-interface CustomerStats {
-  id: string;
-  orderCount: number;
-  totalSpent: number;
-  orders: Array<{ created_at: string; [key: string]: unknown }>;
-}
-const customerMap = new Map<string, CustomerStats>();
-```
-
-**RiderDashboard.tsx** (Lines 472-480, 649-664):
-Add missing properties to `Delivery` interface or use type assertion:
-```typescript
-interface Delivery {
-  // existing properties...
-  vendor_name?: string;
-  pickup_address?: string;
-  delivery_address?: string;
-}
+// Responsive button layout - stack on very small screens
+<div className="flex flex-col sm:flex-row gap-2">
+  ...
+</div>
 ```
 
 ---
 
-### 4. Vendor Pages - Fix useCallback Order
+### 3. ReviewsSection Component (`src/components/vendor/ReviewsSection.tsx`)
 
-**Files**:
-- `AdvancedOrdersManagement.tsx`
-- `AnalyticsDashboard.tsx`
-- `CommunicationsHub.tsx`
-- `MarketingCampaigns.tsx`
-- `MinimartAnalytics.tsx`
-- `MinimartManagement.tsx`
+**Current Issues:**
+- Rating number is very large (`text-5xl`) on all screens
+- Padding is fixed
+- No responsive adjustments for review text
 
-**All files**: Move `useCallback` definitions before `useEffect` that reference them.
+**Proposed Changes:**
 
-**AdvancedOrdersManagement.tsx** (Line 154):
-Fix the `setOrders` call to properly type the mapped data:
 ```typescript
-setOrders(
-  (data || []).map((order: Record<string, unknown>): Order => ({
-    id: order.id as string,
-    order_number: order.order_number as string | null,
-    status: order.status as string,
-    total_amount: order.total_amount as number,
-    delivery_address: order.delivery_address as string,
-    customer_notes: order.customer_notes as string | null,
-    payment_status: order.payment_status as string,
-    created_at: order.created_at as string,
-    estate_id: order.estate_id as string | null,
-    order_items: order.order_items as OrderItem[],
-    deliveries: (order.deliveries as Record<string, unknown>[])?.map(...),
-  }))
-);
-```
+// Responsive card padding
+<Card className="p-4 md:p-6 mb-8">
 
-**Line 235 dateFilter issue**: Change state type to accept string:
-```typescript
-const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
-// Or use string type with validation
+// Responsive title
+<h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">...</h2>
+
+// Responsive rating number
+<div className="text-4xl md:text-5xl font-bold text-primary">...</div>
+
+// Responsive review text
+<p className="text-sm md:text-base text-foreground mb-2 md:mb-3">...</p>
+
+// Better mobile button sizing
+<Button variant="ghost" size="sm" className="gap-1 md:gap-2 text-xs md:text-sm">
+  ...
+</Button>
 ```
 
 ---
 
-### 5. Analytics Pages - TopProduct Interface
+### 4. Order Tracking Action Buttons
 
-**Files**:
-- `AnalyticsDashboard.tsx`
-- `MinimartAnalytics.tsx`
+**Current Issue:**
+- Quick action buttons may overflow on small screens
 
-**Problem**: `TopProduct` interface missing `id`, `image_url`, `price`, `total_quantity` properties.
-
-**Fix**: Update the interface:
-```typescript
-interface TopProduct {
-  id?: string;
-  name: string;
-  revenue: number;
-  orders: number;
-  // Add missing properties
-  image_url?: string;
-  price?: number;
-  total_quantity?: number;
-}
-```
-
----
-
-### 6. Estate/Analytics.tsx - Unknown Type Issues
-
-**Lines 169-171, 399-406**: Type assertions needed for fetched data.
+**Proposed Changes:**
 
 ```typescript
-// Lines 169-171: Cast the arrays properly
-setAnalytics({
-  // ...
-  topVendors: topVendors as TopVendor[],
-  revenueByCategory: revenueByCategory as RevenueByCategory[],
-  // ...
-});
-
-// Lines 399-406: Add proper typing for recentOrders map
-interface RecentOrder {
-  id: string;
-  created_at: string;
-  vendor?: { business_name: string };
-  resident?: { apartment_number: string };
-  final_amount?: number;
-  status: string;
-}
-
-// Update analytics state type
-recentOrders: RecentOrder[];
-```
-
----
-
-### 7. NewVendorDashboard.tsx - Pharmacy Type
-
-**Line 270**: The `operational_category` type doesn't include 'pharmacy'.
-
-**Fix**: Update the `VendorProfile` interface:
-```typescript
-interface VendorProfile {
-  // ...
-  operational_category: 'inventory' | 'service' | 'booking' | 'minimart' | 'pharmacy' | null;
-  // ...
-}
-```
-
----
-
-### 8. Estate/Notifications.tsx - Metadata Type
-
-**Lines 265-267**: `notification.metadata` typed as `unknown`.
-
-**Fix**: Add proper typing:
-```typescript
-interface Notification {
-  // existing...
-  metadata?: {
-    amount?: number;
-    [key: string]: unknown;
-  };
-}
+// Make action buttons scroll horizontally on mobile
+<div className="flex flex-wrap gap-2 sm:flex-nowrap overflow-x-auto pb-2">
+  {getActionButtons(orderStatus).map((action, index) => (
+    <Button
+      key={index}
+      variant={action.variant || "outline"}
+      size="sm"
+      className="flex items-center gap-2 flex-shrink-0 text-xs sm:text-sm"
+      ...
+    >
 ```
 
 ---
@@ -262,32 +135,83 @@ interface Notification {
 
 | File | Changes |
 |------|---------|
-| `src/pages/OrderTracking.tsx` | Fix parameter types and type assertions |
-| `src/pages/estate/Analytics.tsx` | Fix unknown types, add RecentOrder interface |
-| `src/pages/estate/EstateDashboard.tsx` | Reorder useCallback/useEffect |
-| `src/pages/estate/Notifications.tsx` | Reorder useCallback/useEffect, fix metadata type |
-| `src/pages/rider/RiderAnalytics.tsx` | Reorder useCallback/useEffect |
-| `src/pages/rider/RiderCommunications.tsx` | Reorder useCallback/useEffect |
-| `src/pages/rider/RiderCustomerManagement.tsx` | Reorder + add CustomerStats interface |
-| `src/pages/rider/RiderDashboard.tsx` | Add Delivery interface properties |
-| `src/pages/vendor/AdvancedOrdersManagement.tsx` | Reorder + fix Order mapping + dateFilter type |
-| `src/pages/vendor/AnalyticsDashboard.tsx` | Reorder + update TopProduct interface |
-| `src/pages/vendor/CommunicationsHub.tsx` | Reorder useCallback/useEffect |
-| `src/pages/vendor/MarketingCampaigns.tsx` | Reorder useCallback/useEffect |
-| `src/pages/vendor/MinimartAnalytics.tsx` | Reorder + update TopProduct interface |
-| `src/pages/vendor/MinimartManagement.tsx` | Reorder useCallback/useEffect |
-| `src/pages/vendor/NewVendorDashboard.tsx` | Add 'pharmacy' to operational_category type |
+| `src/pages/account/Reviews.tsx` | Add responsive grid, typography, padding |
+| `src/pages/OrderTracking.tsx` | Improve cancel dialog and action buttons |
+| `src/components/vendor/ReviewsSection.tsx` | Add responsive sizing throughout |
+
+---
+
+## Implementation Details
+
+### Reviews.tsx Full Changes
+
+1. Make title responsive: `text-2xl md:text-3xl`
+2. Add 2-column grid on medium+ screens for review cards
+3. Adjust card padding: `p-3 md:p-4`
+4. Make star icons slightly larger on desktop
+
+### OrderTracking.tsx Cancel Dialog Changes
+
+1. Shorten placeholder text for clarity
+2. Make warning box padding responsive
+3. Stack buttons vertically on very small screens (xs), horizontal on sm+
+4. Reduce text sizes on mobile
+
+### ReviewsSection.tsx Changes
+
+1. Reduce rating number size on mobile
+2. Add responsive padding to card and spacing
+3. Make review text and buttons scale appropriately
+4. Ensure helpful/report buttons are touch-friendly on mobile
+
+---
+
+## Visual Before/After
+
+```text
+Before (Mobile - Reviews Page):
+┌──────────────────────────┐
+│ ← ⭐ My Reviews         │  <- text-3xl (too large)
+├──────────────────────────┤
+│ ┌────────────────────┐   │
+│ │ Full width card    │   │  <- Always single column
+│ │ Fixed p-4 padding  │   │
+│ └────────────────────┘   │
+│ ┌────────────────────┐   │
+│ │ Full width card    │   │
+│ └────────────────────┘   │
+└──────────────────────────┘
+
+After (Mobile - Reviews Page):
+┌──────────────────────────┐
+│ ← ⭐ My Reviews         │  <- text-2xl (appropriate)
+├──────────────────────────┤
+│ ┌────────────────────┐   │
+│ │ Compact card p-3   │   │  <- Better padding
+│ └────────────────────┘   │
+│ ┌────────────────────┐   │
+│ └────────────────────┘   │
+└──────────────────────────┘
+
+After (Desktop - Reviews Page):
+┌────────────────────────────────────────────┐
+│ ←  ⭐ My Reviews                           │  <- text-3xl
+├────────────────────────────────────────────┤
+│ ┌─────────────────┐  ┌─────────────────┐   │
+│ │ Card 1   p-4    │  │ Card 2   p-4    │   │  <- 2-column grid
+│ └─────────────────┘  └─────────────────┘   │
+└────────────────────────────────────────────┘
+```
 
 ---
 
 ## Summary
 
-This plan fixes approximately 60+ TypeScript errors by:
+These changes will:
 
-1. **Reordering code** - Moving `useCallback` definitions before `useEffect` hooks (most common fix)
-2. **Adding type assertions** - Properly typing `unknown` values from database queries
-3. **Extending interfaces** - Adding missing properties to type definitions
-4. **Fixing type unions** - Including 'pharmacy' in operational category types
+1. **Improve Reviews page mobile experience** with proper typography scaling and better spacing
+2. **Enhance Cancel Order dialog** with clearer, more concise text and better button layout
+3. **Optimize ReviewsSection** for both mobile viewing and desktop presentation
+4. **Ensure action buttons** in Order Tracking don't overflow on small screens
 
-All changes maintain existing functionality while ensuring type safety.
-
+All changes use existing Tailwind responsive prefixes (`sm:`, `md:`, `lg:`) to maintain consistency with the rest of the application.
