@@ -81,68 +81,68 @@ export function SubscriptionCard({ plan, isCurrentPlan, onSelect, isPopular }: S
   return (
     <Card 
       className={cn(
-        "relative overflow-hidden transition-all duration-300 hover:shadow-lg",
+        "relative overflow-hidden transition-all duration-300 hover:shadow-lg h-full",
         isCurrentPlan && "ring-2 ring-primary",
-        isPopular && "scale-105 shadow-xl"
+        isPopular && "shadow-xl ring-2 ring-amber-500/50"
       )}
     >
       {isPopular && (
-        <div className="absolute top-0 right-0">
-          <Badge className="rounded-none rounded-bl-lg bg-gradient-to-r from-amber-500 to-orange-500">
+        <div className="absolute top-0 right-0 z-10">
+          <Badge className="rounded-none rounded-bl-lg bg-gradient-to-r from-amber-500 to-orange-500 text-xs sm:text-sm">
             Most Popular
           </Badge>
         </div>
       )}
       
       {isCurrentPlan && (
-        <div className="absolute top-0 left-0">
-          <Badge className="rounded-none rounded-br-lg bg-primary">
+        <div className="absolute top-0 left-0 z-10">
+          <Badge className="rounded-none rounded-br-lg bg-primary text-xs sm:text-sm">
             Current Plan
           </Badge>
         </div>
       )}
 
-      <CardHeader className={cn("bg-gradient-to-r text-white", gradient)}>
-        <div className="flex items-center gap-3">
+      <CardHeader className={cn("bg-gradient-to-r text-white p-4 sm:p-6", gradient)}>
+        <div className="flex items-center gap-2 sm:gap-3">
           {planIcons[plan.slug]}
           <div>
-            <CardTitle className="text-xl">{plan.name}</CardTitle>
-            <CardDescription className="text-white/80">
+            <CardTitle className="text-lg sm:text-xl">{plan.name}</CardTitle>
+            <CardDescription className="text-white/80 text-xs sm:text-sm">
               MtaaLoop Plus
             </CardDescription>
           </div>
         </div>
-        <div className="mt-4">
-          <span className="text-4xl font-bold">KSh {plan.price.toLocaleString()}</span>
-          <span className="text-white/80">/month</span>
+        <div className="mt-3 sm:mt-4">
+          <span className="text-2xl sm:text-4xl font-bold">KSh {plan.price.toLocaleString()}</span>
+          <span className="text-white/80 text-sm">/month</span>
         </div>
       </CardHeader>
 
-      <CardContent className="pt-6 space-y-4">
+      <CardContent className="pt-4 sm:pt-6 space-y-3 sm:space-y-4 p-4 sm:p-6">
         {/* Cashback Badge */}
         <div className="flex items-center justify-center">
-          <Badge variant="secondary" className="text-lg px-4 py-1">
+          <Badge variant="secondary" className="text-sm sm:text-lg px-3 sm:px-4 py-1">
             {features.cashback_percent}% Cashback
           </Badge>
         </div>
 
         {/* Feature List */}
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           {featureList.map((feature) => (
-            <div key={feature.label} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span>{feature.icon}</span>
-                <span className="text-sm">{feature.label}</span>
+            <div key={feature.label} className="flex items-center justify-between gap-1">
+              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                <span className="text-sm sm:text-base">{feature.icon}</span>
+                <span className="text-xs sm:text-sm truncate">{feature.label}</span>
               </div>
-              <div className="flex items-center">
+              <div className="flex items-center shrink-0">
                 {feature.value === null ? (
-                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
-                    Unlimited
+                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs">
+                    ∞
                   </Badge>
                 ) : feature.value === undefined || feature.value === 0 ? (
                   <X className="h-4 w-4 text-muted-foreground" />
                 ) : (
-                  <span className="font-medium">{feature.value}/mo</span>
+                  <span className="font-medium text-xs sm:text-sm">{feature.value}/mo</span>
                 )}
               </div>
             </div>

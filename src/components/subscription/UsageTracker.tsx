@@ -46,35 +46,58 @@ export function UsageTracker({ showAll = false, compact = false }: UsageTrackerP
 
   if (compact) {
     return (
-      <div className="space-y-3">
-        {activeServices.slice(0, 4).map(([type, status]) => {
-          const info = usageLabels[type as UsageType];
-          const isUnlimited = status.limit === null;
-          
-          return (
-            <div key={type} className="flex items-center gap-3">
-              <span className="text-lg">{info.icon}</span>
-              <div className="flex-1">
-                <div className="flex justify-between text-sm">
-                  <span>{info.label}</span>
-                  <span className="text-muted-foreground">
-                    {isUnlimited ? (
-                      '∞'
-                    ) : (
-                      `${status.used}/${status.limit}`
-                    )}
-                  </span>
-                </div>
-                {!isUnlimited && (
-                  <Progress 
-                    value={status.percentUsed} 
-                    className="h-1.5 mt-1"
-                  />
-                )}
+      <div className="space-y-2">
+        {/* Compact grid view for mobile */}
+        <div className="grid grid-cols-4 gap-2 sm:hidden">
+          {activeServices.slice(0, 4).map(([type, status]) => {
+            const info = usageLabels[type as UsageType];
+            const isUnlimited = status.limit === null;
+            
+            return (
+              <div key={type} className="flex flex-col items-center p-2 bg-muted/50 rounded-lg">
+                <span className="text-xl mb-1">{info.icon}</span>
+                <span className="text-xs text-muted-foreground">
+                  {isUnlimited ? '∞' : `${status.used}/${status.limit}`}
+                </span>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+        
+        {/* List view for larger screens */}
+        <div className="hidden sm:block space-y-3">
+          {activeServices.slice(0, 4).map(([type, status]) => {
+            const info = usageLabels[type as UsageType];
+            const isUnlimited = status.limit === null;
+            
+            return (
+              <div key={type} className="flex items-center gap-3">
+                <span className="text-lg">{info.icon}</span>
+                <div className="flex-1">
+                  <div className="flex justify-between text-sm">
+                    <span>{info.label}</span>
+                    <span className="text-muted-foreground">
+                      {isUnlimited ? '∞' : `${status.used}/${status.limit}`}
+                    </span>
+                  </div>
+                  {!isUnlimited && (
+                    <Progress 
+                      value={status.percentUsed} 
+                      className="h-1.5 mt-1"
+                    />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        
+        {/* See all link */}
+        {activeServices.length > 4 && (
+          <p className="text-xs text-center text-primary cursor-pointer hover:underline">
+            See all {activeServices.length} services →
+          </p>
+        )}
       </div>
     );
   }

@@ -108,14 +108,14 @@ export default function MtaaLoopPlus() {
         )}
 
         {/* Benefits Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
           {benefits.map((benefit, index) => (
-            <Card key={index} className="text-center p-4">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full mb-3 mx-auto">
+            <Card key={index} className="text-center p-3 sm:p-4">
+              <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-full mb-2 sm:mb-3 mx-auto">
                 <div className="text-primary">{benefit.icon}</div>
               </div>
-              <h3 className="font-medium mb-1">{benefit.title}</h3>
-              <p className="text-xs text-muted-foreground">{benefit.description}</p>
+              <h3 className="font-medium text-sm sm:text-base mb-1">{benefit.title}</h3>
+              <p className="text-xs text-muted-foreground line-clamp-2">{benefit.description}</p>
             </Card>
           ))}
         </div>
@@ -128,16 +128,17 @@ export default function MtaaLoopPlus() {
           </TabsList>
 
           <TabsContent value="plans" className="mt-6">
-            {/* Subscription Plans */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Subscription Plans - Mobile scroll, Desktop grid */}
+            <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-visible sm:pb-0">
               {SUBSCRIPTION_PLANS.map((planData, index) => (
-                <SubscriptionCard
-                  key={planData.slug}
-                  plan={planData}
-                  isCurrentPlan={plan?.slug === planData.slug}
-                  isPopular={index === 2} // Premium is most popular
-                  onSelect={handleSelectPlan}
-                />
+                <div key={planData.slug} className="min-w-[280px] sm:min-w-0 snap-center">
+                  <SubscriptionCard
+                    plan={planData}
+                    isCurrentPlan={plan?.slug === planData.slug}
+                    isPopular={index === 2}
+                    onSelect={handleSelectPlan}
+                  />
+                </div>
               ))}
             </div>
           </TabsContent>
