@@ -57,7 +57,10 @@ export default function VendorApprovals() {
             location
           )
         `)
+        // Only show truly pending applications.
+        // Rejected vendors have `is_approved = false` but also have a `rejection_reason`.
         .eq('is_approved', false)
+        .is('rejection_reason', null)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -80,6 +83,8 @@ export default function VendorApprovals() {
       if (error) throw error;
 
       toast.success('Vendor approved successfully');
+      // Optimistically remove from the list (then refresh to stay consistent with DB)
+      setVendors((prev) => prev.filter((v) => v.id !== vendorId));
       fetchVendors();
     } catch (error) {
       console.error('Error approving vendor:', error);
@@ -95,6 +100,8 @@ export default function VendorApprovals() {
       return;
     }
 
+    const vendorId = selectedVendor.id;
+
     setProcessing(true);
     try {
       const { error } = await supabase.rpc('reject_vendor', {
@@ -108,6 +115,8 @@ export default function VendorApprovals() {
       setShowRejectDialog(false);
       setRejectionReason('');
       setSelectedVendor(null);
+      // Optimistically remove from the list (then refresh to stay consistent with DB)
+      setVendors((prev) => prev.filter((v) => v.id !== vendorId));
       fetchVendors();
     } catch (error) {
       console.error('Error rejecting vendor:', error);
