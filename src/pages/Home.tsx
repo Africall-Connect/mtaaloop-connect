@@ -486,58 +486,25 @@ const Home = () => {
             <div>
               <h2 className="text-lg md:text-2xl font-bold">MtaaLoop Essentials</h2>
               <p className="text-xs md:text-sm text-muted-foreground">
-                Our shops, always available for you
+                Our shop, always available for you
               </p>
             </div>
           </div>
           
-          {/* Horizontal scrollable on mobile, grid on desktop */}
-          <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory md:grid md:grid-cols-3 md:overflow-visible">
-            {/* MtaaLoop Mart */}
-            <Card 
-              className="min-w-[260px] md:min-w-0 snap-start group overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1" 
-              onClick={() => navigate('/mtaaloop-mart')}
-            >
-              <div className="relative h-32 md:h-40 overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5">
-                <div className="w-full h-full flex items-center justify-center text-5xl">🛒</div>
-                <Badge className="absolute top-3 right-3 bg-green-600">🟢 Open</Badge>
-              </div>
-              <div className="p-4">
-                <h3 className="font-bold text-base md:text-lg group-hover:text-primary transition-colors">MtaaLoop Mart</h3>
-                <p className="text-xs md:text-sm text-muted-foreground">Your one-stop shop for essentials</p>
-              </div>
-            </Card>
-            
-            {/* MtaaLoop Pharmacy */}
-            <Card 
-              className="min-w-[260px] md:min-w-0 snap-start group overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1" 
-              onClick={() => navigate('/pharmacy')}
-            >
-              <div className="relative h-32 md:h-40 overflow-hidden bg-gradient-to-br from-cyan-500/20 to-sky-500/5">
-                <div className="w-full h-full flex items-center justify-center text-5xl">💊</div>
-                <Badge className="absolute top-3 right-3 bg-green-600">🟢 Open</Badge>
-              </div>
-              <div className="p-4">
-                <h3 className="font-bold text-base md:text-lg group-hover:text-primary transition-colors">MtaaLoop Pharmacy</h3>
-                <p className="text-xs md:text-sm text-muted-foreground">Medicine & health consultations</p>
-              </div>
-            </Card>
-            
-            {/* MtaaLoop Gas */}
-            <Card 
-              className="min-w-[260px] md:min-w-0 snap-start group overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1" 
-              onClick={() => navigate('/utilities-services')}
-            >
-              <div className="relative h-32 md:h-40 overflow-hidden bg-gradient-to-br from-orange-500/20 to-amber-500/5">
-                <div className="w-full h-full flex items-center justify-center text-5xl">🔥</div>
-                <Badge className="absolute top-3 right-3 bg-green-600">🟢 Open</Badge>
-              </div>
-              <div className="p-4">
-                <h3 className="font-bold text-base md:text-lg group-hover:text-primary transition-colors">MtaaLoop Gas</h3>
-                <p className="text-xs md:text-sm text-muted-foreground">LPG refills & cooking gas</p>
-              </div>
-            </Card>
-          </div>
+          {/* MtaaLoop Mart Only */}
+          <Card 
+            className="max-w-sm group overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1" 
+            onClick={() => navigate('/mtaaloop-mart')}
+          >
+            <div className="relative h-32 md:h-40 overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5">
+              <div className="w-full h-full flex items-center justify-center text-5xl">🛒</div>
+              <Badge className="absolute top-3 right-3 bg-green-600">🟢 Open</Badge>
+            </div>
+            <div className="p-4">
+              <h3 className="font-bold text-base md:text-lg group-hover:text-primary transition-colors">MtaaLoop Mart</h3>
+              <p className="text-xs md:text-sm text-muted-foreground">Your one-stop shop for essentials</p>
+            </div>
+          </Card>
         </div>
 
         {/* Featured Vendors Section */}
