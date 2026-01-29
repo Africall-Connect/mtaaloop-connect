@@ -1,397 +1,102 @@
 // Category and Subcategory Constants
-// Extracted from CategoryManagement for Fast Refresh compatibility
+// Mirrors src/lib/categories.ts for consistency
 
+// ============= Main Categories (for dropdowns with label/value format) =============
 export const MAIN_CATEGORIES = [
+  // Inventory
   { value: "Food & Drinks", label: "Food & Drinks" },
-  { value: "Groceries & Essentials", label: "Groceries & Essentials" },
-  { value: "Health & Wellness", label: "Health & Wellness" },
-  { value: "Beauty & Spa", label: "Beauty & Spa" },
-  { value: "Auto Services", label: "Auto Services" },
-  { value: "Liquor Store", label: "Liquor Store" },
-  { value: "Home Services", label: "Home Services" },
-  { value: "Repairs & Maintenance", label: "Repairs & Maintenance" },
-  { value: "Fashion & Clothing", label: "Fashion & Clothing" },
-  { value: "Electronics & Gadgets", label: "Electronics & Gadgets" },
-  { value: "Fitness & Sports", label: "Fitness & Sports" },
-  { value: "Education & Tutoring", label: "Education & Tutoring" },
-  { value: "Events & Entertainment", label: "Events & Entertainment" },
-  { value: "Professional Services", label: "Professional Services" },
-  { value: "Pet Services", label: "Pet Services" },
-  { value: "Home & Garden", label: "Home & Garden" },
-  { value: "Books & Stationery", label: "Books & Stationery" },
-  { value: "Baby & Kids", label: "Baby & Kids" },
-  { value: "Transport & Logistics", label: "Transport & Logistics" },
-  { value: "Accommodation", label: "Accommodation" },
-  { value: "Flowers & Gifts", label: "Flowers & Gifts" },
+  { value: "Living Essentials", label: "Living Essentials" },
+  { value: "Groceries & Food", label: "Groceries & Food" },
+  { value: "Restaurant", label: "Restaurant" },
+  // Service
   { value: "Utilities & Services", label: "Utilities & Services" },
-  { value: "Security Services", label: "Security Services" },
-  { value: "Religious Services", label: "Religious Services" },
-  { value: "Creative Services", label: "Creative Services" },
-  { value: "Construction Services", label: "Construction Services" },
-  { value: "Agriculture & Farming", label: "Agriculture & Farming" },
-  { value: "Waste & Recycling", label: "Waste & Recycling" },
-  { value: "Wedding Services", label: "Wedding Services" },
-  { value: "Special Occasions", label: "Special Occasions" },
+  { value: "Home Services", label: "Home Services" },
+  // Booking
+  { value: "Beauty & Spa", label: "Beauty & Spa" },
+  { value: "Accommodation", label: "Accommodation" },
+  // Pharmacy (Hybrid)
   { value: "Pharmacy", label: "Pharmacy" },
 ];
 
+// ============= Subcategory Options =============
 export const SUBCATEGORY_OPTIONS: Record<string, string[]> = {
+  // Inventory Subcategories
   "Food & Drinks": [
-    "Restaurants",
     "Fast Food",
     "Traditional Food",
+    "Cafes & Coffee Shops",
     "Bakery & Pastries",
-    "Coffee & Tea",
-    "Juice Bar",
-    "Desserts & Ice Cream",
-    "Pizza & Italian",
-    "Asian Cuisine",
-    "Continental",
+    "International Cuisine",
+    "Pizza",
+    "Burgers & Sandwiches",
+    "Chicken & Wings",
     "Seafood",
-    "Vegan & Vegetarian",
-    "Street Food",
-    "Catering Services"
+    "Vegetarian & Vegan",
+    "Juice Bar & Smoothies",
+    "Ice Cream",
   ],
-  "Groceries & Essentials": [
-    "Supermarket",
+
+  "Living Essentials": [
+    "Toiletries & Personal Hygiene",
+    "Skincare & Grooming",
+    "Health & First Aid",
+    "Cleaning Supplies",
+    "Household Essentials",
+  ],
+
+  "Groceries & Food": [
     "Fresh Produce",
+    "Fruits",
+    "Vegetables",
     "Meat & Poultry",
-    "Dairy Products",
-    "Bakery Items",
-    "Household Supplies",
-    "Personal Care",
-    "Baby Products",
-    "Pet Food & Supplies",
-    "Frozen Foods",
-    "Snacks & Beverages",
-    "Organic Products",
-    "Gas"
+    "Fish",
+    "Dairy & Eggs",
+    "Bread & Bakery",
+    "Snacks & Confectionery",
   ],
-  "Health & Wellness": [
-    "Pharmacy",
-    "Medical Supplies",
-    "Vitamins & Supplements",
-    "First Aid",
-    "Health Monitoring Devices",
-    "Fitness Equipment",
-    "Wellness Products",
-    "Alternative Medicine",
-    "Medical Consultation"
+
+  // Restaurant - Empty array, vendors create custom subcategories
+  "Restaurant": [],
+
+  // Service Subcategories
+  "Utilities & Services": [
+    "Gas Delivery",
+    "Water Delivery",
   ],
-  "Beauty & Spa": [
-    "Hair Salon",
-    "Barbershop",
-    "Nail Salon",
-    "Spa & Massage",
-    "Makeup Artist",
-    "Skin Care",
-    "Beauty Products",
-    "Cosmetics",
-    "Tattoo & Piercing",
-    "Eyebrow & Lashes"
-  ],
-  "Auto Services": [
-    "Car Wash",
-    "Auto Repair",
-    "Oil Change",
-    "Tire Services",
-    "Auto Detailing",
-    "Car Painting",
-    "Towing Services",
-    "Auto Parts",
-    "Car Rental",
-    "Mechanic Services"
-  ],
-  "Liquor Store": [
-    "Wine",
-    "Beer",
-    "Spirits",
-    "Champagne",
-    "Cocktail Supplies",
-    "Non-Alcoholic Beverages",
-    "Bar Accessories"
-  ],
+
   "Home Services": [
     "Cleaning Services",
-    "Plumbing",
+    "Laundry Services",
     "Electrical",
-    "HVAC",
-    "Pest Control",
-    "Locksmith",
-    "Carpentry",
-    "Painting",
-    "Roofing",
-    "Landscaping",
-    "Moving Services",
-    "Handyman"
   ],
-  "Repairs & Maintenance": [
-    "Electronics Repair",
-    "Appliance Repair",
-    "Phone Repair",
-    "Computer Repair",
-    "Watch Repair",
-    "Shoe Repair",
-    "Furniture Repair",
-    "Equipment Maintenance"
+
+  // Booking Subcategories
+  "Beauty & Spa": [
+    "Hair Salon",
+    "Barber",
+    "Nail Salon",
+    "Massage",
+    "Facial",
+    "Makeup Service",
+    "Bridal Package",
   ],
-  "Fashion & Clothing": [
-    "Men's Clothing",
-    "Women's Clothing",
-    "Kids' Clothing",
-    "Shoes & Footwear",
-    "Accessories",
-    "Jewelry",
-    "Bags & Luggage",
-    "Sportswear",
-    "Traditional Wear",
-    "Formal Wear",
-    "Casual Wear",
-    "Tailoring Services"
-  ],
-  "Electronics & Gadgets": [
-    "Mobile Phones",
-    "Computers & Laptops",
-    "Tablets",
-    "Audio Equipment",
-    "Cameras",
-    "Gaming Consoles",
-    "Smart Home Devices",
-    "Wearables",
-    "Accessories",
-    "Software & Apps"
-  ],
-  "Fitness & Sports": [
-    "Gym Membership",
-    "Personal Training",
-    "Yoga Classes",
-    "Sports Equipment",
-    "Cycling",
-    "Swimming",
-    "Martial Arts",
-    "Team Sports",
-    "Outdoor Activities",
-    "Fitness Apparel"
-  ],
-  "Education & Tutoring": [
-    "Academic Tutoring",
-    "Music Lessons",
-    "Art Classes",
-    "Language Learning",
-    "STEM Education",
-    "Test Preparation",
-    "Online Courses",
-    "Professional Development",
-    "Skill Training"
-  ],
-  "Events & Entertainment": [
-    "DJ Services",
-    "Photography",
-    "Videography",
-    "Event Planning",
-    "Catering",
-    "Decoration",
-    "Entertainment",
-    "Sound & Lighting",
-    "Venue Rental",
-    "MC Services"
-  ],
-  "Professional Services": [
-    "Legal Services",
-    "Accounting",
-    "Tax Services",
-    "Consulting",
-    "Marketing",
-    "Web Design",
-    "Graphic Design",
-    "IT Services",
-    "Business Services",
-    "Translation"
-  ],
-  "Pet Services": [
-    "Veterinary",
-    "Pet Grooming",
-    "Pet Training",
-    "Pet Sitting",
-    "Pet Boarding",
-    "Pet Supplies",
-    "Pet Food",
-    "Pet Accessories"
-  ],
-  "Home & Garden": [
-    "Plants & Seeds",
-    "Gardening Tools",
-    "Furniture",
-    "Home Decor",
-    "Lighting",
-    "Bedding & Linen",
-    "Kitchen & Dining",
-    "Storage Solutions",
-    "Garden Maintenance"
-  ],
-  "Books & Stationery": [
-    "Books",
-    "Office Supplies",
-    "School Supplies",
-    "Art Supplies",
-    "Writing Instruments",
-    "Paper Products",
-    "Educational Materials",
-    "E-books"
-  ],
-  "Baby & Kids": [
-    "Baby Clothing",
-    "Baby Food",
-    "Diapers & Wipes",
-    "Baby Furniture",
-    "Toys",
-    "Strollers & Car Seats",
-    "Baby Care Products",
-    "Maternity Products",
-    "Kids' Clothing",
-    "Educational Toys"
-  ],
-  "Transport & Logistics": [
-    "Moving Services",
-    "Courier Services",
-    "Taxi Services",
-    "Ride-sharing",
-    "Cargo Services",
-    "Freight Services",
-    "Vehicle Rental",
-    "Airport Transfer"
-  ],
+
   "Accommodation": [
-    "Hotels",
     "Guest Houses",
     "Airbnb",
-    "Hostels",
-    "Serviced Apartments",
-    "Vacation Rentals",
-    "Bed & Breakfast"
+    "Rentals",
   ],
-  "Flowers & Gifts": [
-    "Fresh Flowers",
-    "Flower Arrangements",
-    "Gift Baskets",
-    "Gift Items",
-    "Greeting Cards",
-    "Balloon Decorations",
-    "Custom Gifts"
-  ],
-  "Utilities & Services": [
-    "Bill Payments",
-    "Airtime & Data",
-    "Mobile Money",
-    "Banking Services",
-    "Insurance",
-    "Postal Services",
-    "Government Services"
-  ],
-  "Security Services": [
-    "Security Guards",
-    "CCTV Installation",
-    "Alarm Systems",
-    "Access Control",
-    "Security Consulting",
-    "Patrol Services"
-  ],
-  "Religious Services": [
-    "Churches",
-    "Mosques",
-    "Temples",
-    "Spiritual Counseling",
-    "Religious Books",
-    "Religious Events"
-  ],
-  "Creative Services": [
-    "Graphic Design",
-    "Video Production",
-    "Content Creation",
-    "Social Media Management",
-    "Animation",
-    "Copywriting",
-    "Brand Design"
-  ],
-  "Construction Services": [
-    "Building Construction",
-    "Masonry",
-    "Concrete Work",
-    "Steel Work",
-    "Renovation",
-    "Interior Design",
-    "Architecture",
-    "Surveying"
-  ],
-  "Agriculture & Farming": [
-    "Farm Produce",
-    "Agricultural Equipment",
-    "Seeds & Fertilizers",
-    "Livestock",
-    "Poultry",
-    "Farming Services",
-    "Agricultural Supplies"
-  ],
-  "Waste & Recycling": [
-    "Garbage Collection",
-    "Recycling Services",
-    "Waste Management",
-    "Composting",
-    "Hazardous Waste Disposal"
-  ],
-  "Wedding Services": [
-    "Wedding Planning",
-    "Bridal Wear",
-    "Groom Wear",
-    "Wedding Photography",
-    "Wedding Videography",
-    "Wedding Decoration",
-    "Wedding Catering",
-    "Wedding Cakes",
-    "Bridal Makeup",
-    "Wedding Venue"
-  ],
-  "Special Occasions": [
-    "Birthday Parties",
-    "Anniversary Celebrations",
-    "Corporate Events",
-    "Baby Showers",
-    "Graduation Parties",
-    "Holiday Celebrations",
-    "Theme Parties"
-  ],
+
+  // Pharmacy - Hybrid (Inventory + Booking)
   "Pharmacy": [
+    "Consultation",
+    "Prescription Medicine",
+    "Over-the-Counter Medicine",
+    "Family Planning",
+    "First Aid Supplies",
     "Vitamins & Supplements",
-    "OTC Medications",
-    "First Aid",
-    "Home Health",
-    "Oral Care",
-    "Skin & Body Care",
-    "Hair Care",
-    "Hygiene",
-    "Cosmetics",
-    "Baby & Child Products",
-    "Others"
+    "Baby Care",
+    "Personal Hygiene",
+    "Medical Devices",
   ],
-  "Minimart": [
-    "Foods",
-    "Groceries & Essentials",
-    "Fresh Produce (Fruits & Vegetables)",
-    "Bakery & Pastries",
-    "Dairy & Eggs",
-    "Meat & Poultry",
-    "Frozen Foods",
-    "Snacks & Confectionery",
-    "Beverages (Non-alcoholic)",
-    "Liquor Store",
-    "Household Supplies",
-    "Personal Care & Toiletries",
-    "Health & Pharmacy",
-    "Electronics & Gadgets",
-    "Pet Services",
-    "Home & Garden",
-    "Books & Stationery",
-    "Baby & Kids",
-    "Flowers & Gifts"
-  ]
 };

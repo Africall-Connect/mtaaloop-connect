@@ -46,7 +46,7 @@ export interface VendorProfile {
   open_hours: string | null;
   years_in_business: number | null;
   certifications: Record<string, unknown> | null;
-  operational_category: 'inventory' | 'service' | 'booking' | null;
+  operational_category: 'inventory' | 'service' | 'booking' | 'pharmacy' | null;
   created_at: string;
   updated_at: string;
 }

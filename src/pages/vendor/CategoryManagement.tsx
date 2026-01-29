@@ -14,51 +14,29 @@ import { MAIN_CATEGORIES, SUBCATEGORY_OPTIONS } from '@/constants/categories';
 
 interface CategoryManagementProps {
   vendorId: string;
-  operationalCategory?: 'inventory' | 'service' | 'booking' | 'minimart' | null;
+  operationalCategory?: 'inventory' | 'service' | 'booking' | 'pharmacy' | null;
 }
 
-// Classifications based on operational_category
+// Classifications based on operational_category (new streamlined structure)
 const INVENTORY_CATEGORIES = [
   "Food & Drinks",
-  "Groceries & Essentials",
-  "Liquor Store",
-  "Fashion & Clothing",
-  "Electronics & Gadgets",
-  "Pet Services",
-  "Home & Garden",
-  "Books & Stationery",
-  "Baby & Kids",
-  "Flowers & Gifts",
-  "Agriculture & Farming"
+  "Living Essentials",
+  "Groceries & Food",
+  "Restaurant",
 ] as const;
 
 const SERVICE_CATEGORIES = [
-  "Home Services",
-  "Repairs & Maintenance",
-  "Auto Services",
   "Utilities & Services",
-  "Security Services",
-  "Religious Services",
-  "Creative Services",
-  "Construction Services",
-  "Waste & Recycling",
-  "Professional Services",
-  "Transport & Logistics"
+  "Home Services",
 ] as const;
 
 const BOOKING_CATEGORIES = [
-  "Health & Wellness",
   "Beauty & Spa",
-  "Fitness & Sports",
-  "Education & Tutoring",
-  "Events & Entertainment",
   "Accommodation",
-  "Wedding Services",
-  "Special Occasions"
 ] as const;
 
-const MINIMART_CATEGORIES = [
-  "Minimart"
+const PHARMACY_CATEGORIES = [
+  "Pharmacy",
 ] as const;
 
 export default function CategoryManagement({ vendorId, operationalCategory }: CategoryManagementProps) {
@@ -70,7 +48,7 @@ export default function CategoryManagement({ vendorId, operationalCategory }: Ca
   const [editingCategory, setEditingCategory] = useState<VendorCategory | null>(null);
   const [editingSubcategory, setEditingSubcategory] = useState<VendorSubcategory | null>(null);
   const [selectedCategoryForSub, setSelectedCategoryForSub] = useState<string | null>(null);
-  const [fetchedOperationalCategory, setFetchedOperationalCategory] = useState<'inventory' | 'service' | 'booking' | 'minimart' | null>(null);
+  const [fetchedOperationalCategory, setFetchedOperationalCategory] = useState<'inventory' | 'service' | 'booking' | 'pharmacy' | null>(null);
   const [vendorBusinessType, setVendorBusinessType] = useState<string | null>(null);
 
   const [categoryForm, setCategoryForm] = useState({
@@ -81,6 +59,8 @@ export default function CategoryManagement({ vendorId, operationalCategory }: Ca
     name: '',
   });
   
+  // For custom subcategory input (Restaurant category)
+  const [customSubcategoryName, setCustomSubcategoryName] = useState('');
   const [selectedParentCategory, setSelectedParentCategory] = useState<string>('');
 
   const fetchCategoriesAndSubcategories = useCallback(async () => {
@@ -143,9 +123,7 @@ export default function CategoryManagement({ vendorId, operationalCategory }: Ca
       if (categories.length === 0 && !loading) {
         let categoryLabel: string | undefined;
 
-        if (fetchedOperationalCategory === 'minimart') {
-          categoryLabel = 'Minimart';
-        } else if (vendorBusinessType) {
+        if (vendorBusinessType) {
           categoryLabel = MAIN_CATEGORIES.find(c => generateSlug(c.value) === vendorBusinessType)?.label;
         }
 
@@ -174,7 +152,7 @@ export default function CategoryManagement({ vendorId, operationalCategory }: Ca
       }
     };
     addDefaultCategory();
-  }, [fetchedOperationalCategory, vendorBusinessType, categories, loading, vendorId, fetchCategoriesAndSubcategories]);
+  }, [vendorBusinessType, categories, loading, vendorId, fetchCategoriesAndSubcategories]);
 
   const generateSlug = (name: string) => {
     return name
@@ -236,15 +214,23 @@ export default function CategoryManagement({ vendorId, operationalCategory }: Ca
       return;
     }
 
+    // Use custom name for Restaurant, otherwise use selected from dropdown
+    const subcategoryName = isRestaurantCategory() ? customSubcategoryName : subcategoryForm.name;
+    
+    if (!subcategoryName.trim()) {
+      toast.error('Please enter a subcategory name');
+      return;
+    }
+
     try {
-      const slug = generateSlug(subcategoryForm.name);
+      const slug = generateSlug(subcategoryName);
       const categorySubcategories = subcategories.filter(s => s.category_id === selectedCategoryForSub);
       const displayOrder = editingSubcategory?.display_order ?? categorySubcategories.length + 1;
 
       const subcategoryData = {
         vendor_id: vendorId,
         category_id: selectedCategoryForSub,
-        name: subcategoryForm.name,
+        name: subcategoryName,
         slug,
         description: null,
         display_order: displayOrder,
@@ -345,9 +331,12 @@ export default function CategoryManagement({ vendorId, operationalCategory }: Ca
   const openEditSubcategoryDialog = (subcategory: VendorSubcategory) => {
     setEditingSubcategory(subcategory);
     setSelectedCategoryForSub(subcategory.category_id);
+    const parentCat = categories.find(c => c.id === subcategory.category_id);
+    setSelectedParentCategory(parentCat?.name || '');
     setSubcategoryForm({
       name: subcategory.name,
     });
+    setCustomSubcategoryName(subcategory.name);
     setSubcategoryDialogOpen(true);
   };
 
@@ -368,6 +357,7 @@ export default function CategoryManagement({ vendorId, operationalCategory }: Ca
     setSelectedCategoryForSub(null);
     setSelectedParentCategory('');
     setSubcategoryForm({ name: '' });
+    setCustomSubcategoryName('');
   };
   
   const getAvailableCategories = () => {
@@ -380,16 +370,22 @@ export default function CategoryManagement({ vendorId, operationalCategory }: Ca
       return SERVICE_CATEGORIES;
     } else if (opCategory === 'booking') {
       return BOOKING_CATEGORIES;
-    } else if (opCategory === 'minimart') {
-      return MINIMART_CATEGORIES;
+    } else if (opCategory === 'pharmacy') {
+      return PHARMACY_CATEGORIES;
     } else {
-      return MAIN_CATEGORIES; // fallback for all categories
+      // Fallback: show all main categories
+      return MAIN_CATEGORIES.map(c => c.value);
     }
   };
 
   const getSubcategoryOptions = () => {
     if (!selectedParentCategory) return [];
     return SUBCATEGORY_OPTIONS[selectedParentCategory] || [];
+  };
+  
+  // Check if Restaurant category (allows custom subcategories)
+  const isRestaurantCategory = () => {
+    return selectedParentCategory === 'Restaurant';
   };
 
   if (loading) {
@@ -520,6 +516,7 @@ export default function CategoryManagement({ vendorId, operationalCategory }: Ca
                     const selectedCat = categories.find(c => c.id === e.target.value);
                     setSelectedParentCategory(selectedCat?.name || '');
                     setSubcategoryForm({ name: '' });
+                    setCustomSubcategoryName('');
                   }}
                   required
                 >
@@ -536,23 +533,55 @@ export default function CategoryManagement({ vendorId, operationalCategory }: Ca
             {selectedCategoryForSub && (
               <div className="space-y-2">
                 <Label htmlFor="sub-name">Subcategory *</Label>
-                <select
-                  id="sub-name"
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={subcategoryForm.name}
-                  onChange={(e) => setSubcategoryForm({ name: e.target.value })}
-                  required
-                >
-                  <option value="">Select subcategory</option>
-                  {getSubcategoryOptions().map((sub) => (
-                    <option key={sub} value={sub}>
-                      {sub}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-muted-foreground">
-                  Select from common subcategory options
-                </p>
+                
+                {/* Restaurant category: show text input for custom subcategories */}
+                {isRestaurantCategory() ? (
+                  <>
+                    <Input
+                      id="sub-name-custom"
+                      placeholder="Enter your subcategory name (e.g., Starters, Mains, Desserts)"
+                      value={customSubcategoryName}
+                      onChange={(e) => setCustomSubcategoryName(e.target.value)}
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Restaurant vendors can create custom subcategories for their menu
+                    </p>
+                  </>
+                ) : getSubcategoryOptions().length > 0 ? (
+                  <>
+                    <select
+                      id="sub-name"
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      value={subcategoryForm.name}
+                      onChange={(e) => setSubcategoryForm({ name: e.target.value })}
+                      required
+                    >
+                      <option value="">Select subcategory</option>
+                      {getSubcategoryOptions().map((sub) => (
+                        <option key={sub} value={sub}>
+                          {sub}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-muted-foreground">
+                      Select from common subcategory options
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <Input
+                      id="sub-name-custom"
+                      placeholder="Enter subcategory name"
+                      value={customSubcategoryName}
+                      onChange={(e) => setCustomSubcategoryName(e.target.value)}
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      No predefined subcategories - enter your own
+                    </p>
+                  </>
+                )}
               </div>
             )}
             <Button type="submit" className="w-full">
