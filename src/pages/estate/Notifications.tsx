@@ -7,6 +7,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { Bell, CheckCircle, AlertCircle, ShoppingCart, UserPlus, UserMinus, DollarSign, Clock } from 'lucide-react';
 
+interface NotificationMetadata {
+  residentId?: string;
+  vendorId?: string;
+  orderId?: string;
+  amount?: number;
+  [key: string]: unknown;
+}
+
 interface Notification {
   id: string;
   type: 'order' | 'resident_request' | 'vendor_request' | 'payment' | 'system';
@@ -14,7 +22,7 @@ interface Notification {
   message: string;
   is_read: boolean;
   created_at: string;
-  metadata?: unknown;
+  metadata?: NotificationMetadata;
 }
 
 interface NotificationsProps {
@@ -25,16 +33,11 @@ export default function Notifications({ estateId }: NotificationsProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchNotifications();
-    setupRealtimeSubscription();
-  }, [estateId, fetchNotifications, setupRealtimeSubscription]);
-
   const fetchNotifications = useCallback(async () => {
     try {
       // For now, we'll simulate notifications based on recent activity
       // In a real app, you'd have a notifications table
-      const notifications: Notification[] = [];
+      const notificationsList: Notification[] = [];
 
       // Check for pending resident approvals
       const { data: pendingResidents } = await supabase
@@ -46,7 +49,7 @@ export default function Notifications({ estateId }: NotificationsProps) {
         .limit(5);
 
       pendingResidents?.forEach(resident => {
-        notifications.push({
+        notificationsList.push({
           id: `resident-${resident.id}`,
           type: 'resident_request',
           title: 'New Resident Request',
@@ -67,7 +70,7 @@ export default function Notifications({ estateId }: NotificationsProps) {
         .limit(5);
 
       pendingVendors?.forEach(vendor => {
-        notifications.push({
+        notificationsList.push({
           id: `vendor-${vendor.id}`,
           type: 'vendor_request',
           title: 'New Vendor Application',
@@ -91,7 +94,7 @@ export default function Notifications({ estateId }: NotificationsProps) {
         .limit(10);
 
       recentOrders?.forEach(order => {
-        notifications.push({
+        notificationsList.push({
           id: `order-${order.id}`,
           type: 'order',
           title: 'New Order Placed',
@@ -103,8 +106,8 @@ export default function Notifications({ estateId }: NotificationsProps) {
       });
 
       // Sort by date and limit to 20
-      notifications.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      setNotifications(notifications.slice(0, 20));
+      notificationsList.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setNotifications(notificationsList.slice(0, 20));
     } catch (error) {
       console.error('Error fetching notifications:', error);
     } finally {
@@ -156,6 +159,11 @@ export default function Notifications({ estateId }: NotificationsProps) {
       ordersSubscription.unsubscribe();
     };
   }, [estateId, fetchNotifications]);
+
+  useEffect(() => {
+    fetchNotifications();
+    setupRealtimeSubscription();
+  }, [estateId, fetchNotifications, setupRealtimeSubscription]);
 
   const markAsRead = async (notificationId: string) => {
     setNotifications(prev =>

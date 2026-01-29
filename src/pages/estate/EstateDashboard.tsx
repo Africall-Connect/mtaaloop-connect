@@ -45,22 +45,51 @@ export default function EstateDashboard() {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      fetchEstateData();
-    }
+  const fetchStats = useCallback(async (estateId: string) => {
+    try {
+      // Get active residents count
+      const { count: residentsCount } = await supabase
+        .from('estate_residents')
+        .select('*', { count: 'exact', head: true })
+        .eq('estate_id', estateId)
+        .eq('is_approved', true);
 
-    return () => {
-      // Cleanup subscriptions on unmount
-      supabase.removeAllChannels();
-    };
-  }, [user, fetchEstateData]);
+      // Get pending approvals count
+      const { count: pendingCount } = await supabase
+        .from('estate_residents')
+        .select('*', { count: 'exact', head: true })
+        .eq('estate_id', estateId)
+        .eq('is_approved', false);
 
-  useEffect(() => {
-    if (estate?.id) {
-      setupRealtimeSubscriptions();
+      // Get active vendors count (assuming vendors table exists)
+      const { count: vendorsCount } = await supabase
+        .from('vendors')
+        .select('*', { count: 'exact', head: true })
+        .eq('estate_id', estateId)
+        .eq('is_approved', true);
+
+      // Get orders and revenue (assuming orders table exists)
+      const { data: ordersData } = await supabase
+        .from('orders')
+        .select('total_amount')
+        .eq('estate_id', estateId)
+        .eq('status', 'completed');
+
+      const totalOrders = ordersData?.length || 0;
+      const totalRevenue = ordersData?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
+
+      setStats({
+        totalUnits: estate?.total_units || 0,
+        activeVendors: vendorsCount || 0,
+        activeResidents: residentsCount || 0,
+        totalOrders,
+        totalRevenue,
+        pendingApprovals: pendingCount || 0,
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
     }
-  }, [estate?.id, setupRealtimeSubscriptions]);
+  }, [estate]);
 
   const setupRealtimeSubscriptions = useCallback(() => {
     if (!estate?.id) return;
@@ -140,51 +169,22 @@ export default function EstateDashboard() {
     }
   }, [user, fetchStats]);
 
-  const fetchStats = useCallback(async (estateId: string) => {
-    try {
-      // Get active residents count
-      const { count: residentsCount } = await supabase
-        .from('estate_residents')
-        .select('*', { count: 'exact', head: true })
-        .eq('estate_id', estateId)
-        .eq('is_approved', true);
-
-      // Get pending approvals count
-      const { count: pendingCount } = await supabase
-        .from('estate_residents')
-        .select('*', { count: 'exact', head: true })
-        .eq('estate_id', estateId)
-        .eq('is_approved', false);
-
-      // Get active vendors count (assuming vendors table exists)
-      const { count: vendorsCount } = await supabase
-        .from('vendors')
-        .select('*', { count: 'exact', head: true })
-        .eq('estate_id', estateId)
-        .eq('is_approved', true);
-
-      // Get orders and revenue (assuming orders table exists)
-      const { data: ordersData } = await supabase
-        .from('orders')
-        .select('total_amount')
-        .eq('estate_id', estateId)
-        .eq('status', 'completed');
-
-      const totalOrders = ordersData?.length || 0;
-      const totalRevenue = ordersData?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
-
-      setStats({
-        totalUnits: estate?.total_units || 0,
-        activeVendors: vendorsCount || 0,
-        activeResidents: residentsCount || 0,
-        totalOrders,
-        totalRevenue,
-        pendingApprovals: pendingCount || 0,
-      });
-    } catch (error) {
-      console.error('Error fetching stats:', error);
+  useEffect(() => {
+    if (user) {
+      fetchEstateData();
     }
-  }, [estate]);
+
+    return () => {
+      // Cleanup subscriptions on unmount
+      supabase.removeAllChannels();
+    };
+  }, [user, fetchEstateData]);
+
+  useEffect(() => {
+    if (estate?.id) {
+      setupRealtimeSubscriptions();
+    }
+  }, [estate?.id, setupRealtimeSubscriptions]);
 
   if (loading) {
     return (
@@ -394,74 +394,21 @@ export default function EstateDashboard() {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-indigo-700 dark:text-indigo-300 flex items-center gap-3">
                       <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg group-hover:bg-indigo-200 dark:group-hover:bg-indigo-900/70 transition-colors">
-                        <Activity className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                        <DollarSign className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                       </div>
-                      <span className="text-lg font-semibold">Recent Activity</span>
+                      <span className="text-lg font-semibold">Average Order</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-indigo-800 dark:text-indigo-200 text-base leading-relaxed">
-                      {stats.pendingApprovals > 0
-                        ? `📋 ${stats.pendingApprovals} resident approval${stats.pendingApprovals > 1 ? 's' : ''} pending review`
-                        : '✅ All approvals are up to date - your estate is running smoothly!'
-                      }
-                    </p>
+                    <div className="text-4xl font-bold text-indigo-900 dark:text-indigo-100 mb-2">
+                      KES {stats.totalOrders > 0 ? (stats.totalRevenue / stats.totalOrders).toLocaleString() : '0'}
+                    </div>
+                    <p className="text-indigo-700 dark:text-indigo-300 text-sm">Per transaction</p>
                   </CardContent>
                 </Card>
               </div>
 
-              <Card className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 border-slate-200/50 dark:border-slate-700/50 shadow-lg">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-slate-900 dark:text-slate-100 text-xl font-bold flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg">
-                      <Activity className="h-6 w-6 text-white" />
-                    </div>
-                    Quick Actions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <Button
-                      variant="outline"
-                      className="group justify-start h-auto p-6 bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border-emerald-200/50 dark:border-emerald-800/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
-                    >
-                      <div className="p-3 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg mr-4 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-900/70 transition-colors">
-                        <Store className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
-                      </div>
-                      <div className="text-left">
-                        <div className="font-bold text-emerald-900 dark:text-emerald-100 text-lg">Manage Vendors</div>
-                        <div className="text-emerald-700 dark:text-emerald-300 text-sm mt-1">Approve and monitor service providers</div>
-                      </div>
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      className="group justify-start h-auto p-6 bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 border-purple-200/50 dark:border-purple-800/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
-                    >
-                      <div className="p-3 bg-purple-100 dark:bg-purple-900/50 rounded-lg mr-4 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/70 transition-colors">
-                        <Users className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                      </div>
-                      <div className="text-left">
-                        <div className="font-bold text-purple-900 dark:text-purple-100 text-lg">View Residents</div>
-                        <div className="text-purple-700 dark:text-purple-300 text-sm mt-1">Manage community member accounts</div>
-                      </div>
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      className="group justify-start h-auto p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200/50 dark:border-blue-800/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
-                    >
-                      <div className="p-3 bg-blue-100 dark:bg-blue-900/50 rounded-lg mr-4 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/70 transition-colors">
-                        <DollarSign className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <div className="text-left">
-                        <div className="font-bold text-blue-900 dark:text-blue-100 text-lg">View Analytics</div>
-                        <div className="text-blue-700 dark:text-blue-300 text-sm mt-1">Check detailed performance metrics</div>
-                      </div>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <Notifications estateId={estate?.id || ''} />
             </TabsContent>
 
             <TabsContent value="residents">
@@ -477,11 +424,11 @@ export default function EstateDashboard() {
             </TabsContent>
 
             <TabsContent value="profile">
-              <EstateProfile />
+              <EstateProfile estateId={estate?.id || ''} />
             </TabsContent>
 
             <TabsContent value="settings">
-              <Settings />
+              <Settings estateId={estate?.id || ''} />
             </TabsContent>
           </Tabs>
         )}

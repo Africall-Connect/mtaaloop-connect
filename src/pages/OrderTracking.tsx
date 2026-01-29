@@ -406,7 +406,7 @@ const OrderTracking = () => {
     }
   };
 
-  const loadExistingOrder = async (order: Record<string, unknown>) => {
+  const loadExistingOrder = async (order: OrderData) => {
     console.log("[loadExistingOrder] order =", order);
     setOrderData({
       ...order,
@@ -968,22 +968,22 @@ const OrderTracking = () => {
                     <div>
                       <Label className="mb-2 block text-center">Food Rating</Label>
                       <div className="flex justify-center gap-2 text-3xl">
-                        {"⭐".repeat(reviewData.food_rating)}
-                        {"☆".repeat(5 - reviewData.food_rating)}
+                        {"⭐".repeat(Number(reviewData.food_rating) || 0)}
+                        {"☆".repeat(5 - (Number(reviewData.food_rating) || 0))}
                       </div>
                     </div>
                     <div>
                       <Label className="mb-2 block text-center">Delivery Rating</Label>
                       <div className="flex justify-center gap-2 text-3xl">
-                        {"⭐".repeat(reviewData.delivery_rating)}
-                        {"☆".repeat(5 - reviewData.delivery_rating)}
+                        {"⭐".repeat(Number(reviewData.delivery_rating) || 0)}
+                        {"☆".repeat(5 - (Number(reviewData.delivery_rating) || 0))}
                       </div>
                     </div>
                     {reviewData.comment && (
                       <div>
                         <Label className="mb-2 block text-center">Your Comment</Label>
                         <p className="text-center text-muted-foreground p-4 bg-muted rounded-lg">
-                          "{reviewData.comment}"
+                          "{String(reviewData.comment)}"
                         </p>
                       </div>
                     )}

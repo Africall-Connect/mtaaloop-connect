@@ -20,7 +20,7 @@ interface VendorProfile {
   id: string;
   business_name: string;
   business_type: string;
-  operational_category: 'inventory' | 'service' | 'booking' | 'minimart' | null;
+  operational_category: 'inventory' | 'service' | 'booking' | 'minimart' | 'pharmacy' | null;
   is_approved: boolean;
   rating: number;
   estate_id: string | null;

@@ -29,6 +29,15 @@ interface MonthlyStat {
   revenue: number;
 }
 
+interface RecentOrder {
+  id: string;
+  created_at: string;
+  vendor?: { business_name: string };
+  resident?: { apartment_number: string };
+  final_amount?: number;
+  status: string;
+}
+
 interface AnalyticsData {
   totalRevenue: number;
   totalOrders: number;
@@ -36,7 +45,7 @@ interface AnalyticsData {
   activeVendors: number;
   activeResidents: number;
   topVendors: TopVendor[];
-  recentOrders: Record<string, unknown>[];
+  recentOrders: RecentOrder[];
   revenueByCategory: RevenueByCategory[];
   monthlyStats: MonthlyStat[];
 }
@@ -119,7 +128,7 @@ export default function Analytics({ estateId }: AnalyticsProps) {
 
       const topVendors = Object.values(vendorStats || {})
         .sort((a: TopVendor, b: TopVendor) => b.revenue - a.revenue)
-        .slice(0, 5);
+        .slice(0, 5) as TopVendor[];
 
       // Get revenue by category
       const categoryStats = ordersData?.reduce((acc, order) => {
@@ -133,10 +142,10 @@ export default function Analytics({ estateId }: AnalyticsProps) {
       }, {} as Record<string, RevenueByCategory>);
 
       const revenueByCategory = Object.values(categoryStats || [])
-        .sort((a: RevenueByCategory, b: RevenueByCategory) => b.revenue - a.revenue);
+        .sort((a: RevenueByCategory, b: RevenueByCategory) => b.revenue - a.revenue) as RevenueByCategory[];
 
       // Get monthly stats for the last 6 months
-      const monthlyStats = [];
+      const monthlyStats: MonthlyStat[] = [];
       for (let i = 5; i >= 0; i--) {
         const monthStart = new Date();
         monthStart.setMonth(monthStart.getMonth() - i, 1);
@@ -160,6 +169,16 @@ export default function Analytics({ estateId }: AnalyticsProps) {
         });
       }
 
+      // Map recent orders to RecentOrder interface
+      const recentOrders: RecentOrder[] = (ordersData?.slice(0, 10) || []).map(order => ({
+        id: order.id,
+        created_at: order.created_at,
+        vendor: order.vendor,
+        resident: order.resident,
+        final_amount: order.final_amount,
+        status: order.status
+      }));
+
       setAnalytics({
         totalRevenue,
         totalOrders,
@@ -167,7 +186,7 @@ export default function Analytics({ estateId }: AnalyticsProps) {
         activeVendors: activeVendors || 0,
         activeResidents: activeResidents || 0,
         topVendors,
-        recentOrders: ordersData?.slice(0, 10) || [],
+        recentOrders,
         revenueByCategory,
         monthlyStats
       });
@@ -399,9 +418,9 @@ export default function Analytics({ estateId }: AnalyticsProps) {
                 {analytics.recentOrders.map((order) => (
                   <TableRow key={order.id}>
                     <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
-                    <TableCell>{order.vendor?.business_name}</TableCell>
-                    <TableCell>{order.resident?.apartment_number}</TableCell>
-                    <TableCell>KES {order.final_amount?.toLocaleString()}</TableCell>
+                    <TableCell>{order.vendor?.business_name || 'N/A'}</TableCell>
+                    <TableCell>{order.resident?.apartment_number || 'N/A'}</TableCell>
+                    <TableCell>KES {(order.final_amount || 0).toLocaleString()}</TableCell>
                     <TableCell>
                       <Badge variant="default">{order.status}</Badge>
                     </TableCell>

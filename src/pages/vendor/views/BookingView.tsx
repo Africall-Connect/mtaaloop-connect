@@ -11,9 +11,17 @@ interface BookingViewProps {
   products: Product[];
 }
 
+interface BookingSlot {
+  id: string;
+  product_id: string;
+  slot_start: string;
+  slot_end: string;
+  is_available: boolean;
+}
+
 export function BookingView({ vendor, products }: BookingViewProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [bookingSlots, setBookingSlots] = useState<unknown[]>([]);
+  const [bookingSlots, setBookingSlots] = useState<BookingSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const { addItem } = useCart();
   const { toast } = useToast();
