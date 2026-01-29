@@ -37,36 +37,36 @@ export const ReviewsSection = ({ rating, reviewCount }: ReviewsSectionProps) => 
   ];
 
   return (
-    <Card className="p-6 mb-8">
-      <h2 className="text-2xl font-bold mb-6">⭐ Customer Reviews ({reviewCount})</h2>
+    <Card className="p-4 md:p-6 mb-6 md:mb-8">
+      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">⭐ Customer Reviews ({reviewCount})</h2>
 
-      <div className="grid md:grid-cols-2 gap-8 mb-6">
+      <div className="grid md:grid-cols-2 gap-6 md:gap-8 mb-4 md:mb-6">
         {/* Rating Summary */}
-        <div className="space-y-3">
-          <div className="text-5xl font-bold text-primary">{rating}</div>
-          <div className="text-muted-foreground">out of 5</div>
+        <div className="space-y-2 md:space-y-3">
+          <div className="text-4xl md:text-5xl font-bold text-primary">{rating}</div>
+          <div className="text-sm md:text-base text-muted-foreground">out of 5</div>
 
           {ratingDistribution.map((dist) => (
-            <div key={dist.stars} className="flex items-center gap-2">
-              <div className="flex gap-1">
+            <div key={dist.stars} className="flex items-center gap-1.5 md:gap-2">
+              <div className="flex gap-0.5 md:gap-1">
                 {[...Array(dist.stars)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-warning text-warning" />
+                  <Star key={i} className="w-3 h-3 md:w-4 md:h-4 fill-warning text-warning" />
                 ))}
               </div>
-              <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+              <div className="flex-1 h-1.5 md:h-2 bg-muted rounded-full overflow-hidden">
                 <div
                   className="h-full bg-warning"
                   style={{ width: `${dist.percentage}%` }}
                 />
               </div>
-              <div className="text-sm text-muted-foreground w-12">{dist.percentage}%</div>
+              <div className="text-xs md:text-sm text-muted-foreground w-10 md:w-12">{dist.percentage}%</div>
             </div>
           ))}
         </div>
 
         {/* Sort */}
         <div>
-          <Button variant="outline" className="w-full justify-between">
+          <Button variant="outline" className="w-full justify-between text-sm md:text-base">
             Sort: Most Recent
             <span>▼</span>
           </Button>
@@ -74,35 +74,35 @@ export const ReviewsSection = ({ rating, reviewCount }: ReviewsSectionProps) => 
       </div>
 
       {/* Reviews List */}
-      <div className="space-y-4">
+      <div className="space-y-3 md:space-y-4">
         {reviews.map((review, index) => (
-          <div key={index} className="pb-4 border-b last:border-0">
-            <div className="flex items-start justify-between mb-2">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-semibold">{review.name}</span>
-                  <span className="text-sm text-muted-foreground">• {review.date}</span>
+          <div key={index} className="pb-3 md:pb-4 border-b last:border-0">
+            <div className="flex items-start justify-between mb-2 gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 md:gap-2 mb-1 flex-wrap">
+                  <span className="font-semibold text-sm md:text-base">{review.name}</span>
+                  <span className="text-xs md:text-sm text-muted-foreground">• {review.date}</span>
                 </div>
-                <div className="flex gap-1 mb-2">
+                <div className="flex gap-0.5 md:gap-1 mb-2">
                   {[...Array(review.rating)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-warning text-warning" />
+                    <Star key={i} className="w-3 h-3 md:w-4 md:h-4 fill-warning text-warning" />
                   ))}
                 </div>
               </div>
               {review.verified && (
-                <Badge variant="secondary">Verified Purchase</Badge>
+                <Badge variant="secondary" className="text-xs shrink-0">Verified</Badge>
               )}
             </div>
 
-            <p className="text-foreground mb-3">"{review.text}"</p>
+            <p className="text-sm md:text-base text-foreground mb-2 md:mb-3">"{review.text}"</p>
 
-            <div className="flex items-center gap-4 text-sm">
-              <Button variant="ghost" size="sm" className="gap-2">
-                <ThumbsUp className="w-4 h-4" />
+            <div className="flex items-center gap-2 md:gap-4">
+              <Button variant="ghost" size="sm" className="gap-1 md:gap-2 text-xs md:text-sm h-8 px-2 md:px-3">
+                <ThumbsUp className="w-3 h-3 md:w-4 md:h-4" />
                 Helpful ({review.helpful})
               </Button>
-              <Button variant="ghost" size="sm" className="gap-2">
-                <Flag className="w-4 h-4" />
+              <Button variant="ghost" size="sm" className="gap-1 md:gap-2 text-xs md:text-sm h-8 px-2 md:px-3">
+                <Flag className="w-3 h-3 md:w-4 md:h-4" />
                 Report
               </Button>
             </div>
@@ -110,7 +110,7 @@ export const ReviewsSection = ({ rating, reviewCount }: ReviewsSectionProps) => 
         ))}
       </div>
 
-      <Button variant="outline" className="w-full mt-4">
+      <Button variant="outline" className="w-full mt-3 md:mt-4 text-sm md:text-base">
         Load More Reviews
       </Button>
     </Card>
