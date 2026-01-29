@@ -1262,9 +1262,9 @@ const OrderTracking = () => {
 
                 {/* Context-aware Action Buttons */}
                 {getActionButtons(orderStatus).length > 0 && (
-                  <Card className="p-4">
-                    <h3 className="font-semibold mb-3 text-sm text-muted-foreground">Quick Actions</h3>
-                    <div className="flex flex-wrap gap-2">
+                  <Card className="p-3 sm:p-4">
+                    <h3 className="font-semibold mb-2 sm:mb-3 text-xs sm:text-sm text-muted-foreground">Quick Actions</h3>
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2 overflow-x-auto pb-1">
                       {getActionButtons(orderStatus).map((action, index) => {
                         const Icon = action.icon;
                         return (
@@ -1273,9 +1273,9 @@ const OrderTracking = () => {
                             variant={action.variant || "outline"}
                             size="sm"
                             onClick={action.action}
-                            className="flex items-center gap-2"
+                            className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm flex-shrink-0"
                           >
-                            <Icon className="w-4 h-4" />
+                            <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             {action.label}
                           </Button>
                         );
@@ -1433,43 +1433,43 @@ const OrderTracking = () => {
 
         {/* Cancel Order Dialog */}
         <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md max-w-[calc(100vw-2rem)]">
             <DialogHeader>
-              <DialogTitle>Cancel Order</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to cancel this order? This action cannot be undone.
+              <DialogTitle className="text-lg sm:text-xl">Cancel Order</DialogTitle>
+              <DialogDescription className="text-sm">
+                Are you sure? This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 pt-4">
+            <div className="space-y-3 sm:space-y-4 pt-3 sm:pt-4">
               <div>
-                <Label className="mb-2 block">Reason for cancellation</Label>
+                <Label className="mb-1.5 sm:mb-2 block text-sm">Reason for cancellation</Label>
                 <Textarea
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
-                  placeholder="Please tell us why you're cancelling (optional but helpful)"
-                  className="min-h-[100px]"
+                  placeholder="Why are you cancelling? (optional)"
+                  className="min-h-[80px] sm:min-h-[100px] text-sm"
                   disabled={cancelling}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Common reasons: Changed my mind, Ordered by mistake, Taking too long, etc.
+                  e.g., Changed my mind, Ordered by mistake
                 </p>
               </div>
 
-              <div className="bg-destructive/10 p-3 rounded-lg text-sm border border-destructive/20">
-                <p className="font-medium mb-1 text-destructive">⚠️ Please note:</p>
-                <ul className="space-y-1 text-muted-foreground text-xs">
+              <div className="bg-destructive/10 p-2 sm:p-3 rounded-lg text-xs sm:text-sm border border-destructive/20">
+                <p className="font-medium mb-1 text-destructive text-sm sm:text-base">⚠️ Please note:</p>
+                <ul className="space-y-0.5 sm:space-y-1 text-muted-foreground text-xs">
                   <li>• Order will be cancelled immediately</li>
-                  <li>• Refund (if applicable) may take 3-5 business days</li>
+                  <li>• Refund may take 3-5 business days</li>
                   <li>• The vendor will be notified</li>
                 </ul>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   variant="outline"
                   onClick={() => setCancelDialogOpen(false)}
                   disabled={cancelling}
-                  className="flex-1"
+                  className="flex-1 text-sm"
                 >
                   Keep Order
                 </Button>
@@ -1477,9 +1477,9 @@ const OrderTracking = () => {
                   variant="destructive"
                   onClick={handleCancelOrder}
                   disabled={cancelling}
-                  className="flex-1"
+                  className="flex-1 text-sm"
                 >
-                  {cancelling ? "Cancelling..." : "Yes, Cancel Order"}
+                  {cancelling ? "Cancelling..." : "Yes, Cancel"}
                 </Button>
               </div>
             </div>
