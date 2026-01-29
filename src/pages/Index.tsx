@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ShoppingBag, User, Store, Plus, X } from "lucide-react";
+import { Search, ShoppingBag, User, Plus, X, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import { Footer } from "@/components/landing/Footer";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getOperationalType } from "@/lib/categories";
 
 interface ProductWithVendor {
   id: string;
@@ -28,13 +29,113 @@ interface ProductWithVendor {
   };
 }
 
+// Section filter options
+const sectionFilters = [
+  { id: null, label: "All", emoji: "🏠" },
+  { id: "shop", label: "Shop", emoji: "🛒" },
+  { id: "services", label: "Services", emoji: "📅" },
+  { id: "health", label: "Health", emoji: "💊" },
+];
+
+// Compact Product Card Component
+const CompactProductCard = ({
+  product,
+  onAddToCart,
+  onProductClick,
+}: {
+  product: ProductWithVendor;
+  onAddToCart: (e: React.MouseEvent, product: ProductWithVendor) => void;
+  onProductClick: (product: ProductWithVendor) => void;
+}) => (
+  <Card
+    className="overflow-hidden cursor-pointer hover:border-primary transition-all group"
+    onClick={() => onProductClick(product)}
+  >
+    <div className="aspect-[4/3] relative overflow-hidden bg-muted">
+      {product.image_url ? (
+        <img
+          src={product.image_url}
+          alt={product.name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center text-3xl">
+          🛍️
+        </div>
+      )}
+      {!product.is_available && (
+        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+          <Badge variant="destructive" className="text-xs">Out of Stock</Badge>
+        </div>
+      )}
+    </div>
+    <div className="p-2">
+      <h3 className="font-medium text-xs line-clamp-1 group-hover:text-primary transition-colors">
+        {product.name}
+      </h3>
+      <div className="flex items-center justify-between mt-1">
+        <span className="text-sm font-bold text-primary">
+          KES {product.price.toLocaleString()}
+        </span>
+        <Button
+          size="icon"
+          variant="default"
+          className="h-6 w-6 rounded-full"
+          onClick={(e) => onAddToCart(e, product)}
+          disabled={!product.is_available}
+        >
+          <Plus className="h-3 w-3" />
+        </Button>
+      </div>
+      <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-1">
+        <Store className="w-2.5 h-2.5" />
+        <span className="truncate">{product.vendor.business_name}</span>
+      </div>
+    </div>
+  </Card>
+);
+
+// Product Section Component
+const ProductSection = ({
+  title,
+  emoji,
+  products,
+  onAddToCart,
+  onProductClick,
+}: {
+  title: string;
+  emoji: string;
+  products: ProductWithVendor[];
+  onAddToCart: (e: React.MouseEvent, product: ProductWithVendor) => void;
+  onProductClick: (product: ProductWithVendor) => void;
+}) => {
+  if (products.length === 0) return null;
+
+  return (
+    <section className="mb-8">
+      <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
+        <span>{emoji}</span> {title}
+      </h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        {products.map((product) => (
+          <CompactProductCard
+            key={product.id}
+            product={product}
+            onAddToCart={onAddToCart}
+            onProductClick={onProductClick}
+          />
+        ))}
+      </div>
+    </section>
+  );
+};
+
 const Index = () => {
   const [products, setProducts] = useState<ProductWithVendor[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
+  const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   const navigate = useNavigate();
   const { addItem, getItemCount } = useCart();
   const { toast } = useToast();
@@ -45,44 +146,47 @@ const Index = () => {
       try {
         setLoading(true);
         const { data, error } = await supabase
-          .from('products')
-          .select(`
+          .from("products")
+          .select(
+            `
             id, name, description, category, subcategory, price, image_url, 
             is_available, vendor_id,
             vendor_profiles!inner (
               id, business_name, slug, is_approved, is_active
             )
-          `)
-          .eq('is_available', true)
-          .eq('vendor_profiles.is_approved', true)
-          .eq('vendor_profiles.is_active', true)
-          .order('category', { ascending: true })
-          .order('subcategory', { ascending: true })
-          .order('name', { ascending: true });
+          `
+          )
+          .eq("is_available", true)
+          .eq("vendor_profiles.is_approved", true)
+          .eq("vendor_profiles.is_active", true)
+          .order("category", { ascending: true })
+          .order("subcategory", { ascending: true })
+          .order("name", { ascending: true });
 
         if (error) throw error;
 
-        // Transform data to expected format
-        const transformedProducts: ProductWithVendor[] = (data || []).map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          description: p.description,
-          category: p.category,
-          subcategory: p.subcategory,
-          price: p.price,
-          image_url: p.image_url,
-          is_available: p.is_available,
-          vendor_id: p.vendor_id,
-          vendor: {
-            id: p.vendor_profiles.id,
-            business_name: p.vendor_profiles.business_name,
-            slug: p.vendor_profiles.slug,
-          },
-        }));
+        const transformedProducts: ProductWithVendor[] = (data || []).map(
+          (p: any) => ({
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            category: p.category,
+            subcategory: p.subcategory,
+            price: p.price,
+            image_url: p.image_url,
+            is_available: p.is_available,
+            vendor_id: p.vendor_id,
+            vendor: {
+              id: p.vendor_profiles.id,
+              business_name: p.vendor_profiles.business_name,
+              slug: p.vendor_profiles.slug,
+            },
+          })
+        );
 
         setProducts(transformedProducts);
       } catch (error) {
-        console.error('Error fetching products:', error);
+        console.error("Error fetching products:", error);
       } finally {
         setLoading(false);
       }
@@ -91,66 +195,58 @@ const Index = () => {
     fetchProducts();
   }, []);
 
-  // Extract unique categories and subcategories from products
-  const categoriesWithProducts = useMemo(() => {
-    const categoryMap = new Map<string, Set<string>>();
-    
-    products.forEach(product => {
-      if (!categoryMap.has(product.category)) {
-        categoryMap.set(product.category, new Set());
-      }
-      if (product.subcategory) {
-        categoryMap.get(product.category)!.add(product.subcategory);
-      }
-    });
-    
-    // Sort alphabetically
-    return Array.from(categoryMap.entries())
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([category, subcategories]) => ({
-        name: category,
-        subcategories: Array.from(subcategories).sort()
-      }));
-  }, [products]);
-
-  // Get subcategories for selected category
-  const currentSubcategories = useMemo(() => {
-    if (!selectedCategory) return [];
-    const category = categoriesWithProducts.find(c => c.name === selectedCategory);
-    return category?.subcategories || [];
-  }, [selectedCategory, categoriesWithProducts]);
-
-  // Filter products based on search and category/subcategory
+  // Filter products by search
   const filteredProducts = useMemo(() => {
-    let filtered = products;
-    
-    // Search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(p => 
+    if (!searchQuery.trim()) return products;
+
+    const query = searchQuery.toLowerCase();
+    return products.filter(
+      (p) =>
         p.name.toLowerCase().includes(query) ||
         p.description?.toLowerCase().includes(query) ||
         p.category.toLowerCase().includes(query) ||
         p.vendor.business_name.toLowerCase().includes(query)
-      );
-    }
-    
-    // Category filter
-    if (selectedCategory) {
-      filtered = filtered.filter(p => p.category === selectedCategory);
-    }
-    
-    // Subcategory filter
-    if (selectedSubcategory) {
-      filtered = filtered.filter(p => p.subcategory === selectedSubcategory);
-    }
-    
-    return filtered;
-  }, [products, searchQuery, selectedCategory, selectedSubcategory]);
+    );
+  }, [products, searchQuery]);
+
+  // Group products by section
+  const productsBySection = useMemo(() => {
+    const sections = {
+      shop: [] as ProductWithVendor[],
+      services: [] as ProductWithVendor[],
+      health: [] as ProductWithVendor[],
+    };
+
+    filteredProducts.forEach((product) => {
+      const opType = getOperationalType(product.category);
+      if (opType === "inventory") {
+        sections.shop.push(product);
+      } else if (opType === "service" || opType === "booking") {
+        sections.services.push(product);
+      } else if (opType === "pharmacy") {
+        sections.health.push(product);
+      } else {
+        // Fallback: add to shop
+        sections.shop.push(product);
+      }
+    });
+
+    return sections;
+  }, [filteredProducts]);
+
+  // Filter visible sections based on selection
+  const visibleSections = useMemo(() => {
+    if (!selectedSection) return productsBySection;
+    return {
+      shop: selectedSection === "shop" ? productsBySection.shop : [],
+      services: selectedSection === "services" ? productsBySection.services : [],
+      health: selectedSection === "health" ? productsBySection.health : [],
+    };
+  }, [selectedSection, productsBySection]);
 
   const handleAddToCart = (e: React.MouseEvent, product: ProductWithVendor) => {
     e.stopPropagation();
-    
+
     addItem({
       id: product.id,
       vendorId: product.vendor_id,
@@ -174,18 +270,16 @@ const Index = () => {
     }
   };
 
-  const handleCategoryClick = (category: string | null) => {
-    setSelectedCategory(category);
-    setSelectedSubcategory(null);
-  };
-
   const clearFilters = () => {
-    setSelectedCategory(null);
-    setSelectedSubcategory(null);
+    setSelectedSection(null);
     setSearchQuery("");
   };
 
   const cartCount = getItemCount();
+  const totalProducts =
+    visibleSections.shop.length +
+    visibleSections.services.length +
+    visibleSections.health.length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -204,7 +298,7 @@ const Index = () => {
                   variant="ghost"
                   size="icon"
                   className="relative"
-                  onClick={() => navigate('/cart')}
+                  onClick={() => navigate("/cart")}
                 >
                   <ShoppingBag className="h-5 w-5" />
                   {cartCount > 0 && (
@@ -216,7 +310,7 @@ const Index = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => navigate('/account')}
+                  onClick={() => navigate("/account")}
                 >
                   <User className="h-5 w-5" />
                 </Button>
@@ -253,7 +347,7 @@ const Index = () => {
                 variant="ghost"
                 size="icon"
                 className="relative"
-                onClick={() => navigate('/cart')}
+                onClick={() => navigate("/cart")}
               >
                 <ShoppingBag className="h-5 w-5" />
                 {cartCount > 0 && (
@@ -262,10 +356,7 @@ const Index = () => {
                   </Badge>
                 )}
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate('/account')}
-              >
+              <Button variant="outline" onClick={() => navigate("/account")}>
                 <User className="h-4 w-4 mr-2" />
                 Account
               </Button>
@@ -275,82 +366,41 @@ const Index = () => {
       </header>
 
       <main className="container px-4 py-6 max-w-7xl mx-auto">
-        {/* Category Filter Chips */}
+        {/* Section Filter Chips */}
         <div className="flex gap-2 overflow-x-auto pb-4 mb-4 scrollbar-hide">
-          <Button
-            variant={!selectedCategory ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleCategoryClick(null)}
-            className="whitespace-nowrap flex-shrink-0"
-          >
-            All Products
-          </Button>
-          {categoriesWithProducts.map(cat => (
+          {sectionFilters.map((filter) => (
             <Button
-              key={cat.name}
-              variant={selectedCategory === cat.name ? "default" : "outline"}
+              key={filter.id ?? "all"}
+              variant={selectedSection === filter.id ? "default" : "outline"}
               size="sm"
-              onClick={() => handleCategoryClick(cat.name)}
-              className="whitespace-nowrap flex-shrink-0"
+              onClick={() => setSelectedSection(filter.id)}
+              className="whitespace-nowrap flex-shrink-0 gap-1"
             >
-              {cat.name}
+              <span>{filter.emoji}</span>
+              {filter.label}
             </Button>
           ))}
         </div>
 
-        {/* Subcategory Tabs (when category selected) */}
-        {selectedCategory && currentSubcategories.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto pb-4 mb-4 scrollbar-hide">
-            <Button
-              variant={!selectedSubcategory ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setSelectedSubcategory(null)}
-              className="whitespace-nowrap flex-shrink-0"
-            >
-              All {selectedCategory}
-            </Button>
-            {currentSubcategories.map(sub => (
-              <Button
-                key={sub}
-                variant={selectedSubcategory === sub ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setSelectedSubcategory(sub)}
-                className="whitespace-nowrap flex-shrink-0"
-              >
-                {sub}
-              </Button>
-            ))}
-          </div>
-        )}
-
         {/* Active Filters Summary */}
-        {(selectedCategory || selectedSubcategory || searchQuery) && (
+        {(selectedSection || searchQuery) && (
           <div className="flex items-center gap-2 mb-4 flex-wrap">
             <span className="text-sm text-muted-foreground">Filters:</span>
             {searchQuery && (
               <Badge variant="secondary" className="gap-1">
                 "{searchQuery}"
-                <X 
-                  className="h-3 w-3 cursor-pointer" 
+                <X
+                  className="h-3 w-3 cursor-pointer"
                   onClick={() => setSearchQuery("")}
                 />
               </Badge>
             )}
-            {selectedCategory && (
+            {selectedSection && (
               <Badge variant="secondary" className="gap-1">
-                {selectedCategory}
-                <X 
-                  className="h-3 w-3 cursor-pointer" 
-                  onClick={() => handleCategoryClick(null)}
-                />
-              </Badge>
-            )}
-            {selectedSubcategory && (
-              <Badge variant="secondary" className="gap-1">
-                {selectedSubcategory}
-                <X 
-                  className="h-3 w-3 cursor-pointer" 
-                  onClick={() => setSelectedSubcategory(null)}
+                {sectionFilters.find((f) => f.id === selectedSection)?.label}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => setSelectedSection(null)}
                 />
               </Badge>
             )}
@@ -363,89 +413,53 @@ const Index = () => {
         {/* Results Count */}
         {!loading && (
           <p className="text-sm text-muted-foreground mb-4">
-            {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} found
+            {totalProducts} product{totalProducts !== 1 ? "s" : ""} found
           </p>
         )}
 
-        {/* Product Grid */}
+        {/* Product Sections */}
         {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {Array.from({ length: 8 }).map((_, i) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {Array.from({ length: 10 }).map((_, i) => (
               <Card key={i} className="overflow-hidden">
-                <Skeleton className="aspect-square w-full" />
-                <div className="p-3 space-y-2">
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-3 w-full" />
-                  <Skeleton className="h-6 w-1/2" />
+                <Skeleton className="aspect-[4/3] w-full" />
+                <div className="p-2 space-y-1">
+                  <Skeleton className="h-3 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
                 </div>
               </Card>
             ))}
           </div>
-        ) : filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredProducts.map((product) => (
-              <Card 
-                key={product.id}
-                className="overflow-hidden cursor-pointer hover:border-primary transition-all hover:shadow-lg h-full flex flex-col group"
-                onClick={() => handleProductClick(product)}
-              >
-                <div className="aspect-square relative overflow-hidden bg-muted">
-                  {product.image_url ? (
-                    <img
-                      src={product.image_url}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-6xl">
-                      🛍️
-                    </div>
-                  )}
-                  {!product.is_available && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                      <Badge variant="destructive">Out of Stock</Badge>
-                    </div>
-                  )}
-                </div>
-                <div className="p-3 flex-1 flex flex-col">
-                  <h3 className="font-semibold text-sm mb-1 line-clamp-2 group-hover:text-primary transition-colors">
-                    {product.name}
-                  </h3>
-                  {product.description && (
-                    <p className="text-xs text-muted-foreground mb-2 line-clamp-2 flex-1">
-                      {product.description}
-                    </p>
-                  )}
-                  <div className="mt-auto space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-base font-bold text-primary">
-                        KES {product.price.toLocaleString()}
-                      </span>
-                      <Button
-                        size="icon"
-                        variant="default"
-                        className="h-8 w-8 rounded-full"
-                        onClick={(e) => handleAddToCart(e, product)}
-                        disabled={!product.is_available}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
-                      <Store className="w-3 h-3" />
-                      <span className="truncate">{product.vendor.business_name}</span>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+        ) : totalProducts > 0 ? (
+          <>
+            <ProductSection
+              title="Shop Now"
+              emoji="🛒"
+              products={visibleSections.shop}
+              onAddToCart={handleAddToCart}
+              onProductClick={handleProductClick}
+            />
+            <ProductSection
+              title="Book a Service"
+              emoji="📅"
+              products={visibleSections.services}
+              onAddToCart={handleAddToCart}
+              onProductClick={handleProductClick}
+            />
+            <ProductSection
+              title="Health & Pharmacy"
+              emoji="💊"
+              products={visibleSections.health}
+              onAddToCart={handleAddToCart}
+              onProductClick={handleProductClick}
+            />
+          </>
         ) : (
           <div className="text-center py-16">
             <div className="text-6xl mb-4">🔍</div>
             <h3 className="text-2xl font-bold mb-2">No Products Found</h3>
             <p className="text-muted-foreground mb-4">
-              No products match your current filters. Try adjusting your search or category.
+              No products match your current filters. Try adjusting your search.
             </p>
             <Button onClick={clearFilters}>Clear Filters</Button>
           </div>
