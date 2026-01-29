@@ -186,6 +186,7 @@ const VendorSignup = () => {
                       <SelectItem value="living-essentials">Living Essentials</SelectItem>
                       <SelectItem value="groceries-food">Groceries & Food</SelectItem>
                       <SelectItem value="restaurant">Restaurant</SelectItem>
+                      <SelectItem value="liquor-store">Liquor Store</SelectItem>
                       {/* Service Categories */}
                       <SelectItem value="utilities-services">Utilities & Services</SelectItem>
                       <SelectItem value="home-services">Home Services</SelectItem>

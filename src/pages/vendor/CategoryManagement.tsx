@@ -23,6 +23,7 @@ const INVENTORY_CATEGORIES = [
   "Living Essentials",
   "Groceries & Food",
   "Restaurant",
+  "Liquor Store",
 ] as const;
 
 const SERVICE_CATEGORIES = [
