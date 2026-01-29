@@ -36,18 +36,6 @@ export default function MinimartManagement() {
   const [checkingSubcategories, setCheckingSubcategories] = useState(true);
   const [subcategories, setSubcategories] = useState<VendorSubcategory[]>([]);
 
-  useEffect(() => {
-    if (user) {
-      checkSubcategories();
-    }
-  }, [user, checkSubcategories]);
-
-  useEffect(() => {
-    if (user && hasSubcategories) {
-      fetchProducts();
-    }
-  }, [user, sortBy, hasSubcategories, fetchProducts]);
-
   const checkSubcategories = useCallback(async () => {
     try {
       setCheckingSubcategories(true);
@@ -99,11 +87,22 @@ export default function MinimartManagement() {
       setProducts(data || []);
     } catch (error) {
       console.error('Error fetching products:', error);
-      toast.error('Failed to load products');
-    } finally {
-      setLoading(false);
+      toast.error('Could not fetch products. Please try again.');
     }
   }, [sortBy]);
+
+  useEffect(() => {
+    if (user) {
+      checkSubcategories();
+    }
+  }, [user, checkSubcategories]);
+
+  useEffect(() => {
+    if (user && hasSubcategories) {
+      fetchProducts();
+    }
+  }, [user, sortBy, hasSubcategories, fetchProducts]);
+
 
   const getProductStats = () => {
     const totalProducts = products.length;

@@ -51,15 +51,8 @@ export default function VendorStaffPage() {
   const [showDialog, setShowDialog] = useState(false);
   const [search, setSearch] = useState('');
 
-  useEffect(() => {
-    if (user) {
-      loadVendorAndStaff();
-    }
-  }, [user, loadVendorAndStaff]);
-
   const loadVendorAndStaff = useCallback(async () => {
     try {
-      // 1) get vendor_profile for logged in vendor
       const { data: vendorRow, error: vErr } = await supabase
         .from('vendor_profiles')
         .select('id, business_name')
@@ -69,7 +62,6 @@ export default function VendorStaffPage() {
       if (vErr) throw vErr;
       setVendor(vendorRow);
 
-      // 2) get invites for this vendor
       const { data: inviteRows, error: iErr } = await supabase
         .from('vendor_staff_invites')
         .select('id, email, token, status, created_at, expires_at')
@@ -79,7 +71,6 @@ export default function VendorStaffPage() {
       if (iErr) throw iErr;
       setInvites(inviteRows || []);
 
-      // 3) legacy staff (your old table) – keep for now
       const { data: staffRows, error: sErr } = await supabase
         .from('vendor_staff')
         .select('id, staff_name, staff_email, is_active, created_at')
@@ -88,13 +79,21 @@ export default function VendorStaffPage() {
 
       if (sErr) throw sErr;
       setStaff(staffRows || []);
-    } catch (err: unknown) {
-      console.error(err);
-      toast.error('Failed to load staff');
+    } catch (error) {
+      console.error('Error loading vendor staff:', error);
+      toast.error('Could not load staff data.');
     } finally {
       setLoading(false);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      loadVendorAndStaff();
+    }
+  }, [user, loadVendorAndStaff]);
+
+  // loadVendorAndStaff is defined above (lines 60-88)
 
   const toggleActive = async (row: VendorStaff) => {
     try {

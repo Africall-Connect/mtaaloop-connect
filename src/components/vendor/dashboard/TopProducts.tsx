@@ -26,7 +26,7 @@ interface ProductStats {
 
 interface TopProductsProps {
   vendorId: string;
-  operationalCategory: 'inventory' | 'service' | 'booking' | 'minimart' | null;
+  operationalCategory: 'inventory' | 'service' | 'booking' | 'minimart' | 'pharmacy' | null;
 }
 
 export default function TopProducts({ vendorId, operationalCategory }: TopProductsProps) {

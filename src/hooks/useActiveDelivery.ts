@@ -8,7 +8,9 @@ import {
 interface Delivery {
   id: string;
   status: DeliveryStatus;
-  // Add other properties as needed
+  vendor_name?: string;
+  pickup_address?: string;
+  delivery_address?: string;
 }
 
 export function useActiveDelivery() {

@@ -71,36 +71,10 @@ export default function AdvancedOrdersManagement() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      fetchOrders();
-
-      const channel = supabase
-        .channel('orders-changes')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'orders',
-          },
-          () => {
-            fetchOrders();
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
-  }, [user, dateFilter, fetchOrders]);
-
   const fetchOrders = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
-      // 1) get vendor profile for this user
       const { data: vendorProfile, error: vendorError } = await supabase
         .from('vendor_profiles')
         .select('id')
@@ -113,7 +87,6 @@ export default function AdvancedOrdersManagement() {
         return;
       }
 
-      // 2) fetch orders for that vendor
       let query = supabase
         .from('orders')
         .select(`
@@ -151,14 +124,28 @@ export default function AdvancedOrdersManagement() {
       if (error) throw error;
 
       setOrders(
-        (data || []).map((order: Record<string, unknown>) => ({
-          ...order,
+        (data || []).map((order: Record<string, unknown>): Order => ({
+          id: order.id as string,
+          order_number: order.order_number as string | null,
+          status: order.status as string,
+          total_amount: order.total_amount as number,
+          delivery_address: order.delivery_address as string,
+          customer_notes: order.customer_notes as string | null,
+          payment_status: order.payment_status as string,
+          created_at: order.created_at as string,
+          estate_id: order.estate_id as string | null,
+          order_items: order.order_items as OrderItem[],
           deliveries: order.deliveries
-            ? (order.deliveries as Record<string, unknown>[]).map((delivery: Record<string, unknown>) => ({
-                ...delivery,
+            ? (order.deliveries as Record<string, unknown>[]).map((delivery: Record<string, unknown>): Delivery => ({
+                id: delivery.id as string,
+                rider_id: delivery.rider_id as string | null,
+                status: delivery.status as string,
+                pickup_time: delivery.pickup_time as string | null,
+                delivery_time: delivery.delivery_time as string | null,
+                delivery_fee: delivery.delivery_fee as number,
                 rider_profiles: Array.isArray(delivery.rider_profiles)
                   ? delivery.rider_profiles[0] || null
-                  : delivery.rider_profiles || null,
+                  : (delivery.rider_profiles as { full_name: string } | null),
               }))
             : [],
         }))
@@ -170,6 +157,33 @@ export default function AdvancedOrdersManagement() {
       setLoading(false);
     }
   }, [user, dateFilter]);
+
+  useEffect(() => {
+    if (user) {
+      fetchOrders();
+
+      const channel = supabase
+        .channel('orders-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'orders',
+          },
+          () => {
+            fetchOrders();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [user, dateFilter, fetchOrders]);
+
+  // fetchOrders is now defined above useEffect
 
   const getStatusCounts = () => {
     return {
@@ -232,7 +246,7 @@ export default function AdvancedOrdersManagement() {
           <CardContent className="p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">📊 REAL-TIME STATISTICS</h2>
-              <Select value={dateFilter} onValueChange={(v: string) => setDateFilter(v)}>
+              <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as 'all' | 'today' | 'week' | 'month')}>
                 <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>

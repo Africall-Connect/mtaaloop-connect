@@ -18,6 +18,10 @@ export interface Product {
   item_type: 'inventory' | 'service' | 'booking' | null;
   created_at: string;
   updated_at: string;
+  // Pharmacy-specific fields
+  requires_prescription?: boolean;
+  // Booking-specific fields
+  duration?: number;
 }
 
 export interface VendorProfile {

@@ -6,7 +6,7 @@ import { TrendingUp } from 'lucide-react';
 
 interface PerformanceChartProps {
   vendorId: string;
-  operationalCategory: 'inventory' | 'service' | 'booking' | 'minimart' | null;
+  operationalCategory: 'inventory' | 'service' | 'booking' | 'minimart' | 'pharmacy' | null;
 }
 
 interface DayData {

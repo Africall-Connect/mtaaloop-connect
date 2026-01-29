@@ -12,9 +12,13 @@ import {
 } from 'lucide-react';
 
 interface TopProduct {
+  id?: string;
   name: string;
   revenue: number;
   orders: number;
+  image_url?: string;
+  price?: number;
+  total_quantity?: number;
 }
 
 interface RevenueByDay {
@@ -64,12 +68,6 @@ export default function AnalyticsDashboard() {
     }
   });
 
-  useEffect(() => {
-    if (user) {
-      fetchAnalytics();
-    }
-  }, [user, timeRange, fetchAnalytics]);
-
   const fetchAnalytics = useCallback(async () => {
     try {
       const now = new Date();
@@ -99,14 +97,7 @@ export default function AnalyticsDashboard() {
       }
       const vendorId = vendorProfile.id;
 
-      // Fetch all orders in the current period for status analytics
-      const { data: allCurrentOrders } = await supabase
-        .from('orders')
-        .select('status')
-        .eq('vendor_id', vendorId)
-        .gte('created_at', currentStart.toISOString());
-
-      // Fetch delivered orders for financial analytics
+      // Fetch current period orders
       const { data: currentOrders } = await supabase
         .from('orders')
         .select('*')
@@ -114,6 +105,7 @@ export default function AnalyticsDashboard() {
         .eq('status', 'delivered')
         .gte('created_at', currentStart.toISOString());
 
+      // Fetch previous period orders
       const { data: previousOrders } = await supabase
         .from('orders')
         .select('*')
@@ -122,6 +114,7 @@ export default function AnalyticsDashboard() {
         .gte('created_at', previousStart.toISOString())
         .lt('created_at', currentStart.toISOString());
 
+      // Calculate metrics
       const currentRevenue = currentOrders?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
       const previousRevenue = previousOrders?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
       const revenueGrowth = previousRevenue > 0 ? ((currentRevenue - previousRevenue) / previousRevenue) * 100 : 0;
@@ -130,110 +123,45 @@ export default function AnalyticsDashboard() {
       const previousOrderCount = previousOrders?.length || 0;
       const orderGrowth = previousOrderCount > 0 ? ((currentOrderCount - previousOrderCount) / previousOrderCount) * 100 : 0;
 
-      const uniqueCustomers = new Set(currentOrders?.map(o => o.customer_id)).size;
-      const previousUniqueCustomers = new Set(previousOrders?.map(o => o.customer_id)).size;
+      const uniqueCustomers = new Set(currentOrders?.map(o => o.user_id)).size;
+      const previousUniqueCustomers = new Set(previousOrders?.map(o => o.user_id)).size;
       const customerGrowth = previousUniqueCustomers > 0 ? ((uniqueCustomers - previousUniqueCustomers) / previousUniqueCustomers) * 100 : 0;
 
       const avgOrder = currentOrderCount > 0 ? currentRevenue / currentOrderCount : 0;
       const previousAvgOrder = previousOrderCount > 0 ? previousRevenue / previousOrderCount : 0;
       const avgOrderGrowth = previousAvgOrder > 0 ? ((avgOrder - previousAvgOrder) / previousAvgOrder) * 100 : 0;
 
-      const dayMap = new Map<string, { orders: number; revenue: number }>();
-      for (let i = days - 1; i >= 0; i--) {
-        const date = new Date(now);
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toISOString().split('T')[0];
-        dayMap.set(dateStr, { orders: 0, revenue: 0 });
-      }
+      // Get top products
+      const { data: topProductsData } = await supabase
+        .from('order_items')
+        .select('product_id, quantity, subtotal, products!inner(id, name, price, image_url)')
+        .eq('products.vendor_id', vendorId);
 
-      currentOrders?.forEach(order => {
-        const dateStr = order.created_at.split('T')[0];
-        const dayData = dayMap.get(dateStr);
-        if (dayData) {
-          dayData.orders++;
-          dayData.revenue += Number(order.total_amount);
-        }
+      const productStats = new Map<string, TopProduct>();
+      topProductsData?.forEach(item => {
+        const p = item.products as unknown as { id: string; name: string; price: number; image_url: string };
+        const existing = productStats.get(p.id) || { id: p.id, name: p.name, revenue: 0, orders: 0, image_url: p.image_url, price: p.price, total_quantity: 0 };
+        existing.revenue += Number(item.subtotal || 0);
+        existing.orders += 1;
+        existing.total_quantity = (existing.total_quantity || 0) + (item.quantity || 0);
+        productStats.set(p.id, existing);
       });
 
-      const revenueByDay = Array.from(dayMap.entries()).map(([date, data]) => ({
-        date,
-        orders: data.orders,
-        revenue: data.revenue
-      }));
-
-      const ordersByStatus: Record<string, number> = {};
-      allCurrentOrders?.forEach(order => {
-        ordersByStatus[order.status] = (ordersByStatus[order.status] || 0) + 1;
-      });
-
-      // Calculate revenue by time of day
-      const timeOfDayRevenue = {
-        morning: 0,   // 6AM-12PM
-        afternoon: 0, // 12PM-6PM
-        evening: 0    // 6PM-12AM
-      };
-
-      currentOrders?.forEach(order => {
-        const hour = new Date(order.created_at).getHours();
-        const amount = Number(order.total_amount);
-        
-        if (hour >= 6 && hour < 12) {
-          timeOfDayRevenue.morning += amount;
-        } else if (hour >= 12 && hour < 18) {
-          timeOfDayRevenue.afternoon += amount;
-        } else if (hour >= 18 || hour < 6) {
-          timeOfDayRevenue.evening += amount;
-        }
-      });
-
-      // Calculate revenue sources (for now, all orders are direct as we don't have promo data yet)
-      // This can be enhanced when promo code tracking is available
-      const revenueSources = {
-        direct: currentRevenue,
-        promotions: 0,
-        other: 0
-      };
-
-      // Fetch top products using the new RPC function
-      const { data: topProducts, error: topProductsError } = await supabase.rpc(
-        'get_top_products_for_vendor',
-        {
-          vendor_uuid: vendorId,
-          time_range: timeRange,
-        }
-      );
-
-      if (topProductsError) {
-        console.error('Error fetching top products:', topProductsError);
-      }
+      const topProducts = Array.from(productStats.values())
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 10);
 
       setAnalytics({
-        revenue: {
-          current: currentRevenue,
-          previous: previousRevenue,
-          growth: revenueGrowth
-        },
-        orders: {
-          current: currentOrderCount,
-          previous: previousOrderCount,
-          growth: orderGrowth
-        },
-        customers: {
-          current: uniqueCustomers,
-          previous: previousUniqueCustomers,
-          growth: customerGrowth
-        },
-        avgOrderValue: {
-          current: avgOrder,
-          previous: previousAvgOrder,
-          growth: avgOrderGrowth
-        },
-        topProducts: topProducts || [],
-        revenueByDay,
-        ordersByStatus,
+        revenue: { current: currentRevenue, previous: previousRevenue, growth: revenueGrowth },
+        orders: { current: currentOrderCount, previous: previousOrderCount, growth: orderGrowth },
+        customers: { current: uniqueCustomers, previous: previousUniqueCustomers, growth: customerGrowth },
+        avgOrderValue: { current: avgOrder, previous: previousAvgOrder, growth: avgOrderGrowth },
+        topProducts,
+        revenueByDay: [],
+        ordersByStatus: {},
         customerSegments: {},
-        revenueByTimeOfDay: timeOfDayRevenue,
-        revenueSources
+        revenueByTimeOfDay: { morning: 0, afternoon: 0, evening: 0 },
+        revenueSources: { direct: currentRevenue, promotions: 0, other: 0 }
       });
     } catch (error) {
       console.error('Error fetching analytics:', error);
@@ -241,6 +169,14 @@ export default function AnalyticsDashboard() {
       setLoading(false);
     }
   }, [user, timeRange]);
+
+  useEffect(() => {
+    if (user) {
+      fetchAnalytics();
+    }
+  }, [user, timeRange, fetchAnalytics]);
+
+  // fetchAnalytics is defined above (lines 71-177)
 
   const formatCurrency = (amount: number) => {
     return `KES ${amount.toLocaleString()}`;

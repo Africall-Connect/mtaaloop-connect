@@ -420,15 +420,15 @@ export default function EstateDashboard() {
             </TabsContent>
 
             <TabsContent value="analytics">
-              <Analytics estateId={estate?.id || ''} />
+              <Analytics />
             </TabsContent>
 
             <TabsContent value="profile">
-              <EstateProfile estateId={estate?.id || ''} />
+              <EstateProfile />
             </TabsContent>
 
             <TabsContent value="settings">
-              <Settings estateId={estate?.id || ''} />
+              <Settings />
             </TabsContent>
           </Tabs>
         )}
