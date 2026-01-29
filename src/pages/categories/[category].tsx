@@ -6,12 +6,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Search, Filter, Star, Clock, MapPin, Store, Package, TrendingUp, Award, ShoppingBag } from 'lucide-react';
 import { 
   calculateDeliveryFee,
   calculateDeliveryTime,
 } from '@/lib/vendorUtils';
 import { SUBCATEGORY_OPTIONS } from '@/lib/categories';
+import { CategoryProductGrid } from '@/components/CategoryProductGrid';
+import { useApartment } from '@/contexts/ApartmentContext';
 
 interface Vendor {
   id: string;
@@ -55,6 +58,7 @@ interface SubcategoryGroup {
 
 export default function CategoryPage() {
   const { category } = useParams<{ category: string }>();
+  const { currentApartment } = useApartment();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [subcategoryGroups, setSubcategoryGroups] = useState<SubcategoryGroup[]>([]);
   const [vendorsWithoutSub, setVendorsWithoutSub] = useState<Vendor[]>([]);
@@ -63,6 +67,13 @@ export default function CategoryPage() {
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('all');
   const [expandedSubcategories, setExpandedSubcategories] = useState<Set<string>>(new Set());
   const [customerLocation, setCustomerLocation] = useState<{ lat: number; lon: number } | null>(null);
+  
+  // New state for Products tab
+  const [activeTab, setActiveTab] = useState<'products' | 'vendors'>('products');
+  const [products, setProducts] = useState<any[]>([]);
+  const [productSubcategories, setProductSubcategories] = useState<string[]>([]);
+  const [selectedProductSubcategory, setSelectedProductSubcategory] = useState<string>('All');
+  const [productsLoading, setProductsLoading] = useState(false);
 
   // Get customer location on mount
   useEffect(() => {
@@ -284,11 +295,74 @@ export default function CategoryPage() {
     }
   }, [categoryName, category, customerLocation, transformVendor]);
 
+  // Fetch products for the Products tab
+  const fetchProducts = React.useCallback(async () => {
+    try {
+      setProductsLoading(true);
+
+      // Build query for products
+      let query = supabase
+        .from('products')
+        .select(`
+          *,
+          vendor:vendor_profiles!inner(
+            id,
+            business_name,
+            slug,
+            is_approved,
+            is_active,
+            estate_id
+          )
+        `)
+        .eq('is_available', true)
+        .eq('category', categoryName)
+        .eq('vendor.is_approved', true)
+        .eq('vendor.is_active', true);
+
+      // Filter by estate if not general-location
+      if (currentApartment && currentApartment.name !== 'general-location') {
+        query = query.eq('vendor.estate_id', currentApartment.id);
+      }
+
+      const { data: productsData, error } = await query.order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Products fetch error:', error);
+        setProducts([]);
+        setProductSubcategories(['All']);
+        return;
+      }
+
+      setProducts(productsData || []);
+
+      // Extract unique subcategories from products
+      const uniqueSubcategories = new Set<string>();
+      productsData?.forEach(product => {
+        if (product.subcategory) {
+          uniqueSubcategories.add(product.subcategory);
+        }
+      });
+
+      // Merge with predefined subcategories from constants
+      const constantSubcategories = SUBCATEGORY_OPTIONS[categoryName] || [];
+      const allSubcategories = ['All', ...new Set([...constantSubcategories, ...Array.from(uniqueSubcategories)])];
+      
+      setProductSubcategories(allSubcategories);
+    } catch (error) {
+      console.error('Error loading products:', error);
+      setProducts([]);
+      setProductSubcategories(['All']);
+    } finally {
+      setProductsLoading(false);
+    }
+  }, [categoryName, currentApartment]);
+
   useEffect(() => {
     if (categoryName) {
       fetchVendors();
+      fetchProducts();
     }
-  }, [categoryName, fetchVendors]);
+  }, [categoryName, fetchVendors, fetchProducts]);
 
   const filteredVendors = vendors.filter(vendor => {
     const matchesSearch = vendor.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -374,50 +448,105 @@ export default function CategoryPage() {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Header - Simplified since we have hero banner */}
+        {/* Products/Vendors Tabs */}
+        <Tabs defaultValue="products" className="w-full" onValueChange={(value) => setActiveTab(value as 'products' | 'vendors')}>
+          <TabsList className="grid w-full max-w-md mx-auto mb-8 grid-cols-2">
+            <TabsTrigger value="products" className="text-base">
+              <Package className="w-4 h-4 mr-2" />
+              Products
+            </TabsTrigger>
+            <TabsTrigger value="vendors" className="text-base">
+              <Store className="w-4 h-4 mr-2" />
+              Vendors
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Filters */}
-        <div className="mb-8 flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search vendors..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          {/* Products Tab Content */}
+          <TabsContent value="products" className="mt-0">
+            {/* Subcategory Tabs */}
+            {productSubcategories.length > 1 && (
+              <div className="mb-6">
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                  {productSubcategories.map((sub) => (
+                    <Button
+                      key={sub}
+                      variant={selectedProductSubcategory === sub ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedProductSubcategory(sub)}
+                      className="whitespace-nowrap"
+                    >
+                      {sub}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
 
-          {subcategories.length > 0 && (
-            <Select value={selectedSubcategory} onValueChange={setSelectedSubcategory}>
-              <SelectTrigger className="w-full sm:w-64">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Filter by subcategory" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Subcategories</SelectItem>
-                {subcategories.map((sub) => (
-                  <SelectItem key={sub} value={sub}>
-                    {sub}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
+            {/* Products Grid */}
+            {productsLoading ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">Loading products...</p>
+              </div>
+            ) : (
+              <CategoryProductGrid
+                products={
+                  selectedProductSubcategory === 'All'
+                    ? products
+                    : products.filter(p => p.subcategory === selectedProductSubcategory || p.category === selectedProductSubcategory)
+                }
+                emptyMessage={
+                  selectedProductSubcategory === 'All'
+                    ? `No products available in ${categoryName} yet.`
+                    : `No products in ${selectedProductSubcategory} yet.`
+                }
+              />
+            )}
+          </TabsContent>
 
-        {/* Vendors by Subcategories */}
-        {subcategoryGroups.length === 0 && vendorsWithoutSub.length === 0 ? (
-          <Card className="p-12 text-center">
-            <p className="text-muted-foreground mb-2">
-              No vendors found in this category yet.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Check back soon as more vendors join MtaaLoop!
-            </p>
-          </Card>
-        ) : (
-          <div className="space-y-6">
+          {/* Vendors Tab Content */}
+          <TabsContent value="vendors" className="mt-0">
+            {/* Filters */}
+            <div className="mb-8 flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search vendors..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {subcategories.length > 0 && (
+                <Select value={selectedSubcategory} onValueChange={setSelectedSubcategory}>
+                  <SelectTrigger className="w-full sm:w-64">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Filter by subcategory" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Subcategories</SelectItem>
+                    {subcategories.map((sub) => (
+                      <SelectItem key={sub} value={sub}>
+                        {sub}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            {/* Vendors by Subcategories */}
+            {subcategoryGroups.length === 0 && vendorsWithoutSub.length === 0 ? (
+              <Card className="p-12 text-center">
+                <p className="text-muted-foreground mb-2">
+                  No vendors found in this category yet.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Check back soon as more vendors join MtaaLoop!
+                </p>
+              </Card>
+            ) : (
+              <div className="space-y-6">
             {/* Vendors grouped by subcategories */}
             {subcategoryGroups.map((group) => (
               <div key={group.subcategory}>
@@ -724,7 +853,9 @@ export default function CategoryPage() {
               </div>
             )}
           </div>
-        )}
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

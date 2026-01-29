@@ -261,7 +261,7 @@ const Home = () => {
     }
   }, [currentApartment, loadingPref]);
 
-  // Fetch categories that have vendors with data
+  // Fetch categories that have vendors with data (DB-driven)
   useEffect(() => {
     const fetchCategoriesWithVendors = async () => {
       try {
@@ -281,20 +281,45 @@ const Home = () => {
           'pharmacy': 'Pharmacy',
         };
 
-        // Get vendor business types and categories from vendor_profiles
-        const { data: vendorData, error } = await supabase
+        // Prefer vendor_categories table (real categories vendors created in DB)
+        // and fall back to vendor_profiles.business_type for vendors that have
+        // not yet set up vendor_categories.
+
+        // 1) vendor_categories (primary)
+        const { data: vendorCategories, error: vendorCategoriesError } = await supabase
+          .from('vendor_categories')
+          .select('name, vendor_id')
+          .eq('is_active', true);
+
+        if (vendorCategoriesError) throw vendorCategoriesError;
+
+        // 2) vendor_profiles (fallback)
+        let vendorProfilesQuery = supabase
           .from('vendor_profiles')
-          .select('business_type, category')
+          .select('id, business_type, category')
           .eq('is_approved', true)
           .eq('is_active', true);
 
-        if (error) throw error;
+        if (currentApartment && currentApartment.id !== 'general-location') {
+          vendorProfilesQuery = vendorProfilesQuery.eq('estate_id', currentApartment.id);
+        }
 
-        const categoriesFromBusinessType = vendorData?.map(v => 
-          businessTypeToCategory[v.business_type] || v.category
-        ).filter(Boolean) || [];
+        const { data: vendorData, error: vendorProfilesError } = await vendorProfilesQuery;
+        if (vendorProfilesError) throw vendorProfilesError;
 
-        const uniqueCategories = [...new Set(categoriesFromBusinessType)];
+        const vendorIdSet = new Set((vendorData || []).map(v => v.id));
+
+        // Keep only vendor_categories belonging to approved/active vendors in this estate
+        const categoriesFromVendorCategories = (vendorCategories || [])
+          .filter(vc => vendorIdSet.has(vc.vendor_id))
+          .map(vc => vc.name)
+          .filter(Boolean);
+
+        const categoriesFromBusinessType = (vendorData || [])
+          .map(v => businessTypeToCategory[v.business_type] || v.category)
+          .filter(Boolean);
+
+        const uniqueCategories = [...new Set([...categoriesFromVendorCategories, ...categoriesFromBusinessType])];
         setCategoriesWithData(uniqueCategories);
       } catch (error) {
         console.error('Error fetching categories:', error);
@@ -306,7 +331,7 @@ const Home = () => {
     };
 
     fetchCategoriesWithVendors();
-  }, []);
+  }, [currentApartment]);
 
   // Filter to only show categories with data (+ always show Trash Collection)
   const displayedCategories = allCategories.filter(cat => 
