@@ -181,38 +181,19 @@ const VendorSignup = () => {
                       <SelectValue placeholder="Select business type" />
                     </SelectTrigger>
                     <SelectContent className="max-h-[300px] bg-background border shadow-lg z-50">
+                      {/* Inventory Categories */}
                       <SelectItem value="food-drinks">Food & Drinks</SelectItem>
-                      <SelectItem value="groceries-essentials">Groceries & Essentials</SelectItem>
-                      <SelectItem value="minimart">Minimart</SelectItem>
-                      <SelectItem value="pharmacy">Pharmacy</SelectItem>
-                      <SelectItem value="health-wellness">Health & Wellness</SelectItem>
-                      <SelectItem value="beauty-spa">Beauty & Spa</SelectItem>
-                      <SelectItem value="auto-services">Auto Services</SelectItem>
-                      <SelectItem value="liquor-store">Liquor Store</SelectItem>
-                      <SelectItem value="home-services">Home Services</SelectItem>
-                      <SelectItem value="repairs-maintenance">Repairs & Maintenance</SelectItem>
-                      <SelectItem value="fashion-clothing">Fashion & Clothing</SelectItem>
-                      <SelectItem value="electronics-gadgets">Electronics & Gadgets</SelectItem>
-                      <SelectItem value="fitness-sports">Fitness & Sports</SelectItem>
-                      <SelectItem value="education-tutoring">Education & Tutoring</SelectItem>
-                      <SelectItem value="events-entertainment">Events & Entertainment</SelectItem>
-                      <SelectItem value="professional-services">Professional Services</SelectItem>
-                      <SelectItem value="pet-services">Pet Services</SelectItem>
-                      <SelectItem value="home-garden">Home & Garden</SelectItem>
-                      <SelectItem value="books-stationery">Books & Stationery</SelectItem>
-                      <SelectItem value="baby-kids">Baby & Kids</SelectItem>
-                      <SelectItem value="transport-logistics">Transport & Logistics</SelectItem>
-                      <SelectItem value="accommodation">Accommodation</SelectItem>
-                      <SelectItem value="flowers-gifts">Flowers & Gifts</SelectItem>
+                      <SelectItem value="living-essentials">Living Essentials</SelectItem>
+                      <SelectItem value="groceries-food">Groceries & Food</SelectItem>
+                      <SelectItem value="restaurant">Restaurant</SelectItem>
+                      {/* Service Categories */}
                       <SelectItem value="utilities-services">Utilities & Services</SelectItem>
-                      <SelectItem value="security-services">Security Services</SelectItem>
-                      <SelectItem value="religious-services">Religious Services</SelectItem>
-                      <SelectItem value="creative-services">Creative Services</SelectItem>
-                      <SelectItem value="construction-services">Construction Services</SelectItem>
-                      <SelectItem value="agriculture-farming">Agriculture & Farming</SelectItem>
-                      <SelectItem value="waste-recycling">Waste & Recycling</SelectItem>
-                      <SelectItem value="wedding-services">Wedding Services</SelectItem>
-                      <SelectItem value="special-occasions">Special Occasions</SelectItem>
+                      <SelectItem value="home-services">Home Services</SelectItem>
+                      {/* Booking Categories */}
+                      <SelectItem value="beauty-spa">Beauty & Spa</SelectItem>
+                      <SelectItem value="accommodation">Accommodation</SelectItem>
+                      {/* Pharmacy (Hybrid) */}
+                      <SelectItem value="pharmacy">Pharmacy</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

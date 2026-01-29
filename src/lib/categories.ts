@@ -1,321 +1,147 @@
-// Centralized category and subcategory constants extracted from CategoryManagement
-// This keeps component files clean and avoids Fast Refresh issues caused by
-// exporting non-component values from a component file.
+// Centralized category and subcategory constants
+// New streamlined structure with 9 main categories across 4 operational types
 
+// ============= Inventory Categories (4) =============
 export const INVENTORY_CATEGORIES = [
   "Food & Drinks",
-  "Shopping",
   "Living Essentials",
-  "Special Occasions",
+  "Groceries & Food",
+  "Restaurant",
 ] as const;
 
+// ============= Service Categories (2) =============
 export const SERVICE_CATEGORIES = [
+  "Utilities & Services",
   "Home Services",
-  "Transport & Car",
-  "Beauty & Spa",
 ] as const;
 
+// ============= Booking Categories (2) =============
 export const BOOKING_CATEGORIES = [
-  "Health & Wellness",
   "Beauty & Spa",
-  "Special Occasions",
   "Accommodation",
 ] as const;
 
-export const MAIN_CATEGORIES = [
-  "Food & Drinks",
-  "Shopping",
-  "Health & Wellness",
-  "Beauty & Spa",
-  "Home Services",
-  "Transport & Car",
-  "Living Essentials",
-  "Special Occasions",
+// ============= Pharmacy Category (1 - Hybrid: Inventory + Booking) =============
+export const PHARMACY_CATEGORIES = [
+  "Pharmacy",
 ] as const;
 
+// ============= All Main Categories (9 total) =============
+export const MAIN_CATEGORIES = [
+  // Inventory
+  "Food & Drinks",
+  "Living Essentials",
+  "Groceries & Food",
+  "Restaurant",
+  // Service
+  "Utilities & Services",
+  "Home Services",
+  // Booking
+  "Beauty & Spa",
+  "Accommodation",
+  // Pharmacy (Hybrid)
+  "Pharmacy",
+] as const;
+
+// ============= Subcategory Options =============
 export const SUBCATEGORY_OPTIONS: Record<string, string[]> = {
+  // Inventory Subcategories
   "Food & Drinks": [
     "Fast Food",
-    "Restaurants",
+    "Traditional Food",
     "Cafes & Coffee Shops",
     "Bakery & Pastries",
-    "Traditional Food",
     "International Cuisine",
-    "Pizza & Pasta",
+    "Pizza",
     "Burgers & Sandwiches",
     "Chicken & Wings",
     "Seafood",
     "Vegetarian & Vegan",
     "Juice Bar & Smoothies",
-    "Tea & Coffee",
-    "Desserts & Ice Cream",
+    "Ice Cream",
   ],
 
-  "Groceries & Essentials": [
-    "Supermarkets",
-    "Mini Marts",
+  "Living Essentials": [
+    "Toiletries & Personal Hygiene",
+    "Skincare & Grooming",
+    "Health & First Aid",
+    "Cleaning Supplies",
+    "Household Essentials",
+  ],
+
+  "Groceries & Food": [
     "Fresh Produce",
     "Fruits",
     "Vegetables",
     "Meat & Poultry",
-    "Fish & Seafood",
+    "Fish",
     "Dairy & Eggs",
     "Bread & Bakery",
-    "Cereals & Breakfast",
-    "Canned & Packaged Foods",
     "Snacks & Confectionery",
-    "Beverages & Drinks",
-    "Frozen Foods",
   ],
 
-  "Health & Wellness": [
-    "Pharmacies & Drugstores",
-    "Medical Consultation",
-    "General Practitioner",
-    "Specialist Doctors",
-    "Dental Services",
-    "Optical & Eye Care",
-    "Physiotherapy",
-    "Mental Health Services",
-    "Therapy",
-    "Nutrition & Dietetics",
-    "Vaccination Services",
-  ],
+  // Restaurant - Empty array, vendors create custom subcategories
+  "Restaurant": [],
 
-  "Beauty & Spa": [
-    "Hair Salons",
-    "Nail Salons",
-    "Spa Services",
-    "Massage",
-    "Facials",
-    "Makeup Services",
-    "Waxing & Threading",
-    "Skin Care",
-    "Bridal Packages",
-  ],
-
-  "Auto Services": [
-    "Car Wash & Detailing",
-    "Auto Repair & Maintenance",
-    "Tire Services",
-    "Battery Services",
-    "Oil Change",
-    "AC Services",
-    "Tow & Recovery",
-  ],
-
-  "Liquor Store": [
-    "Beer",
-    "Wine",
-    "Spirits",
-    "Mixers",
-    "Gift Sets",
+  // Service Subcategories
+  "Utilities & Services": [
+    "Gas Delivery",
+    "Water Delivery",
   ],
 
   "Home Services": [
     "Cleaning Services",
     "Laundry Services",
-    "Plumbing",
     "Electrical",
-    "Carpentry",
-    "Appliance Repair",
-    "Gardening & Landscaping",
   ],
 
-  "Repairs & Maintenance": [
-    "Electronics Repair",
-    "Phone Repair",
-    "Appliance Repair",
-    "Furniture Repair",
-    "Locksmith",
-  ],
-
-  "Fashion & Clothing": [
-    "Men's Clothing",
-    "Women's Clothing",
-    "Children's Clothing",
-    "Shoes & Footwear",
-    "Accessories",
-  ],
-
-  "Electronics & Gadgets": [
-    "Mobile Phones",
-    "Computers & Laptops",
-    "Audio",
-    "Cameras",
-    "Smartwatches",
-  ],
-
-  "Groceries": [
-    "Supermarkets",
-    "Mini Marts",
-    "Fresh Produce",
-  ],
-
-  "Fitness & Sports": [
-    "Gyms & Fitness Centers",
-    "Personal Training",
-    "Yoga",
-    "Sports Equipment",
-  ],
-
-  "Education & Tutoring": [
-    "Private Tutoring",
-    "Music Lessons",
-    "Language Classes",
-    "Driving School",
-  ],
-
-  "Events & Entertainment": [
-    "Event Planning",
-    "Photography & Videography",
-    "DJs & Live Bands",
-    "Venue Rental",
-  ],
-
-  "Professional Services": [
-    "Legal Services",
-    "Accounting",
-    "Marketing & Advertising",
-    "IT Services",
-  ],
-
-  "Pet Services": [
-    "Pet Shops",
-    "Veterinary Services",
-    "Pet Grooming",
-    "Dog Walking",
-  ],
-
-  "Home & Garden": [
-    "Furniture",
-    "Home Decor",
-    "Kitchenware",
-    "Garden Supplies",
-  ],
-
-  "Books & Stationery": [
-    "Books",
-    "School Supplies",
-    "Office Supplies",
-  ],
-
-  "Baby & Kids": [
-    "Baby Clothing",
-    "Toys & Games",
-    "Baby Care Products",
-  ],
-
-  "Transport & Logistics": [
-    "Taxi & Ride Hailing",
-    "Courier Services",
-    "Car Rental",
+  // Booking Subcategories
+  "Beauty & Spa": [
+    "Hair Salon",
+    "Barber",
+    "Nail Salon",
+    "Massage",
+    "Facial",
+    "Makeup Service",
+    "Bridal Package",
   ],
 
   "Accommodation": [
-    "Hotels",
     "Guest Houses",
     "Airbnb",
+    "Rentals",
   ],
 
-  "Flowers & Gifts": [
-    "Flower Shops",
-    "Gifts",
-    "Bouquets",
-  ],
-
-  "Utilities & Services": [
-    "Mobile Money",
-    "Bill Payments",
-    "Gas Delivery",
-  ],
-
-  "Security Services": [
-    "Security Guards",
-    "CCTV Installation",
-  ],
-
-  "Religious Services": [
-    "Churches",
-    "Mosques",
-  ],
-
-  "Creative Services": [
-    "Graphic Design",
-    "Web Design",
-    "Video Editing",
-  ],
-
-  "Construction Services": [
-    "General Contractors",
-    "Painting",
-  ],
-
-  "Agriculture & Farming": [
-    "Fresh Farm Produce",
-    "Seeds & Seedlings",
-  ],
-
-  "Waste & Recycling": [
-    "Garbage Collection",
-    "Recycling Services",
-  ],
-
-  "Wedding Services": [
-    "Wedding Planning",
-    "Wedding Dresses",
-  ],
-
-  "Special Occasions": [
-    "Birthday Parties",
-    "Anniversary Celebrations",
-    "Baby Showers",
-    "Graduation Parties",
-    "Corporate Events",
-  ],
-
-  // Additional arrays from the landing attachments
-  "Shopping": [
-    "Groceries",
-    "Supermarkets",
-    "Mini Marts",
-    "Liquor & Wine",
-    "Fashion & Clothing",
-    "Shoes & Footwear",
-    "Accessories & Jewelry",
-    "Electronics & Gadgets",
-    "Homewares",
-    "Pharmacy & Health Products",
-    "Beauty & Cosmetics",
-    "Stationery & Office Supplies",
-  ],
-
-  "Transport & Car": [
-    "Car Wash & Detailing",
-    "Car Hire & Rental",
-    "Taxi & Ride Hailing",
-    "Motorcycle Taxi",
-    "Courier & Delivery",
-    "Vehicle Repairs & Maintenance",
-    "Towing Services",
-    "Car Accessories",
-  ],
-
-  "Living Essentials": [
-    "Water Delivery",
-    "Gas Delivery (LPG)",
-    "House Hunting & Rentals",
-    "Airbnb & Short-Term Rentals",
-    "Utilities (Electricity, Water)",
-    "Household Supplies",
-    "Laundry & Dry Cleaning",
+  // Pharmacy - Hybrid (Inventory + Booking)
+  "Pharmacy": [
+    "Consultation",           // Booking
+    "Prescription Medicine",   // Inventory
+    "Over-the-Counter Medicine", // Inventory
+    "Family Planning",         // Inventory
+    "First Aid Supplies",      // Inventory
+    "Vitamins & Supplements",  // Inventory
+    "Baby Care",               // Inventory
+    "Personal Hygiene",        // Inventory
+    "Medical Devices",         // Inventory
   ],
 };
 
+// ============= Helper: Get operational type for a category =============
+export const getOperationalType = (category: string): 'inventory' | 'service' | 'booking' | 'pharmacy' | null => {
+  if ((INVENTORY_CATEGORIES as readonly string[]).includes(category)) return 'inventory';
+  if ((SERVICE_CATEGORIES as readonly string[]).includes(category)) return 'service';
+  if ((BOOKING_CATEGORIES as readonly string[]).includes(category)) return 'booking';
+  if ((PHARMACY_CATEGORIES as readonly string[]).includes(category)) return 'pharmacy';
+  return null;
+};
+
+// ============= Exports =============
 export default {
   MAIN_CATEGORIES,
   INVENTORY_CATEGORIES,
   SERVICE_CATEGORIES,
   BOOKING_CATEGORIES,
+  PHARMACY_CATEGORIES,
   SUBCATEGORY_OPTIONS,
+  getOperationalType,
 };
