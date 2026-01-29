@@ -37,6 +37,82 @@ const sectionFilters = [
   { id: "health", label: "Health", emoji: "💊" },
 ];
 
+// Product Section Component with category tabs
+const ProductSection = ({
+  title,
+  emoji,
+  products,
+  onAddToCart,
+  onProductClick,
+}: {
+  title: string;
+  emoji: string;
+  products: ProductWithVendor[];
+  onAddToCart: (e: React.MouseEvent, product: ProductWithVendor) => void;
+  onProductClick: (product: ProductWithVendor) => void;
+}) => {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  // Get unique categories in this section
+  const categories = useMemo(() => {
+    const cats = new Set<string>();
+    products.forEach((p) => cats.add(p.category));
+    return Array.from(cats).sort();
+  }, [products]);
+
+  // Filter products by selected category
+  const filteredProducts = useMemo(() => {
+    if (!selectedCategory) return products;
+    return products.filter((p) => p.category === selectedCategory);
+  }, [products, selectedCategory]);
+
+  if (products.length === 0) return null;
+
+  return (
+    <section className="mb-8">
+      <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
+        <span>{emoji}</span> {title}
+      </h2>
+      
+      {/* Category tabs within section */}
+      {categories.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto pb-3 mb-3 scrollbar-hide">
+          <Button
+            variant={!selectedCategory ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setSelectedCategory(null)}
+            className="whitespace-nowrap flex-shrink-0 text-xs h-7"
+          >
+            All
+          </Button>
+          {categories.map((cat) => (
+            <Button
+              key={cat}
+              variant={selectedCategory === cat ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setSelectedCategory(cat)}
+              className="whitespace-nowrap flex-shrink-0 text-xs h-7"
+            >
+              {cat}
+            </Button>
+          ))}
+        </div>
+      )}
+      
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        {filteredProducts.map((product) => (
+          <CompactProductCard
+            key={product.id}
+            product={product}
+            onAddToCart={onAddToCart}
+            onProductClick={onProductClick}
+          />
+        ))}
+      </div>
+    </section>
+  );
+};
+
 // Compact Product Card Component
 const CompactProductCard = ({
   product,
@@ -95,40 +171,6 @@ const CompactProductCard = ({
   </Card>
 );
 
-// Product Section Component
-const ProductSection = ({
-  title,
-  emoji,
-  products,
-  onAddToCart,
-  onProductClick,
-}: {
-  title: string;
-  emoji: string;
-  products: ProductWithVendor[];
-  onAddToCart: (e: React.MouseEvent, product: ProductWithVendor) => void;
-  onProductClick: (product: ProductWithVendor) => void;
-}) => {
-  if (products.length === 0) return null;
-
-  return (
-    <section className="mb-8">
-      <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
-        <span>{emoji}</span> {title}
-      </h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-        {products.map((product) => (
-          <CompactProductCard
-            key={product.id}
-            product={product}
-            onAddToCart={onAddToCart}
-            onProductClick={onProductClick}
-          />
-        ))}
-      </div>
-    </section>
-  );
-};
 
 const Index = () => {
   const [products, setProducts] = useState<ProductWithVendor[]>([]);
