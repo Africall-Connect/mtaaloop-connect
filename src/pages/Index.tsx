@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Footer } from "@/components/landing/Footer";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { getOperationalType } from "@/lib/categories";
 
@@ -181,6 +182,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { addItem, getItemCount } = useCart();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Fetch products with vendor info
   useEffect(() => {
@@ -289,6 +291,17 @@ const Index = () => {
   const handleAddToCart = (e: React.MouseEvent, product: ProductWithVendor) => {
     e.stopPropagation();
 
+    // Check if user is logged in
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to add items to your cart",
+        variant: "destructive",
+      });
+      navigate("/auth/login", { state: { returnTo: "/" } });
+      return;
+    }
+
     addItem({
       id: product.id,
       vendorId: product.vendor_id,
@@ -307,6 +320,17 @@ const Index = () => {
   };
 
   const handleProductClick = (product: ProductWithVendor) => {
+    // Check if user is logged in
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to view product details",
+        variant: "destructive",
+      });
+      navigate("/auth/login", { state: { returnTo: "/" } });
+      return;
+    }
+
     if (product.vendor?.slug) {
       navigate(`/vendor/${product.vendor.slug}`);
     }

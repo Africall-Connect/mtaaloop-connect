@@ -631,11 +631,31 @@ const App = () => (
             } />
 
             {/* Vendor Storefront routes (for customers) - Must come AFTER vendor portal routes */}
-            <Route path="/vendor/:vendorSlug" element={<VendorHome />} />
-            <Route path="/vendor/:vendorSlug/category/:categorySlug" element={<VendorCategory />} />
-            <Route path="/vendor/:vendorSlug/category/:categorySlug/:subcategorySlug" element={<VendorSubcategory />} />
-            <Route path="/vendor/:vendorSlug/product/:productSlug" element={<ProductDetail />} />
-            <Route path="/minimart/:vendorId" element={<MinimartPage />} />
+            <Route path="/vendor/:vendorSlug" element={
+              <ProtectedRoute>
+                <VendorHome />
+              </ProtectedRoute>
+            } />
+            <Route path="/vendor/:vendorSlug/category/:categorySlug" element={
+              <ProtectedRoute>
+                <VendorCategory />
+              </ProtectedRoute>
+            } />
+            <Route path="/vendor/:vendorSlug/category/:categorySlug/:subcategorySlug" element={
+              <ProtectedRoute>
+                <VendorSubcategory />
+              </ProtectedRoute>
+            } />
+            <Route path="/vendor/:vendorSlug/product/:productSlug" element={
+              <ProtectedRoute>
+                <ProductDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="/minimart/:vendorId" element={
+              <ProtectedRoute>
+                <MinimartPage />
+              </ProtectedRoute>
+            } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
