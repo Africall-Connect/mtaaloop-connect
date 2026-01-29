@@ -112,78 +112,168 @@ export default function CategoryPage() {
   const categoryName = slugToCategoryName(category);
   const subcategories = SUBCATEGORY_OPTIONS[categoryName || ''] || [];
 
+  // Transform raw vendor data to match expected interface
+  const transformVendor = React.useCallback((vendor: {
+    id: string;
+    business_name: string;
+    slug: string | null;
+    logo_url: string | null;
+    cover_image_url: string | null;
+    tagline: string | null;
+    rating: number | null;
+    delivery_time: string | null;
+    delivery_fee: number | null;
+    is_open: boolean | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    total_orders?: number | null;
+    business_description?: string | null;
+    operational_category?: string | null;
+  }): Vendor => {
+    const distance = customerLocation && vendor.latitude && vendor.longitude
+      ? Math.sqrt(
+          Math.pow(vendor.latitude - customerLocation.lat, 2) +
+          Math.pow(vendor.longitude - customerLocation.lon, 2)
+        ) * 111 // Approximate km per degree
+      : 1;
+    
+    const dynamicDeliveryFee = vendor.delivery_fee ?? calculateDeliveryFee(distance);
+    const dynamicDeliveryTime = vendor.delivery_time ?? calculateDeliveryTime(distance);
+    
+    return {
+      id: vendor.id,
+      business_name: vendor.business_name,
+      slug: vendor.slug || vendor.id,
+      description: vendor.business_description || '',
+      operational_category: vendor.operational_category || 'inventory',
+      logo_url: vendor.logo_url,
+      cover_image_url: vendor.cover_image_url,
+      tagline: vendor.tagline,
+      rating: vendor.rating || 0,
+      delivery_time: dynamicDeliveryTime,
+      delivery_fee: dynamicDeliveryFee,
+      is_open: vendor.is_open ?? true,
+      operating_hours: null,
+      latitude: vendor.latitude ?? undefined,
+      longitude: vendor.longitude ?? undefined,
+      total_orders: vendor.total_orders || 0,
+      total_customers: 0,
+      avg_order_value: 0,
+      vendor_categories: [{
+        name: categoryName,
+        vendor_subcategories: []
+      }],
+      vendor_products: [],
+      reviews: []
+    };
+  }, [categoryName, customerLocation]);
+
   const fetchVendors = React.useCallback(async () => {
     try {
       setLoading(true);
 
-      // Query vendors from database that match this category
       const businessTypeSlug = category || '';
       
-      const { data: vendorData, error } = await supabase
+      // Method 1: Query via vendor_categories table (primary method)
+      const { data: categoryEntries, error: catError } = await supabase
+        .from('vendor_categories')
+        .select('id, vendor_id')
+        .eq('name', categoryName)
+        .eq('is_active', true);
+
+      if (catError) console.error('Category fetch error:', catError);
+
+      const categoryVendorIds = categoryEntries?.map(c => c.vendor_id) || [];
+      const categoryIds = categoryEntries?.map(c => c.id) || [];
+
+      // Method 2: Query by business_type (fallback for vendors without categories table entries)
+      const { data: businessTypeVendors, error: btError } = await supabase
         .from('vendor_profiles')
-        .select(`
-          id, business_name, slug, logo_url, cover_image_url, 
-          tagline, rating, delivery_time, delivery_fee, is_open,
-          latitude, longitude, total_orders, business_description,
-          operational_category
-        `)
+        .select('id, business_name, slug, logo_url, cover_image_url, tagline, rating, delivery_time, delivery_fee, is_open, latitude, longitude, total_orders, business_description, operational_category')
+        .eq('business_type', businessTypeSlug)
         .eq('is_approved', true)
-        .eq('is_active', true)
-        .or(`business_type.eq.${businessTypeSlug},category.eq.${categoryName}`)
-        .order('rating', { ascending: false });
+        .eq('is_active', true);
 
-      if (error) throw error;
+      if (btError) console.error('Business type fetch error:', btError);
 
-      if (!vendorData || vendorData.length === 0) {
+      // Combine vendor IDs from both methods
+      const businessTypeVendorIds = businessTypeVendors?.map(v => v.id) || [];
+      const allVendorIds = [...new Set([...categoryVendorIds, ...businessTypeVendorIds])];
+
+      if (allVendorIds.length === 0) {
         setVendors([]);
         setSubcategoryGroups([]);
         setVendorsWithoutSub([]);
+        setLoading(false);
         return;
       }
 
-      // Transform database vendor data to match expected interface
-      const enrichedVendors = vendorData.map(vendor => {
-        const distance = customerLocation && vendor.latitude && vendor.longitude
-          ? Math.sqrt(
-              Math.pow(vendor.latitude - customerLocation.lat, 2) +
-              Math.pow(vendor.longitude - customerLocation.lon, 2)
-            ) * 111 // Approximate km per degree
-          : 1;
+      // Fetch full vendor profiles for category vendors
+      let categoryVendorProfiles: Vendor[] = [];
+      if (categoryVendorIds.length > 0) {
+        const { data: catVendors } = await supabase
+          .from('vendor_profiles')
+          .select('id, business_name, slug, logo_url, cover_image_url, tagline, rating, delivery_time, delivery_fee, is_open, latitude, longitude, total_orders, business_description, operational_category')
+          .in('id', categoryVendorIds)
+          .eq('is_approved', true)
+          .eq('is_active', true);
         
-        const dynamicDeliveryFee = vendor.delivery_fee ?? calculateDeliveryFee(distance);
-        const dynamicDeliveryTime = vendor.delivery_time ?? calculateDeliveryTime(distance);
-        
-        return {
-          id: vendor.id,
-          business_name: vendor.business_name,
-          slug: vendor.slug || vendor.id,
-          description: vendor.business_description || '',
-          operational_category: vendor.operational_category || 'inventory',
-          logo_url: vendor.logo_url,
-          cover_image_url: vendor.cover_image_url,
-          tagline: vendor.tagline,
-          rating: vendor.rating || 0,
-          delivery_time: dynamicDeliveryTime,
-          delivery_fee: dynamicDeliveryFee,
-          is_open: vendor.is_open ?? true,
-          operating_hours: null,
-          latitude: vendor.latitude,
-          longitude: vendor.longitude,
-          total_orders: vendor.total_orders || 0,
-          total_customers: 0,
-          avg_order_value: 0,
-          vendor_categories: [{
-            name: categoryName,
-            vendor_subcategories: []
-          }],
-          vendor_products: [],
-          reviews: []
-        };
-      });
+        categoryVendorProfiles = (catVendors || []).map(transformVendor);
+      }
 
-      setVendors(enrichedVendors);
-      setSubcategoryGroups([]);
-      setVendorsWithoutSub(enrichedVendors);
+      // Merge vendors from both sources, avoiding duplicates
+      const vendorMap = new Map<string, Vendor>();
+      categoryVendorProfiles.forEach(v => {
+        if (!vendorMap.has(v.id)) {
+          vendorMap.set(v.id, v);
+        }
+      });
+      (businessTypeVendors || []).forEach(v => {
+        if (!vendorMap.has(v.id)) {
+          vendorMap.set(v.id, transformVendor(v));
+        }
+      });
+      
+      const allVendors = Array.from(vendorMap.values());
+
+      // Get subcategories for grouping
+      if (categoryIds.length > 0) {
+        const { data: subcategories } = await supabase
+          .from('vendor_subcategories')
+          .select('id, name, vendor_id, category_id')
+          .in('category_id', categoryIds)
+          .eq('is_active', true);
+
+        // Group vendors by subcategory
+        const subGroups: { [key: string]: Vendor[] } = {};
+        const vendorsWithSub = new Set<string>();
+
+        subcategories?.forEach(sub => {
+          const vendor = allVendors.find(v => v.id === sub.vendor_id);
+          if (vendor) {
+            if (!subGroups[sub.name]) {
+              subGroups[sub.name] = [];
+            }
+            subGroups[sub.name].push(vendor);
+            vendorsWithSub.add(vendor.id);
+          }
+        });
+
+        const groupsArray = Object.entries(subGroups).map(([subcategory, vendors]) => ({
+          subcategory,
+          vendors,
+        }));
+
+        const withoutSub = allVendors.filter(v => !vendorsWithSub.has(v.id));
+
+        setSubcategoryGroups(groupsArray);
+        setVendorsWithoutSub(withoutSub);
+      } else {
+        setSubcategoryGroups([]);
+        setVendorsWithoutSub(allVendors);
+      }
+
+      setVendors(allVendors);
     } catch (error) {
       console.error('Error loading vendors:', error);
       setVendors([]);
@@ -192,7 +282,7 @@ export default function CategoryPage() {
     } finally {
       setLoading(false);
     }
-  }, [categoryName, category, customerLocation]);
+  }, [categoryName, category, customerLocation, transformVendor]);
 
   useEffect(() => {
     if (categoryName) {
@@ -227,15 +317,22 @@ export default function CategoryPage() {
       {/* Hero Banner */}
       <div className="relative h-64 md:h-80 overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5">
         {(() => {
-          // Category-specific splash images
+          // Category-specific splash images for all 10 official categories
           const categoryImages: Record<string, string> = {
             'Food & Drinks': 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&h=600&fit=crop',
+            'Living Essentials': 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=1200&h=600&fit=crop',
+            'Groceries & Food': 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200&h=600&fit=crop',
+            'Restaurant': 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&h=600&fit=crop',
+            'Liquor Store': 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=1200&h=600&fit=crop',
+            'Utilities & Services': 'https://images.unsplash.com/photo-1585687433448-e0d7cba3c0a5?w=1200&h=600&fit=crop',
+            'Home Services': 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=1200&h=600&fit=crop',
+            'Beauty & Spa': 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1200&h=600&fit=crop',
+            'Accommodation': 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&h=600&fit=crop',
+            'Pharmacy': 'https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=1200&h=600&fit=crop',
+            // Legacy mappings for backward compatibility
             'Shopping': 'https://images.unsplash.com/photo-1543423924-b9f161af87e4?w=1200&h=600&fit=crop',
             'Health & Wellness': 'https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=1200&h=600&fit=crop',
-            'Beauty & Spa': 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1200&h=600&fit=crop',
-            'Home Services': 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=1200&h=600&fit=crop',
             'Transport & Car': 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=1200&h=600&fit=crop',
-            'Living Essentials': 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=1200&h=600&fit=crop',
             'Special Occasions': 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=1200&h=600&fit=crop',
           };
           
