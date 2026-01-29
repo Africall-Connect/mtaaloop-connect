@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { InventoryView } from "./views/InventoryView";
 import { ServiceView } from "./views/ServiceView";
 import { BookingView } from "./views/BookingView";
+import { PharmacyView } from "./views/PharmacyView";
 import { ShoppingBag, Package, Leaf, ArrowLeft, Star, Clock, MapPin } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -240,6 +241,7 @@ export default function VendorHome() {
         {vendor.operational_category === 'inventory' && <InventoryView vendor={vendor} products={products} />}
         {vendor.operational_category === 'service' && <ServiceView vendor={vendor} products={products} />}
         {vendor.operational_category === 'booking' && <BookingView vendor={vendor} products={products} />}
+        {vendor.operational_category === 'pharmacy' && <PharmacyView vendor={vendor} products={products} />}
         {!vendor.operational_category && <InventoryView vendor={vendor} products={products} />}
 
       </div>

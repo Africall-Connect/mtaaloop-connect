@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Store, Package, MessageSquare, Bell, Settings,
-  Megaphone, BarChart3, Users, ShoppingBag, Wrench, Calendar
+  Megaphone, BarChart3, Users, ShoppingBag, Wrench, Calendar, Pill, Stethoscope
 } from 'lucide-react';
 import DashboardMetrics from '@/components/vendor/dashboard/DashboardMetrics';
 import ActiveOrdersPanel from '@/components/vendor/dashboard/ActiveOrdersPanel';
@@ -266,6 +266,18 @@ export default function NewVendorDashboard() {
                 <Calendar className="h-4 w-4" />
                 Bookings
               </Button>
+            )}
+            {opCat === 'pharmacy' && (
+              <>
+                <Button size="sm" className="gap-2" onClick={() => navigate('/vendor/products')}>
+                  <Pill className="h-4 w-4" />
+                  Products
+                </Button>
+                <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/bookings')}>
+                  <Stethoscope className="h-4 w-4" />
+                  Consultations
+                </Button>
+              </>
             )}
 
             {opCat !== 'minimart' && (
