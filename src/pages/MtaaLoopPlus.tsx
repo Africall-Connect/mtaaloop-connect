@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Crown, Check, Sparkles, Shield, Clock, Users } from 'lucide-react';
+import { ArrowLeft, Crown, Check, Sparkles, Shield, Clock, Users, Trash2, Truck, Home, Shirt, ChefHat, Footprints, Package, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -156,18 +156,18 @@ export default function MtaaLoopPlus() {
             <h3 className="text-xl font-bold mb-4 text-center">What's Included</h3>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                { icon: '🗑️', name: 'Trash Collection', desc: 'Doorstep pickup' },
-                { icon: '🚚', name: 'Free Deliveries', desc: 'Within your building' },
-                { icon: '🧽', name: 'Osha Viombo', desc: 'Dish washing service' },
-                { icon: '🧹', name: 'Quick Cleaning', desc: '30-min room tidy' },
-                { icon: '👕', name: 'Laundry Sorting', desc: 'Fold & organize' },
-                { icon: '🍳', name: 'Meal Prep', desc: 'Simple cooking help' },
-                { icon: '🏃', name: 'Errands', desc: 'General tasks' },
-                { icon: '📦', name: 'Package Collection', desc: 'Gate pickup' },
-                { icon: '💰', name: 'Cashback', desc: 'Up to 12% back' },
+                { icon: <Trash2 className="w-6 h-6 text-emerald-600" />, name: 'Trash Collection', desc: 'Doorstep pickup' },
+                { icon: <Truck className="w-6 h-6 text-blue-600" />, name: 'Free Deliveries', desc: 'Within your building' },
+                { icon: <Sparkles className="w-6 h-6 text-purple-600" />, name: 'Osha Viombo', desc: 'Dish washing service' },
+                { icon: <Home className="w-6 h-6 text-teal-600" />, name: 'Quick Cleaning', desc: '30-min room tidy' },
+                { icon: <Shirt className="w-6 h-6 text-cyan-600" />, name: 'Laundry Sorting', desc: 'Fold & organize' },
+                { icon: <ChefHat className="w-6 h-6 text-orange-600" />, name: 'Meal Prep', desc: 'Simple cooking help' },
+                { icon: <Footprints className="w-6 h-6 text-pink-600" />, name: 'Errands', desc: 'General tasks' },
+                { icon: <Package className="w-6 h-6 text-indigo-600" />, name: 'Package Collection', desc: 'Gate pickup' },
+                { icon: <Coins className="w-6 h-6 text-yellow-600" />, name: 'Cashback', desc: 'Up to 12% back' },
               ].map((item, index) => (
                 <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                  <span className="text-2xl">{item.icon}</span>
+                  {item.icon}
                   <div>
                     <p className="font-medium">{item.name}</p>
                     <p className="text-xs text-muted-foreground">{item.desc}</p>

@@ -50,7 +50,7 @@ const Cart = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="text-center space-y-4">
-          <div className="text-6xl mb-4">🛒</div>
+          <ShoppingBag className="w-16 h-16 mx-auto text-muted-foreground" />
           <h1 className="text-xl sm:text-2xl font-bold">Your cart is empty</h1>
           <p className="text-muted-foreground text-sm sm:text-base">Add some delicious items to get started!</p>
           <Link to="/">
@@ -72,7 +72,7 @@ const Cart = () => {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
-            <h1 className="text-xl sm:text-3xl font-bold">🛒 Your Cart</h1>
+            <h1 className="text-xl sm:text-3xl font-bold flex items-center gap-2"><ShoppingBag className="w-6 h-6" /> Your Cart</h1>
           </div>
 
           {/* Share Cart - Icon only on mobile */}

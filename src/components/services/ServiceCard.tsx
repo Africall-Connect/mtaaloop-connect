@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { MicroService, UsageType } from '@/types/subscription';
 import { cn } from '@/lib/utils';
+import { getServiceIcon } from '@/lib/serviceIcons';
 
 interface ServiceCardProps {
   service: MicroService;
@@ -28,6 +29,7 @@ export function ServiceCard({ service, onClick }: ServiceCardProps) {
   };
 
   const effectivePrice = canUseForFree ? 0 : service.base_price;
+  const IconComponent = getServiceIcon(service.slug);
 
   return (
     <Card 
@@ -40,7 +42,9 @@ export function ServiceCard({ service, onClick }: ServiceCardProps) {
       <CardContent className="p-3 sm:p-4">
         <div className="flex items-start gap-3 sm:gap-4">
           {/* Icon */}
-          <div className="text-3xl sm:text-4xl shrink-0">{service.icon}</div>
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+            <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+          </div>
 
           {/* Content */}
           <div className="flex-1 min-w-0">

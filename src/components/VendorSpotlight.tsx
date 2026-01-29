@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, Star, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 interface SpotlightVendor {
   id: string;
@@ -86,7 +87,7 @@ export const VendorSpotlight = ({ vendors }: VendorSpotlightProps) => {
             </>
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-              <span className="text-6xl sm:text-9xl opacity-20">🏪</span>
+              <Store className="w-24 h-24 sm:w-40 sm:h-40 text-primary/20" />
             </div>
           )}
         </div>
@@ -101,8 +102,8 @@ export const VendorSpotlight = ({ vendors }: VendorSpotlightProps) => {
                 <span className="font-bold text-xs sm:text-sm">{currentVendor.rating.toFixed(1)}</span>
               </div>
               {currentVendor.is_open && (
-                <Badge className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm px-2 py-0.5">
-                  🟢 Open
+                <Badge className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm px-2 py-0.5 gap-1">
+                  <span className="w-2 h-2 rounded-full bg-white animate-pulse" /> Open
                 </Badge>
               )}
               {currentVendor.delivery_time && (

@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Eye, Check, X, Phone, MessageSquare, MapPin, Navigation, Package } from 'lucide-react';
+import { Clock, Eye, Check, X, Phone, MessageSquare, MapPin, Navigation, Package, Bike } from 'lucide-react';
 import { toast } from 'sonner';
 import { ErrorResponse, DeliveryUpdate } from '@/types/common';
 
@@ -160,10 +160,10 @@ export default function RiderActiveOrders({ riderId }: RiderActiveOrdersProps) {
   };
 
   const getStatusInfo = (status: string) => {
-    const configs: Record<string, { icon: string; color: string; label: string }> = {
-      assigned: { icon: '📦', color: 'bg-blue-50 text-blue-700 border-blue-200', label: 'ASSIGNED' },
-      picked_up: { icon: '🚴', color: 'bg-orange-50 text-orange-700 border-orange-200', label: 'PICKED UP' },
-      in_transit: { icon: '🚴‍♂️', color: 'bg-purple-50 text-purple-700 border-purple-200', label: 'IN TRANSIT' }
+    const configs: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
+      assigned: { icon: <Package className="w-3 h-3" />, color: 'bg-blue-50 text-blue-700 border-blue-200', label: 'ASSIGNED' },
+      picked_up: { icon: <Bike className="w-3 h-3" />, color: 'bg-orange-50 text-orange-700 border-orange-200', label: 'PICKED UP' },
+      in_transit: { icon: <Navigation className="w-3 h-3" />, color: 'bg-purple-50 text-purple-700 border-purple-200', label: 'IN TRANSIT' }
     };
     return configs[status] || configs.assigned;
   };
@@ -224,7 +224,7 @@ export default function RiderActiveOrders({ riderId }: RiderActiveOrdersProps) {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-3">
-                        <Badge className={statusInfo.color}>
+                        <Badge className={`${statusInfo.color} gap-1`}>
                           {statusInfo.icon} {statusInfo.label}
                         </Badge>
                         <span className="text-sm font-medium">#{order.order_number}</span>

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Footprints, FileText, Key, Mail, Store, Pill, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ServiceRequestForm } from '@/components/services/ServiceRequestForm';
 import { MICRO_SERVICES_CATALOG, MicroService } from '@/types/subscription';
@@ -31,7 +31,9 @@ export default function ErrandsService() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-2">
-            <span className="text-2xl">🏃</span>
+            <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+              <Footprints className="h-5 w-5 text-green-600" />
+            </div>
             <h1 className="text-xl font-bold">Run Errands</h1>
           </div>
         </div>
@@ -48,25 +50,27 @@ export default function ErrandsService() {
           <h3 className="font-medium mb-3">Examples of Errands:</h3>
           <ul className="space-y-2 text-sm">
             <li className="flex items-center gap-2">
-              <span>📄</span> Pick up documents/forms
+              <FileText className="w-4 h-4 text-muted-foreground" /> Pick up documents/forms
             </li>
             <li className="flex items-center gap-2">
-              <span>🔑</span> Key drop-off/pickup
+              <Key className="w-4 h-4 text-muted-foreground" /> Key drop-off/pickup
             </li>
             <li className="flex items-center gap-2">
-              <span>📬</span> Post office runs
+              <Mail className="w-4 h-4 text-muted-foreground" /> Post office runs
             </li>
             <li className="flex items-center gap-2">
-              <span>🏪</span> Quick store runs
+              <Store className="w-4 h-4 text-muted-foreground" /> Quick store runs
             </li>
             <li className="flex items-center gap-2">
-              <span>💊</span> Pharmacy pickups
+              <Pill className="w-4 h-4 text-muted-foreground" /> Pharmacy pickups
             </li>
           </ul>
         </div>
 
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-          <h4 className="font-medium text-amber-800 mb-2">Pricing Note:</h4>
+          <h4 className="font-medium text-amber-800 mb-2 flex items-center gap-2">
+            <Info className="w-4 h-4" /> Pricing Note:
+          </h4>
           <p className="text-sm text-amber-700">
             Base price is KSh 100. Additional costs may apply for errands outside the building (KSh 100 extra) or for purchasing items.
           </p>

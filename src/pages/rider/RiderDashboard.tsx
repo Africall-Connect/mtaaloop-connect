@@ -381,8 +381,8 @@ export default function RiderDashboard() {
                 </h1>
                 <div className="flex items-center gap-1 sm:gap-2 mt-1">
                   <div className="flex items-center gap-1 sm:gap-2">
-                    <Label htmlFor="online-toggle" className="text-xs text-gray-700 dark:text-gray-300">
-                      {online ? '🟢 ONLINE' : '🔴 OFFLINE'}
+                    <Label htmlFor="online-toggle" className="text-xs text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                      <span className={`w-2 h-2 rounded-full ${online ? 'bg-green-500' : 'bg-red-500'}`} /> {online ? 'ONLINE' : 'OFFLINE'}
                     </Label>
                     <Switch
                       id="online-toggle"

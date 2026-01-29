@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Home, Check, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ServiceRequestForm } from '@/components/services/ServiceRequestForm';
 import { MICRO_SERVICES_CATALOG, MicroService } from '@/types/subscription';
@@ -31,7 +31,9 @@ export default function QuickCleaning() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-2">
-            <span className="text-2xl">🧹</span>
+            <div className="w-8 h-8 rounded-lg bg-teal-100 flex items-center justify-center">
+              <Home className="h-5 w-5 text-teal-600" />
+            </div>
             <h1 className="text-xl font-bold">Quick Cleaning</h1>
           </div>
         </div>
@@ -48,19 +50,19 @@ export default function QuickCleaning() {
           <h3 className="font-medium mb-3">What's Included:</h3>
           <ul className="space-y-2 text-sm">
             <li className="flex items-center gap-2">
-              <span>✓</span> Sweeping & mopping floors
+              <Check className="w-4 h-4 text-green-600" /> Sweeping & mopping floors
             </li>
             <li className="flex items-center gap-2">
-              <span>✓</span> Dusting surfaces
+              <Check className="w-4 h-4 text-green-600" /> Dusting surfaces
             </li>
             <li className="flex items-center gap-2">
-              <span>✓</span> Making the bed
+              <Check className="w-4 h-4 text-green-600" /> Making the bed
             </li>
             <li className="flex items-center gap-2">
-              <span>✓</span> General tidying up
+              <Check className="w-4 h-4 text-green-600" /> General tidying up
             </li>
             <li className="flex items-center gap-2 text-muted-foreground">
-              <span>📍</span> One room only (bedroom OR sitting room)
+              <MapPin className="w-4 h-4" /> One room only (bedroom OR sitting room)
             </li>
           </ul>
         </div>

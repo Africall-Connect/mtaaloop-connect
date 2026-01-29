@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Crown, Zap, Filter, Search } from 'lucide-react';
+import { ArrowLeft, Crown, Zap, Filter, Search, Package, Sparkles, ChefHat, Footprints, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -106,17 +106,17 @@ export default function QuickServices() {
         >
           <TabsList className="flex w-auto justify-start overflow-x-auto pb-1 scrollbar-hide gap-1">
             <TabsTrigger value="all" className="shrink-0">All</TabsTrigger>
-            <TabsTrigger value="delivery" className="shrink-0">
-              <span className="mr-1">📦</span> Delivery
+            <TabsTrigger value="delivery" className="shrink-0 gap-1">
+              <Package className="w-4 h-4" /> Delivery
             </TabsTrigger>
-            <TabsTrigger value="cleaning" className="shrink-0">
-              <span className="mr-1">🧹</span> Cleaning
+            <TabsTrigger value="cleaning" className="shrink-0 gap-1">
+              <Sparkles className="w-4 h-4" /> Cleaning
             </TabsTrigger>
-            <TabsTrigger value="cooking" className="shrink-0">
-              <span className="mr-1">🍳</span> Cooking
+            <TabsTrigger value="cooking" className="shrink-0 gap-1">
+              <ChefHat className="w-4 h-4" /> Cooking
             </TabsTrigger>
-            <TabsTrigger value="errands" className="shrink-0">
-              <span className="mr-1">🏃</span> Errands
+            <TabsTrigger value="errands" className="shrink-0 gap-1">
+              <Footprints className="w-4 h-4" /> Errands
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -125,7 +125,7 @@ export default function QuickServices() {
         {activeCategory === 'all' && priorityService && (
           <div className="mb-4">
             <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
-              🔥 Most Popular Service
+              <Flame className="w-3 h-3 mr-1" /> Most Popular Service
             </Badge>
           </div>
         )}

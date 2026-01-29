@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VendorListingGrid } from "@/components/VendorListingGrid";
 import { getVendorsByCategory, getVendorById } from "@/data/vendors";
@@ -16,9 +16,14 @@ const ApplianceRepairs = () => {
           <Button variant="ghost" size="icon" onClick={() => navigate("/repairs")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div>
-            <h1 className="text-3xl font-bold">🔌 Appliance Repairs</h1>
-            <p className="text-muted-foreground">Fridges, TVs, microwaves, washing machines</p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+              <Plug className="h-6 w-6 text-orange-600" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold">Appliance Repairs</h1>
+              <p className="text-muted-foreground">Fridges, TVs, microwaves, washing machines</p>
+            </div>
           </div>
         </div>
 
