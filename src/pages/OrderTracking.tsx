@@ -64,6 +64,120 @@ interface OrderItem {
 
 type ButtonVariant = "default" | "destructive" | "outline" | "secondary" | "ghost" | "link" | null | undefined;
 
+// ============= Category-Specific Messaging Configuration =============
+interface CategoryMessaging {
+  icon: string;
+  preparingTitle: string;
+  preparingDescription: string;
+  notificationTitle: string;
+  timelineLabel: string;
+  deliveredMessage: string;
+}
+
+const CATEGORY_MESSAGING: Record<string, CategoryMessaging> = {
+  // Inventory Categories
+  "Food & Drinks": {
+    icon: "👨‍🍳",
+    preparingTitle: "Preparing your order",
+    preparingDescription: "Your delicious order is being prepared with care",
+    notificationTitle: "Cooking Started! 👨‍🍳",
+    timelineLabel: "Preparing Your Order",
+    deliveredMessage: "Enjoy your meal!",
+  },
+  "Restaurant": {
+    icon: "👨‍🍳",
+    preparingTitle: "Preparing your meal",
+    preparingDescription: "Your meal is being freshly prepared",
+    notificationTitle: "Cooking Started! 👨‍🍳",
+    timelineLabel: "Preparing Your Meal",
+    deliveredMessage: "Enjoy your meal!",
+  },
+  "Living Essentials": {
+    icon: "🧴",
+    preparingTitle: "Packing your items",
+    preparingDescription: "Your items are being carefully packed",
+    notificationTitle: "Packing Started! 📦",
+    timelineLabel: "Packing Your Items",
+    deliveredMessage: "Enjoy your items!",
+  },
+  "Groceries & Food": {
+    icon: "🛒",
+    preparingTitle: "Packing your groceries",
+    preparingDescription: "Your groceries are being carefully packed",
+    notificationTitle: "Packing Started! 🛒",
+    timelineLabel: "Packing Your Groceries",
+    deliveredMessage: "Enjoy your groceries!",
+  },
+  // Service Categories
+  "Utilities & Services": {
+    icon: "🔧",
+    preparingTitle: "Preparing your service",
+    preparingDescription: "Your service request is being prepared",
+    notificationTitle: "Service Preparing! 🔧",
+    timelineLabel: "Preparing Your Service",
+    deliveredMessage: "Service complete!",
+  },
+  "Home Services": {
+    icon: "🏠",
+    preparingTitle: "Preparing your service",
+    preparingDescription: "Your home service is being arranged",
+    notificationTitle: "Service Preparing! 🏠",
+    timelineLabel: "Arranging Your Service",
+    deliveredMessage: "Service complete!",
+  },
+  // Booking Categories
+  "Beauty & Spa": {
+    icon: "💅",
+    preparingTitle: "Preparing your appointment",
+    preparingDescription: "Your appointment is being prepared",
+    notificationTitle: "Appointment Ready! 💅",
+    timelineLabel: "Preparing Your Appointment",
+    deliveredMessage: "Thank you for your visit!",
+  },
+  "Accommodation": {
+    icon: "🏨",
+    preparingTitle: "Preparing your stay",
+    preparingDescription: "Your accommodation is being prepared",
+    notificationTitle: "Booking Confirmed! 🏨",
+    timelineLabel: "Preparing Your Stay",
+    deliveredMessage: "Enjoy your stay!",
+  },
+  // Pharmacy (Hybrid)
+  "Pharmacy": {
+    icon: "💊",
+    preparingTitle: "Preparing your medication",
+    preparingDescription: "Your medication is being carefully prepared",
+    notificationTitle: "Medication Ready! 💊",
+    timelineLabel: "Preparing Your Medication",
+    deliveredMessage: "Take care of yourself!",
+  },
+  // Legacy support
+  "Liquor Store": {
+    icon: "🍷",
+    preparingTitle: "Preparing your drinks",
+    preparingDescription: "Your drinks are being prepared",
+    notificationTitle: "Drinks Preparing! 🍷",
+    timelineLabel: "Preparing Your Drinks",
+    deliveredMessage: "Enjoy responsibly!",
+  },
+};
+
+// Default fallback for unknown categories
+const DEFAULT_MESSAGING: CategoryMessaging = {
+  icon: "📦",
+  preparingTitle: "Preparing your order",
+  preparingDescription: "Your order is being prepared",
+  notificationTitle: "Order Preparing! 📦",
+  timelineLabel: "Preparing Your Order",
+  deliveredMessage: "Enjoy!",
+};
+
+// Helper function to get category messaging
+const getCategoryMessaging = (category: string | null | undefined): CategoryMessaging => {
+  if (!category) return DEFAULT_MESSAGING;
+  return CATEGORY_MESSAGING[category] || DEFAULT_MESSAGING;
+};
+
 const OrderTracking = () => {
   const { orderId } = useParams();
   const location = useLocation();
@@ -151,16 +265,19 @@ const OrderTracking = () => {
 
           // Enhanced notification with status-specific messages
           if (notificationsEnabled && newStatus !== oldStatus) {
+            // Get category-specific messaging for notifications
+            const categoryMsg = getCategoryMessaging(orderData?.category);
+            
             const statusMessages: Record<string, { title: string; description: string; emoji: string }> = {
               accepted: {
                 title: "Order Confirmed! 🎉",
-                description: "The vendor has accepted your order and will start preparing it soon.",
+                description: "The vendor has accepted your order and will start soon.",
                 emoji: "✅"
               },
               preparing: {
-                title: "Cooking Started! 👨‍🍳",
-                description: "Your delicious food is now being prepared with care.",
-                emoji: "🔥"
+                title: categoryMsg.notificationTitle,
+                description: categoryMsg.preparingDescription,
+                emoji: categoryMsg.icon
               },
               ready: {
                 title: "Order Ready! 📦",
@@ -174,7 +291,7 @@ const OrderTracking = () => {
               },
               delivered: {
                 title: "Delivered! 🎊",
-                description: "Your order has arrived. Enjoy your meal!",
+                description: `Your order has arrived. ${categoryMsg.deliveredMessage}`,
                 emoji: "🎉"
               },
               cancelled: {
@@ -466,17 +583,13 @@ const OrderTracking = () => {
         default: return "Processing";
       }
     }
+    // Use category-specific messaging for preparing status
+    const messaging = getCategoryMessaging(orderData?.category);
+    
     switch (status) {
       case "pending": return "Waiting for vendor to accept";
       case "accepted": return "Vendor accepted your order";
-      case "preparing":
-        if (orderData?.category === 'Liquor Store') {
-          return "Preparing your drinks";
-        }
-        if (orderData?.category === 'Pharmacy') {
-          return "Preparing your medication";
-        }
-        return "Preparing your food";
+      case "preparing": return messaging.preparingTitle;
       case "ready": return "Ready for pickup";
       case "in_transit": return "Out for delivery";
       case "delivered": return "Delivered";
@@ -1046,11 +1159,7 @@ const OrderTracking = () => {
                     {orderStatus === "pending"
                       ? "⏰"
                       : orderStatus === "accepted" || orderStatus === "preparing"
-                      ? orderData?.category === 'Liquor Store' 
-                        ? "🍷" 
-                        : orderData?.category === 'Pharmacy'
-                        ? "💊"
-                        : "👨‍🍳"
+                      ? getCategoryMessaging(orderData?.category).icon
                       : "🚴"}
                   </span>
                 </div>
@@ -1058,13 +1167,7 @@ const OrderTracking = () => {
                 <p className="text-muted-foreground mb-2">
                   {orderStatus === "pending" && "Your order will be confirmed shortly"}
                   {orderStatus === "accepted" && "The vendor is preparing your order"}
-                  {orderStatus === "preparing" && (
-                    orderData?.category === 'Liquor Store' 
-                      ? "Your drinks are being prepared" 
-                      : orderData?.category === 'Pharmacy'
-                      ? "Your medication is being carefully prepared"
-                      : "Your food is being prepared with care"
-                  )}
+                  {orderStatus === "preparing" && getCategoryMessaging(orderData?.category).preparingDescription}
                   {orderStatus === "ready" && "Your order is ready for pickup"}
                   {orderStatus === "in_transit" && "Arriving soon"}
                 </p>
@@ -1117,27 +1220,15 @@ const OrderTracking = () => {
                       { label: "Order Placed", status: "pending", done: true, icon: "📝", description: "Your order has been received" },
                       { label: "Vendor Confirmed", status: "accepted", done: ["accepted", "preparing", "ready", "in_transit", "delivered"].includes(orderStatus), icon: "✅", description: "Vendor accepted your order" },
                       { 
-                        label: orderData?.category === 'Liquor Store' 
-                          ? "Preparing Your Drinks" 
-                          : orderData?.category === 'Pharmacy'
-                          ? "Preparing Your Medication"
-                          : "Preparing Your Food", 
+                        label: getCategoryMessaging(orderData?.category).timelineLabel, 
                         status: "preparing", 
                         done: ["preparing", "ready", "in_transit", "delivered"].includes(orderStatus), 
-                        icon: orderData?.category === 'Liquor Store' 
-                          ? "🍷" 
-                          : orderData?.category === 'Pharmacy'
-                          ? "💊"
-                          : "👨‍🍳", 
-                        description: orderData?.category === 'Liquor Store' 
-                          ? "Your drinks are being prepared" 
-                          : orderData?.category === 'Pharmacy'
-                          ? "Your medication is being carefully prepared"
-                          : "Your delicious meal is being prepared" 
+                        icon: getCategoryMessaging(orderData?.category).icon, 
+                        description: getCategoryMessaging(orderData?.category).preparingDescription 
                       },
                       { label: "Ready for Pickup", status: "ready", done: ["ready", "in_transit", "delivered"].includes(orderStatus), icon: "📦", description: "Order is ready, waiting for rider" },
                       { label: "Out for Delivery", status: "in_transit", done: ["in_transit", "delivered"].includes(orderStatus), icon: "🏍️", description: "Rider is on the way to you" },
-                      { label: "Delivered", status: "delivered", done: orderStatus === "delivered", icon: "🎉", description: "Enjoy!" },
+                      { label: "Delivered", status: "delivered", done: orderStatus === "delivered", icon: "🎉", description: getCategoryMessaging(orderData?.category).deliveredMessage },
                     ]).map((step, index, arr) => (
                       <div key={index} className="flex items-start gap-4 relative">
                         {index < arr.length - 1 && (
