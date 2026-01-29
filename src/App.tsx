@@ -172,6 +172,7 @@ import LaundrySorting from "./pages/services/LaundrySorting";
 import QuickMealPrep from "./pages/services/QuickMealPrep";
 import PackageCollection from "./pages/services/PackageCollection";
 import ErrandsService from "./pages/services/ErrandsService";
+import ImageGeneratorPage from "./pages/ImageGenerator";
 
 const queryClient = new QueryClient();
 
@@ -278,6 +279,16 @@ const App = () => (
             <Route path="/services/errands" element={
               <ProtectedRoute>
                 <ErrandsService />
+              </ProtectedRoute>
+            } />
+            <Route path="/services/trash-collection" element={
+              <ProtectedRoute>
+                <TrashCollection />
+              </ProtectedRoute>
+            } />
+            <Route path="/image-generator" element={
+              <ProtectedRoute>
+                <ImageGeneratorPage />
               </ProtectedRoute>
             } />
             <Route path="/payment/callback" element={<PaymentCallbackPage />} />

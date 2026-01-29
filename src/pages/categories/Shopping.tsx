@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -41,9 +41,14 @@ const Shopping = () => {
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
-          <div>
-            <h1 className="text-3xl font-bold">🛒 Shopping</h1>
-            <p className="text-muted-foreground">Groceries, liquor, fashion & more</p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+              <ShoppingBag className="h-6 w-6 text-green-600" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold">Shopping</h1>
+              <p className="text-muted-foreground">Groceries, liquor, fashion & more</p>
+            </div>
           </div>
         </div>
 

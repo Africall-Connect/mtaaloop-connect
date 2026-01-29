@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Phone, MessageCircle, CheckCircle, Clock, Trash2, MapPin, Home as HomeIcon } from "lucide-react";
+import { ArrowLeft, Phone, MessageCircle, CheckCircle, Clock, Trash2, MapPin, Home as HomeIcon, Search, Truck, FileText, Package, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -245,7 +245,7 @@ const TrashTracking = () => {
               <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-emerald-100 mb-6">
                 <CheckCircle className="w-16 h-16 text-emerald-600" />
               </div>
-              <h2 className="text-3xl font-bold mb-2">✅ Collection Complete!</h2>
+              <h2 className="text-3xl font-bold mb-2">Collection Complete!</h2>
               <p className="text-muted-foreground">
                 Completed at {deliveryData?.completion_time ? new Date(deliveryData.completion_time).toLocaleTimeString() : new Date().toLocaleTimeString()}
               </p>
@@ -294,9 +294,9 @@ const TrashTracking = () => {
 
               <div className="relative z-10">
                 <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-emerald-100 mb-4 animate-bounce">
-                  <span className="text-4xl">
-                    {collectionStatus === "pending" ? "🔍" : collectionStatus === "assigned" ? "🚛" : "🗑️"}
-                  </span>
+                  {collectionStatus === "pending" && <Search className="w-12 h-12 text-emerald-600" />}
+                  {collectionStatus === "assigned" && <Truck className="w-12 h-12 text-emerald-600" />}
+                  {collectionStatus === "picked_up" && <Trash2 className="w-12 h-12 text-emerald-600" />}
                 </div>
                 <h2 className="text-2xl font-bold mb-2">{getStatusLabel(collectionStatus)}</h2>
                 <p className="text-muted-foreground mb-2">
@@ -321,16 +321,16 @@ const TrashTracking = () => {
               </div>
               <div className="space-y-6 relative">
                 {[
-                  { label: "Request Placed", status: "pending", done: true, icon: "📝", description: "Your request has been received" },
-                  { label: "Agent Assigned", status: "assigned", done: ["assigned", "picked_up", "completed"].includes(collectionStatus), icon: "🚛", description: "Agent is on the way" },
-                  { label: "Trash Picked Up", status: "picked_up", done: ["picked_up", "completed"].includes(collectionStatus), icon: "🗑️", description: "Agent collected your trash" },
-                  { label: "Disposed", status: "completed", done: collectionStatus === "completed", icon: "✅", description: "Properly disposed at garbage base" },
+                  { label: "Request Placed", status: "pending", done: true, icon: <FileText className="w-6 h-6" />, description: "Your request has been received" },
+                  { label: "Agent Assigned", status: "assigned", done: ["assigned", "picked_up", "completed"].includes(collectionStatus), icon: <Truck className="w-6 h-6" />, description: "Agent is on the way" },
+                  { label: "Trash Picked Up", status: "picked_up", done: ["picked_up", "completed"].includes(collectionStatus), icon: <Trash2 className="w-6 h-6" />, description: "Agent collected your trash" },
+                  { label: "Disposed", status: "completed", done: collectionStatus === "completed", icon: <CheckCircle className="w-6 h-6" />, description: "Properly disposed at garbage base" },
                 ].map((step, index, arr) => (
                   <div key={index} className="flex items-start gap-4 relative">
                     {index < arr.length - 1 && (
                       <div className={`absolute left-6 top-12 w-0.5 h-full transition-all duration-500 ${step.done ? "bg-emerald-500" : "bg-gray-200"}`} />
                     )}
-                    <div className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center text-xl transition-all duration-500 ${step.done ? "bg-emerald-500 text-white ring-4 ring-emerald-100 shadow-lg scale-110" : "bg-gray-100 text-gray-400"} ${collectionStatus === step.status && !step.done ? "animate-pulse ring-4 ring-emerald-300" : ""}`}>
+                    <div className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 ${step.done ? "bg-emerald-500 text-white ring-4 ring-emerald-100 shadow-lg scale-110" : "bg-gray-100 text-gray-400"} ${collectionStatus === step.status && !step.done ? "animate-pulse ring-4 ring-emerald-300" : ""}`}>
                       {step.icon}
                     </div>
                     <div className="flex-1 pb-6">
@@ -360,12 +360,18 @@ const TrashTracking = () => {
               <Card className="p-6">
                 <h3 className="font-bold mb-4">Your Agent</h3>
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center text-2xl">
-                    👤
+                  <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <img 
+                      src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop" 
+                      alt="Agent" 
+                      className="w-full h-full rounded-full object-cover"
+                    />
                   </div>
                   <div>
                     <div className="font-semibold">Agent Assigned</div>
-                    <div className="text-sm text-muted-foreground">⭐ On the way</div>
+                    <div className="text-sm text-muted-foreground flex items-center gap-1">
+                      <Star className="w-3 h-3 fill-current text-yellow-500" /> On the way
+                    </div>
                   </div>
                 </div>
                 <div className="flex gap-3">
@@ -400,7 +406,7 @@ const TrashTracking = () => {
                 </div>
                 {collectionData.customer_notes && (
                   <div className="flex items-start gap-3">
-                    <span className="text-lg mt-0.5">📝</span>
+                    <FileText className="w-5 h-5 text-muted-foreground mt-0.5" />
                     <div>
                       <p className="font-medium">Special Instructions</p>
                       <p className="text-sm text-muted-foreground">{collectionData.customer_notes}</p>

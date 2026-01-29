@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Sparkles, Check, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ServiceRequestForm } from '@/components/services/ServiceRequestForm';
 import { MICRO_SERVICES_CATALOG, MicroService } from '@/types/subscription';
@@ -33,7 +33,9 @@ export default function OshaViombo() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-2">
-            <span className="text-2xl">🧽</span>
+            <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+              <Sparkles className="h-5 w-5 text-amber-600" />
+            </div>
             <h1 className="text-xl font-bold">Osha Viombo</h1>
           </div>
         </div>
@@ -52,16 +54,16 @@ export default function OshaViombo() {
           <h3 className="font-medium mb-3">What's Included:</h3>
           <ul className="space-y-2 text-sm">
             <li className="flex items-center gap-2">
-              <span>✓</span> Up to 15 dishes, pots & pans
+              <Check className="w-4 h-4 text-green-600" /> Up to 15 dishes, pots & pans
             </li>
             <li className="flex items-center gap-2">
-              <span>✓</span> Cleaning of sink area
+              <Check className="w-4 h-4 text-green-600" /> Cleaning of sink area
             </li>
             <li className="flex items-center gap-2">
-              <span>✓</span> Drying and organizing
+              <Check className="w-4 h-4 text-green-600" /> Drying and organizing
             </li>
             <li className="flex items-center gap-2 text-muted-foreground">
-              <span>💡</span> We bring our own cleaning supplies
+              <Lightbulb className="w-4 h-4" /> We bring our own cleaning supplies
             </li>
           </ul>
         </div>

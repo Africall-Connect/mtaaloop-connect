@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Shirt, Check, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ServiceRequestForm } from '@/components/services/ServiceRequestForm';
 import { MICRO_SERVICES_CATALOG, MicroService } from '@/types/subscription';
@@ -31,7 +31,9 @@ export default function LaundrySorting() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-2">
-            <span className="text-2xl">👕</span>
+            <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+              <Shirt className="h-5 w-5 text-blue-600" />
+            </div>
             <h1 className="text-xl font-bold">Laundry Sorting</h1>
           </div>
         </div>
@@ -48,19 +50,19 @@ export default function LaundrySorting() {
           <h3 className="font-medium mb-3">What's Included:</h3>
           <ul className="space-y-2 text-sm">
             <li className="flex items-center gap-2">
-              <span>✓</span> Sort clothes by type
+              <Check className="w-4 h-4 text-green-600" /> Sort clothes by type
             </li>
             <li className="flex items-center gap-2">
-              <span>✓</span> Fold all items neatly
+              <Check className="w-4 h-4 text-green-600" /> Fold all items neatly
             </li>
             <li className="flex items-center gap-2">
-              <span>✓</span> Organize in your wardrobe/drawers
+              <Check className="w-4 h-4 text-green-600" /> Organize in your wardrobe/drawers
             </li>
             <li className="flex items-center gap-2">
-              <span>✓</span> Pair socks & organize accessories
+              <Check className="w-4 h-4 text-green-600" /> Pair socks & organize accessories
             </li>
             <li className="flex items-center gap-2 text-muted-foreground">
-              <span>📍</span> Clean clothes only (not washing)
+              <MapPin className="w-4 h-4" /> Clean clothes only (not washing)
             </li>
           </ul>
         </div>

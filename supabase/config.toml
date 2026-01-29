@@ -1,4 +1,9 @@
 project_id = "pccssnlomqaraygclpzw"
+
+[functions.generate-image]
+enabled = true
+verify_jwt = false
+
 [functions.pusher-trigger]
 enabled = true
 verify_jwt = true

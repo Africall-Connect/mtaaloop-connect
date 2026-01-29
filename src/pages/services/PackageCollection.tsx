@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Package, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ServiceRequestForm } from '@/components/services/ServiceRequestForm';
 import { MICRO_SERVICES_CATALOG, MicroService } from '@/types/subscription';
@@ -31,7 +31,9 @@ export default function PackageCollection() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-2">
-            <span className="text-2xl">📦</span>
+            <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
+              <Package className="h-5 w-5 text-indigo-600" />
+            </div>
             <h1 className="text-xl font-bold">Package Collection</h1>
           </div>
         </div>
@@ -48,22 +50,24 @@ export default function PackageCollection() {
           <h3 className="font-medium mb-3">How it Works:</h3>
           <ul className="space-y-2 text-sm">
             <li className="flex items-center gap-2">
-              <span>1️⃣</span> Your package arrives at the gate
+              <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold">1</span> Your package arrives at the gate
             </li>
             <li className="flex items-center gap-2">
-              <span>2️⃣</span> Request pickup through MtaaLoop
+              <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold">2</span> Request pickup through MtaaLoop
             </li>
             <li className="flex items-center gap-2">
-              <span>3️⃣</span> Agent collects from reception/gate
+              <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold">3</span> Agent collects from reception/gate
             </li>
             <li className="flex items-center gap-2">
-              <span>4️⃣</span> Delivered to your doorstep
+              <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold">4</span> Delivered to your doorstep
             </li>
           </ul>
         </div>
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <h4 className="font-medium text-blue-800 mb-2">Tip:</h4>
+          <h4 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
+            <Info className="w-4 h-4" /> Tip:
+          </h4>
           <p className="text-sm text-blue-700">
             Include your package description and where to collect it from (gate, reception, etc.) in the notes.
           </p>
