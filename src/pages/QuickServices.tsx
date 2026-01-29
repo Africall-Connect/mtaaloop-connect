@@ -98,24 +98,24 @@ export default function QuickServices() {
           />
         </div>
 
-        {/* Category Tabs */}
+        {/* Category Tabs - Horizontal scroll on mobile */}
         <Tabs 
           defaultValue="all" 
           className="mb-6"
           onValueChange={(v) => setActiveCategory(v as ServiceCategory)}
         >
-          <TabsList className="w-full justify-start overflow-x-auto">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="delivery">
+          <TabsList className="flex w-auto justify-start overflow-x-auto pb-1 scrollbar-hide gap-1">
+            <TabsTrigger value="all" className="shrink-0">All</TabsTrigger>
+            <TabsTrigger value="delivery" className="shrink-0">
               <span className="mr-1">📦</span> Delivery
             </TabsTrigger>
-            <TabsTrigger value="cleaning">
+            <TabsTrigger value="cleaning" className="shrink-0">
               <span className="mr-1">🧹</span> Cleaning
             </TabsTrigger>
-            <TabsTrigger value="cooking">
+            <TabsTrigger value="cooking" className="shrink-0">
               <span className="mr-1">🍳</span> Cooking
             </TabsTrigger>
-            <TabsTrigger value="errands">
+            <TabsTrigger value="errands" className="shrink-0">
               <span className="mr-1">🏃</span> Errands
             </TabsTrigger>
           </TabsList>

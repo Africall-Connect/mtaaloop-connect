@@ -352,46 +352,26 @@ const TrashCollection = () => {
           </p>
         </Card>
 
-        {/* How It Works */}
-        <Card className="p-6 mt-6 bg-muted/30">
+        {/* How It Works - Mobile optimized with horizontal scroll option */}
+        <Card className="p-4 sm:p-6 mt-6 bg-muted/30">
           <h3 className="font-bold mb-4">How It Works</h3>
-          <div className="space-y-3 text-sm">
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">
-                1
+          <div className="flex overflow-x-auto pb-2 gap-4 sm:grid sm:grid-cols-1 sm:overflow-visible sm:pb-0 sm:gap-3 scrollbar-hide">
+            {[
+              { step: 1, title: "Place Your Order", desc: "Confirm your pickup location" },
+              { step: 2, title: "Agent Notified", desc: "Nearest available agent accepts your request" },
+              { step: 3, title: "Agent On The Way", desc: "You'll get a notification when agent is coming" },
+              { step: 4, title: "Pickup Complete", desc: "Agent picks up trash and disposes it properly" },
+            ].map((item) => (
+              <div key={item.step} className="flex items-start gap-3 min-w-[200px] sm:min-w-0">
+                <div className="w-8 h-8 sm:w-6 sm:h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold flex-shrink-0 touch-target">
+                  {item.step}
+                </div>
+                <div className="text-sm">
+                  <p className="font-semibold">{item.title}</p>
+                  <p className="text-muted-foreground text-xs sm:text-sm">{item.desc}</p>
+                </div>
               </div>
-              <div>
-                <p className="font-semibold">Place Your Order</p>
-                <p className="text-muted-foreground">Confirm your pickup location</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">
-                2
-              </div>
-              <div>
-                <p className="font-semibold">Agent Notified</p>
-                <p className="text-muted-foreground">Nearest available agent accepts your request</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">
-                3
-              </div>
-              <div>
-                <p className="font-semibold">Agent On The Way</p>
-                <p className="text-muted-foreground">You'll get a notification when agent is coming</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">
-                4
-              </div>
-              <div>
-                <p className="font-semibold">Pickup Complete</p>
-                <p className="text-muted-foreground">Agent picks up trash and disposes it properly</p>
-              </div>
-            </div>
+            ))}
           </div>
         </Card>
       </div>
