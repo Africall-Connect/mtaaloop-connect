@@ -708,27 +708,38 @@ const Checkout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container px-4 py-6 max-w-3xl mx-auto">
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+    <div className="min-h-screen bg-background pb-24 sm:pb-0">
+      <div className="container px-4 py-4 sm:py-6 max-w-3xl mx-auto">
+        {/* Mobile-optimized header */}
+        <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-6">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="touch-target shrink-0">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-3xl font-bold">Checkout</h1>
+          <h1 className="text-xl sm:text-3xl font-bold">Checkout</h1>
         </div>
 
-        <div className="flex items-center justify-between mb-8">
-          {[1, 2, 3].map((s) => (
-            <div key={s} className="flex items-center flex-1">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                  s <= step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                }`}
-              >
-                {s}
+        {/* Compact step indicators for mobile */}
+        <div className="flex items-center justify-between mb-4 sm:mb-8 px-2 sm:px-0">
+          {[
+            { num: 1, label: "Delivery" },
+            { num: 2, label: "Payment" },
+            { num: 3, label: "Review" },
+          ].map((s, idx) => (
+            <div key={s.num} className="flex items-center flex-1">
+              <div className="flex flex-col items-center gap-1">
+                <div
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-sm sm:text-base transition-colors ${
+                    s.num <= step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {s.num}
+                </div>
+                <span className={`text-[10px] sm:text-xs font-medium ${s.num <= step ? "text-primary" : "text-muted-foreground"}`}>
+                  {s.label}
+                </span>
               </div>
-              {s < 3 && (
-                <div className={`flex-1 h-1 mx-2 ${s < step ? "bg-primary" : "bg-muted"}`} />
+              {idx < 2 && (
+                <div className={`flex-1 h-0.5 sm:h-1 mx-1 sm:mx-2 ${s.num < step ? "bg-primary" : "bg-muted"}`} />
               )}
             </div>
           ))}
@@ -1125,7 +1136,8 @@ const Checkout = () => {
               </Label>
             </div>
 
-            <div className="flex gap-3">
+            {/* Desktop buttons - hidden on mobile */}
+            <div className="hidden sm:flex gap-3">
               <Button
                 variant="outline"
                 onClick={() => setStep(2)}
@@ -1143,12 +1155,42 @@ const Checkout = () => {
                 {isProcessingPayment ? (
                   <span className="flex items-center gap-2">
                     <span className="animate-spin">⏳</span>
-                    Processing Payment...
+                    Processing...
                   </span>
                 ) : (
-                  `Place Order - Pay KSh ${total}`
+                  `Place Order - KSh ${total}`
                 )}
               </Button>
+            </div>
+
+            {/* Mobile sticky footer - visible only on mobile */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border sm:hidden safe-area-bottom z-50">
+              <div className="flex gap-2 max-w-3xl mx-auto">
+                <Button
+                  variant="outline"
+                  onClick={() => setStep(2)}
+                  className="touch-target"
+                  disabled={isProcessingPayment}
+                  size="sm"
+                >
+                  ← Back
+                </Button>
+                <Button
+                  onClick={handlePlaceOrder}
+                  className="flex-1 touch-target"
+                  size="lg"
+                  disabled={isProcessingPayment || !agreedToTerms}
+                >
+                  {isProcessingPayment ? (
+                    <span className="flex items-center gap-2">
+                      <span className="animate-spin">⏳</span>
+                      Processing...
+                    </span>
+                  ) : (
+                    `Pay KSh ${total}`
+                  )}
+                </Button>
+              </div>
             </div>
 
             {paymentMethod === "paystack" && lastOrderId && (
