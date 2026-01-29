@@ -1,252 +1,387 @@
 
-# Fix Category Pages: Database Fetching for All 10 Official Categories
+# Landing Page Redesign: E-Commerce Marketplace Style
 
-## Problem Summary
+## Overview
 
-1. **The `/categories/liquor-store` route is empty** - The dynamic `[category].tsx` page queries `vendor_profiles` by `business_type` or `category` fields, but vendors may be categorized through the `vendor_categories` table instead.
+Transform the Index.tsx landing page from an informational page with multiple sections (HeroSection, ProblemSection, HowItWorksSection, SocialProof, GuaranteeSection, FinalCTA) into a product-first marketplace experience similar to Jumia/Amazon, while maintaining the Mtaaloop branding and style.
 
-2. **The working `/liquor-db` page** uses a different approach - it queries through `vendor_categories` table first, then gets vendor profiles.
+## What You'll Get
 
-3. **The current `[category].tsx`** only looks at `vendor_profiles.business_type` and `vendor_profiles.category` columns, missing vendors that are categorized via the `vendor_categories` join table.
+A clean, product-focused landing page that:
+- Shows a simple header with navigation and cart
+- Displays all products from the database grouped by category and subcategory
+- Allows filtering by category and subcategory with tabs/chips
+- Orders products alphabetically: Category Name > Subcategory Name > Product Name
+- Only shows categories that actually have products in the database
+- Maintains the footer for navigation
 
-## Solution
+---
 
-Rewrite the `src/pages/categories/[category].tsx` file to use the same database-fetching pattern as `Liquor2.tsx`:
+## Part 1: Page Structure
 
-1. Query `vendor_categories` table to find vendors in the category
-2. Then fetch `vendor_profiles` for those vendors
-3. Also query `vendor_subcategories` to group by subcategory
+### New Layout
 
-## Files to Modify
-
-| File | Purpose |
-|------|---------|
-| `src/pages/categories/[category].tsx` | Rewrite to use `vendor_categories` table pattern like `Liquor2.tsx` |
-
-## Detailed Changes
-
-### Rewrite `[category].tsx` Fetch Logic
-
-**Current Approach (not working):**
-```typescript
-const { data: vendorData } = await supabase
-  .from('vendor_profiles')
-  .select(...)
-  .or(`business_type.eq.${slug},category.eq.${categoryName}`)
+```text
++--------------------------------------------------+
+| HEADER (logo, search, cart, login/account)       |
++--------------------------------------------------+
+| CATEGORY FILTERS (horizontal scrollable chips)   |
++--------------------------------------------------+
+| SUBCATEGORY TABS (when category selected)        |
++--------------------------------------------------+
+| PRODUCTS GRID (sorted alphabetically)            |
+|                                                  |
+|  [Product] [Product] [Product] [Product]         |
+|  [Product] [Product] [Product] [Product]         |
+|  [Product] [Product] [Product] ...               |
++--------------------------------------------------+
+| FOOTER                                           |
++--------------------------------------------------+
 ```
 
-**New Approach (following Liquor2.tsx pattern):**
-```typescript
-// Step 1: Get category entries from vendor_categories
-const { data: categories } = await supabase
-  .from('vendor_categories')
-  .select('id, vendor_id')
-  .eq('name', categoryName)  // e.g., "Liquor Store"
-  .eq('is_active', true);
+### Components to Keep
+- **Footer**: Keep the existing Footer component for partner links, contact info, and legal
 
-// Step 2: Get vendor profiles for those vendors
-const vendorIds = categories?.map(c => c.vendor_id) || [];
-const { data: vendors } = await supabase
-  .from('vendor_profiles')
-  .select('id, business_name, slug, logo_url, cover_image_url, tagline, rating, delivery_time, delivery_fee, is_open')
-  .in('id', vendorIds)
-  .eq('is_approved', true)
-  .eq('is_active', true);
+### Components to Remove
+- HeroSection
+- ProblemSection
+- HowItWorksSection
+- SocialProof
+- GuaranteeSection
+- FinalCTA
+- LiveActivityFeed
+- SectionSeparator
 
-// Step 3: Get subcategories for grouping
-const categoryIds = categories?.map(c => c.id) || [];
-const { data: subcategories } = await supabase
-  .from('vendor_subcategories')
-  .select('id, name, vendor_id, category_id')
-  .in('category_id', categoryIds)
-  .eq('is_active', true);
+---
 
-// Step 4: Group vendors by subcategory
+## Part 2: New Header Design
+
+A compact, e-commerce focused header:
+
+| Element | Description |
+|---------|-------------|
+| **Logo** | Mtaaloop logo (h-10) + "Mtaaloop" text |
+| **Search** | Prominent search bar for products |
+| **Cart** | Shopping bag icon with item count badge |
+| **Account** | User avatar or login button |
+
+```text
++--------------------------------------------------+
+| [Logo] Mtaaloop    [    Search products...    ]  |
+|                    [Cart🛒] [Login/Account]      |
++--------------------------------------------------+
 ```
 
-### Add Fallback Query
+---
 
-Also query `vendor_profiles.business_type` as a fallback for vendors who haven't set up the `vendor_categories` table:
+## Part 3: Category & Subcategory Filtering
+
+### Category Filter Bar (Horizontal Scrollable)
+- "All Products" chip (default selected)
+- One chip per category that has products
+- Only categories with products appear
+- Clicking a category filters the grid
+
+### Subcategory Filter (Appears when category selected)
+- "All" tab (shows all subcategories in that category)
+- One tab per subcategory in the selected category
+- Only subcategories with products appear
+
+**Visual Style**: Pills/chips with primary color when selected, muted when unselected
+
+---
+
+## Part 4: Products Fetching & Sorting
+
+### Database Query
+
+Fetch all available products with their vendor info:
 
 ```typescript
-// Fallback: Also get vendors by business_type column
-const { data: businessTypeVendors } = await supabase
-  .from('vendor_profiles')
-  .select('...')
-  .eq('business_type', businessTypeSlug)  // e.g., "liquor-store"
-  .eq('is_approved', true)
-  .eq('is_active', true);
-
-// Merge results, avoiding duplicates
-const allVendorIds = new Set([...vendorIds, ...(businessTypeVendors?.map(v => v.id) || [])]);
+const { data: products } = await supabase
+  .from('products')
+  .select(`
+    id, name, description, category, subcategory, price, image_url, 
+    is_available, vendor_id,
+    vendor_profiles!inner (
+      id, business_name, slug, is_approved, is_active
+    )
+  `)
+  .eq('is_available', true)
+  .eq('vendor_profiles.is_approved', true)
+  .eq('vendor_profiles.is_active', true)
+  .order('category', { ascending: true })
+  .order('subcategory', { ascending: true })
+  .order('name', { ascending: true });
 ```
 
-### Category Name to Emoji/Icon Mapping
+### Sorting Order
+1. **Category Name** (alphabetically A-Z)
+2. **Subcategory Name** (alphabetically A-Z within category)
+3. **Product Name** (alphabetically A-Z within subcategory)
 
-Add a mapping for category-specific icons to display in vendor cards:
+### Data Structure After Fetch
 
 ```typescript
-const categoryEmojis: Record<string, string> = {
-  'Food & Drinks': '🍔',
-  'Living Essentials': '🧴',
-  'Groceries & Food': '🥬',
-  'Restaurant': '🍽️',
-  'Liquor Store': '🍺',
-  'Utilities & Services': '💧',
-  'Home Services': '🏠',
-  'Beauty & Spa': '💅',
-  'Accommodation': '🏨',
-  'Pharmacy': '💊',
-};
+interface ProductWithVendor {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string;
+  subcategory: string | null;
+  price: number;
+  image_url: string | null;
+  is_available: boolean;
+  vendor_id: string;
+  vendor: {
+    id: string;
+    business_name: string;
+    slug: string;
+  };
+}
 ```
 
-### Update Hero Banner Images
+---
 
-Add missing category images to the `categoryImages` mapping:
+## Part 5: Dynamic Category Discovery
 
-```typescript
-const categoryImages: Record<string, string> = {
-  'Food & Drinks': 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&h=600&fit=crop',
-  'Living Essentials': 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=1200&h=600&fit=crop',
-  'Groceries & Food': 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200&h=600&fit=crop',
-  'Restaurant': 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&h=600&fit=crop',
-  'Liquor Store': 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=1200&h=600&fit=crop',
-  'Utilities & Services': 'https://images.unsplash.com/photo-1585687433448-e0d7cba3c0a5?w=1200&h=600&fit=crop',
-  'Home Services': 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=1200&h=600&fit=crop',
-  'Beauty & Spa': 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1200&h=600&fit=crop',
-  'Accommodation': 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&h=600&fit=crop',
-  'Pharmacy': 'https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=1200&h=600&fit=crop',
-};
-```
-
-## Complete Rewritten Fetch Function
+Instead of using hardcoded categories, discover categories from actual products:
 
 ```typescript
-const fetchVendors = React.useCallback(async () => {
-  try {
-    setLoading(true);
-
-    const businessTypeSlug = category || '';
-    
-    // Method 1: Query via vendor_categories table
-    const { data: categoryEntries, error: catError } = await supabase
-      .from('vendor_categories')
-      .select('id, vendor_id')
-      .eq('name', categoryName)
-      .eq('is_active', true);
-
-    if (catError) console.error('Category fetch error:', catError);
-
-    const categoryVendorIds = categoryEntries?.map(c => c.vendor_id) || [];
-    const categoryIds = categoryEntries?.map(c => c.id) || [];
-
-    // Method 2: Query by business_type (fallback)
-    const { data: businessTypeVendors, error: btError } = await supabase
-      .from('vendor_profiles')
-      .select('id, business_name, slug, logo_url, cover_image_url, tagline, rating, delivery_time, delivery_fee, is_open, latitude, longitude, total_orders, business_description, operational_category')
-      .eq('business_type', businessTypeSlug)
-      .eq('is_approved', true)
-      .eq('is_active', true);
-
-    if (btError) console.error('Business type fetch error:', btError);
-
-    // Combine vendor IDs from both methods
-    const businessTypeVendorIds = businessTypeVendors?.map(v => v.id) || [];
-    const allVendorIds = [...new Set([...categoryVendorIds, ...businessTypeVendorIds])];
-
-    if (allVendorIds.length === 0) {
-      setVendors([]);
-      setSubcategoryGroups([]);
-      setVendorsWithoutSub([]);
-      setLoading(false);
-      return;
+// Extract unique categories and subcategories from products
+const categoriesWithProducts = useMemo(() => {
+  const categoryMap = new Map<string, Set<string>>();
+  
+  products.forEach(product => {
+    if (!categoryMap.has(product.category)) {
+      categoryMap.set(product.category, new Set());
     }
-
-    // Fetch full vendor profiles for category vendors
-    let categoryVendorProfiles: Vendor[] = [];
-    if (categoryVendorIds.length > 0) {
-      const { data: catVendors } = await supabase
-        .from('vendor_profiles')
-        .select('id, business_name, slug, logo_url, cover_image_url, tagline, rating, delivery_time, delivery_fee, is_open, latitude, longitude, total_orders, business_description, operational_category')
-        .in('id', categoryVendorIds)
-        .eq('is_approved', true)
-        .eq('is_active', true);
-      
-      categoryVendorProfiles = catVendors || [];
+    if (product.subcategory) {
+      categoryMap.get(product.category)!.add(product.subcategory);
     }
+  });
+  
+  // Sort alphabetically
+  return Array.from(categoryMap.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([category, subcategories]) => ({
+      name: category,
+      subcategories: Array.from(subcategories).sort()
+    }));
+}, [products]);
+```
 
-    // Merge vendors from both sources
-    const vendorMap = new Map<string, Vendor>();
-    [...categoryVendorProfiles, ...(businessTypeVendors || [])].forEach(v => {
-      if (!vendorMap.has(v.id)) {
-        vendorMap.set(v.id, transformVendor(v));
-      }
-    });
-    
-    const allVendors = Array.from(vendorMap.values());
+---
 
-    // Get subcategories for grouping
-    if (categoryIds.length > 0) {
-      const { data: subcategories } = await supabase
-        .from('vendor_subcategories')
-        .select('id, name, vendor_id, category_id')
-        .in('category_id', categoryIds)
-        .eq('is_active', true);
+## Part 6: Product Card Component
 
-      // Group vendors by subcategory
-      const subGroups: { [key: string]: Vendor[] } = {};
-      const vendorsWithSub = new Set<string>();
+Reuse/enhance the existing CategoryProductGrid style with:
 
-      subcategories?.forEach(sub => {
-        const vendor = allVendors.find(v => v.id === sub.vendor_id);
-        if (vendor) {
-          if (!subGroups[sub.name]) {
-            subGroups[sub.name] = [];
-          }
-          subGroups[sub.name].push(vendor);
-          vendorsWithSub.add(vendor.id);
-        }
-      });
+| Element | Description |
+|---------|-------------|
+| **Image** | Product image (aspect-square) with fallback |
+| **Name** | Product name (line-clamp-2) |
+| **Price** | Bold price in KES |
+| **Vendor** | Small vendor name badge |
+| **Add Button** | Circular + button to add to cart |
 
-      const groupsArray = Object.entries(subGroups).map(([subcategory, vendors]) => ({
-        subcategory,
-        vendors,
-      }));
+### Product Card Layout
 
-      const withoutSub = allVendors.filter(v => !vendorsWithSub.has(v.id));
+```text
++------------------------+
+|      [Product Image]   |
+|                        |
++------------------------+
+| Product Name           |
+| (max 2 lines)          |
++------------------------+
+| KES 1,500    [+ Add]   |
+| 🏪 Vendor Name         |
++------------------------+
+```
 
-      setSubcategoryGroups(groupsArray);
-      setVendorsWithoutSub(withoutSub);
-    } else {
-      setSubcategoryGroups([]);
-      setVendorsWithoutSub(allVendors);
-    }
+---
 
-    setVendors(allVendors);
-  } catch (error) {
-    console.error('Error loading vendors:', error);
-    setVendors([]);
-    setSubcategoryGroups([]);
-    setVendorsWithoutSub([]);
-  } finally {
-    setLoading(false);
+## Part 7: Filtering Logic
+
+### State Variables
+
+```typescript
+const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
+const [searchQuery, setSearchQuery] = useState("");
+```
+
+### Filtering Flow
+
+```typescript
+const filteredProducts = useMemo(() => {
+  let filtered = products;
+  
+  // 1. Search filter
+  if (searchQuery.trim()) {
+    const query = searchQuery.toLowerCase();
+    filtered = filtered.filter(p => 
+      p.name.toLowerCase().includes(query) ||
+      p.description?.toLowerCase().includes(query) ||
+      p.category.toLowerCase().includes(query)
+    );
   }
-}, [categoryName, category, customerLocation]);
+  
+  // 2. Category filter
+  if (selectedCategory) {
+    filtered = filtered.filter(p => p.category === selectedCategory);
+  }
+  
+  // 3. Subcategory filter
+  if (selectedSubcategory) {
+    filtered = filtered.filter(p => p.subcategory === selectedSubcategory);
+  }
+  
+  return filtered;
+}, [products, searchQuery, selectedCategory, selectedSubcategory]);
 ```
+
+---
+
+## Part 8: Empty States
+
+### No Products Found
+
+```text
++--------------------------------------------------+
+|                      🔍                          |
+|              No Products Found                   |
+|                                                  |
+|   No products match your current filters.        |
+|   Try adjusting your search or category.         |
+|                                                  |
+|          [Clear Filters]                         |
++--------------------------------------------------+
+```
+
+### Loading State
+
+```text
++--------------------------------------------------+
+| [Skeleton] [Skeleton] [Skeleton] [Skeleton]      |
+| [Skeleton] [Skeleton] [Skeleton] [Skeleton]      |
++--------------------------------------------------+
+```
+
+---
+
+## Part 9: Mobile Responsiveness
+
+| Element | Mobile | Desktop |
+|---------|--------|---------|
+| Header | Stacked (logo above search) | Inline |
+| Category chips | Horizontal scroll | Horizontal scroll |
+| Product grid | 2 columns | 4 columns |
+| Subcategory tabs | Horizontal scroll | Wrap |
+
+---
+
+## Part 10: Implementation Details
+
+### File Changes
+
+| File | Action | Description |
+|------|--------|-------------|
+| `src/pages/Index.tsx` | **Rewrite** | Complete rewrite to marketplace layout |
+
+### New Index.tsx Structure
+
+```typescript
+const Index = () => {
+  // State
+  const [products, setProducts] = useState<ProductWithVendor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  // Hooks
+  const navigate = useNavigate();
+  const { addItem, getItemCount } = useCart();
+  
+  // Fetch products with vendor info
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+  
+  // Derived data
+  const categoriesWithProducts = useMemo(() => { ... }, [products]);
+  const filteredProducts = useMemo(() => { ... }, [products, ...]);
+  
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Compact Header */}
+      <header>...</header>
+      
+      <main className="container px-4 py-6 max-w-7xl mx-auto">
+        {/* Category Filter Chips */}
+        <div className="flex gap-2 overflow-x-auto pb-4 mb-4">
+          <Button variant={!selectedCategory ? "default" : "outline"}>
+            All Products
+          </Button>
+          {categoriesWithProducts.map(cat => (
+            <Button key={cat.name} variant={...}>
+              {cat.name}
+            </Button>
+          ))}
+        </div>
+        
+        {/* Subcategory Tabs (when category selected) */}
+        {selectedCategory && (
+          <div className="flex gap-2 overflow-x-auto pb-4 mb-4">...</div>
+        )}
+        
+        {/* Product Grid */}
+        {loading ? (
+          <LoadingSkeleton />
+        ) : filteredProducts.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filteredProducts.map(product => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState />
+        )}
+      </main>
+      
+      <Footer />
+    </div>
+  );
+};
+```
+
+---
 
 ## Summary
 
 | Before | After |
 |--------|-------|
-| Only queries `vendor_profiles.business_type` | Queries `vendor_categories` table + fallback to `business_type` |
-| No subcategory grouping | Groups vendors by subcategories from `vendor_subcategories` |
-| Missing category banner images | All 10 categories have banner images |
-| No category-specific emoji | Category-specific emojis for vendor cards |
+| 6 landing page sections | Header + Products + Footer |
+| No products shown | All products displayed |
+| Category grid (image cards) | Category filter chips |
+| Hardcoded categories | Dynamic from products |
+| Vendor-focused | Product-focused |
+| Informational | Transactional |
 
-## Result
+### Key Features
+1. **Products first** - Users see products immediately
+2. **Category filters** - Only categories with products appear
+3. **Subcategory filters** - Drill down within categories
+4. **Search** - Filter products by name/description
+5. **Sorted alphabetically** - Category > Subcategory > Product name
+6. **Add to cart** - Direct add-to-cart from product cards
+7. **Mobile optimized** - 2-column grid, scrollable filters
 
-After this change:
-- `/categories/liquor-store` will show vendors from `vendor_categories` where `name = 'Liquor Store'`
-- All 10 category pages will work correctly
-- Vendors will be grouped by subcategories when available
-- Fallback to `business_type` ensures backward compatibility
+### Mtaaloop Style Elements Preserved
+- Coral/Teal/Purple color palette via Tailwind theme
+- Primary color accents on selected filters
+- Card-based product layout
+- Rounded corners and shadows
+- Mobile-first responsive design
