@@ -1,457 +1,261 @@
 
+# Mobile Responsiveness Perfection Plan
 
-# MtaaLoop Plus Subscription & Micro-Services Implementation Plan
+## Overview
 
-## Executive Summary
-
-This plan implements a comprehensive subscription system with 4 tiers (KSh 999 - KSh 3,599), integrates micro-services for young urban residents, updates terminology from "Rider" to "Delivery Agent", and implements dynamic delivery fee calculation with multi-vendor surcharges.
-
----
-
-## Major Components
-
-| Component | Description | Priority |
-|-----------|-------------|----------|
-| Subscription Tiers | 4 plans from KSh 999 to KSh 3,599/month | High |
-| Micro-Services | Trash, Cleaning, Laundry, Cooking, Errands | High |
-| Terminology Update | "Rider" → "Delivery Agent" globally | Medium |
-| Delivery Fee Logic | Within building (KSh 40) vs Outside (KSh 100) | High |
-| Multi-Vendor Surcharge | Progressive surcharge for large orders | Medium |
+This plan focuses on improving mobile responsiveness across MtaaLoop's pages and components, ensuring a seamless experience on all screen sizes (mobile: 320-768px, tablet: 768-1024px, desktop: 1024px+).
 
 ---
 
-## Part 1: Subscription Tier Structure
+## Issues Identified
 
-### Tier Breakdown
+### Critical Mobile Issues
+
+| Page/Component | Issue | Impact |
+|----------------|-------|--------|
+| Cart.tsx | Header actions overflow on mobile | Buttons wrap awkwardly, unusable |
+| Cart.tsx | Bulk actions bar too crowded | Cannot access selection features |
+| Cart.tsx | Item cards have too much horizontal content | Text truncation, touch targets too small |
+| SubscriptionCard.tsx | 4-column grid too cramped on tablet | Cards overlap or shrink excessively |
+| MtaaLoopPlus.tsx | Tab list doesn't scroll horizontally | Tabs cut off on small screens |
+| VendorSpotlight.tsx | Fixed 400px height too tall for small phones | Takes up entire viewport |
+| QuickServices.tsx | Category tabs overflow without scrolling | Last tabs hidden |
+| Checkout.tsx | Form fields and payment sections cramped | Hard to interact with on mobile |
+| ServiceCard.tsx | Arrow and content too close together | Crowded appearance |
+
+### Good Patterns Already in Use
+
+- Home.tsx uses proper `grid-cols-2 md:grid-cols-3` patterns
+- Mobile-first approach with `px-4 py-6 md:py-8`
+- Horizontal scroll carousels with `snap-x snap-mandatory`
+- Responsive text sizing `text-lg md:text-2xl`
+
+---
+
+## Implementation Plan
+
+### Phase 1: Cart Page Mobile Overhaul
+
+**File: `src/pages/Cart.tsx`**
+
+Changes:
+1. **Header redesign for mobile**
+   - Stack actions vertically on mobile
+   - Move "Share Cart" to a floating action button on mobile
+   - Collapse bulk actions into a dropdown menu on mobile
+
+2. **Item cards mobile optimization**
+   - Stack image, content, and price vertically on mobile
+   - Move quantity controls and action buttons to bottom row
+   - Use icon-only buttons on mobile for actions
+
+3. **Vendor summary cards**
+   - Full-width on mobile with better spacing
+   - Larger touch targets for checkout button
 
 ```text
-┌─────────────────┬────────────┬─────────────┬──────────────┬──────────────┐
-│ Feature         │ Starter    │ Essential   │ Premium      │ Ultimate     │
-│                 │ KSh 999    │ KSh 1,599   │ KSh 2,499    │ KSh 3,599    │
-├─────────────────┼────────────┼─────────────┼──────────────┼──────────────┤
-│ Deliveries      │ 30/month   │ 50/month    │ 80/month     │ Unlimited    │
-│ Trash Pickups   │ 6/month    │ 12/month    │ 20/month     │ Unlimited    │
-│ Cashback        │ 2%         │ 5%          │ 8%           │ 12%          │
-│ Osha Viombo     │ 2/month    │ 4/month     │ 8/month      │ 15/month     │
-│ Quick Cleaning  │ 1/month    │ 2/month     │ 4/month      │ 8/month      │
-│ Laundry Sort    │ 2/month    │ 4/month     │ 8/month      │ 12/month     │
-│ Quick Meal Prep │ ❌         │ 1/month     │ 3/month      │ 6/month      │
-│ Errands         │ ❌         │ 2/month     │ 5/month      │ 10/month     │
-│ Priority Support│ ❌         │ ✅          │ ✅           │ ✅           │
-│ Agent Scheduling│ ❌         │ ❌          │ ✅           │ ✅           │
-└─────────────────┴────────────┴─────────────┴──────────────┴──────────────┘
+Mobile Layout (before):
+┌────────────────────────────────────┐
+│ [←] 🛒 Cart   [Bulk Actions...][Share] │  ← Too cramped
+└────────────────────────────────────┘
+
+Mobile Layout (after):
+┌────────────────────────────────────┐
+│ [←] 🛒 Your Cart                   │
+├────────────────────────────────────┤
+│ [Select All] [⋮ More Actions]      │  ← Cleaner
+└────────────────────────────────────┘
 ```
 
-### Database Schema
+### Phase 2: Subscription Cards Grid Fix
 
-**Migration: `supabase/migrations/XXXXX_subscription_system.sql`**
+**File: `src/pages/MtaaLoopPlus.tsx`**
 
-```sql
--- Subscription Plans
-CREATE TABLE public.subscription_plans (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    name text NOT NULL,                      -- "Starter", "Essential", "Premium", "Ultimate"
-    slug text UNIQUE NOT NULL,
-    price decimal(10,2) NOT NULL,            -- 999, 1599, 2499, 3599
-    billing_period text DEFAULT 'monthly',
-    features jsonb NOT NULL DEFAULT '{}',    -- Detailed feature allowances
-    is_active boolean DEFAULT true,
-    display_order integer DEFAULT 0,
-    created_at timestamptz DEFAULT now()
-);
+Changes:
+1. Change grid from `md:grid-cols-2 lg:grid-cols-4` to `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`
+2. Add horizontal scroll option for mobile with snap scrolling
+3. Make popular card scale visible but not overlapping
 
--- User Subscriptions
-CREATE TABLE public.user_subscriptions (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    plan_id uuid REFERENCES subscription_plans(id) NOT NULL,
-    status text DEFAULT 'active' CHECK (status IN ('active', 'cancelled', 'expired', 'pending')),
-    current_period_start timestamptz NOT NULL,
-    current_period_end timestamptz NOT NULL,
-    cancel_at_period_end boolean DEFAULT false,
-    payment_reference text,
-    created_at timestamptz DEFAULT now(),
-    updated_at timestamptz DEFAULT now()
-);
+**File: `src/components/subscription/SubscriptionCard.tsx`**
 
--- Usage Tracking per Service Type
-CREATE TABLE public.subscription_usage (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    subscription_id uuid REFERENCES user_subscriptions(id) ON DELETE CASCADE,
-    user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    usage_type text NOT NULL,  -- 'delivery', 'trash', 'osha_viombo', 'cleaning', 'laundry', 'meal_prep', 'errand'
-    period_month text NOT NULL,  -- '2026-01' format
-    limit_amount integer,
-    used_amount integer DEFAULT 0,
-    UNIQUE(user_id, usage_type, period_month)
-);
-```
-
----
-
-## Part 2: Micro-Services Catalog
-
-### Services for Young Urban Residents
-
-| Service | Price (Non-Subscriber) | Description |
-|---------|------------------------|-------------|
-| 🗑️ Trash Collection | KSh 30 | Doorstep pickup, #1 priority service |
-| 🧽 Osha Viombo | KSh 80 | Dish washing (up to 15 items) |
-| 🧹 Quick Cleaning | KSh 150 | 30-min bedroom/sitting room tidy |
-| 👕 Laundry Sort | KSh 50 | Sort, fold, organize clean clothes |
-| 🍳 Quick Meal Prep | KSh 200 | Simple meal prep (ingredients provided) |
-| 📦 Package Collection | KSh 20 | Pick up package from gate |
-| 🏃 Errands | KSh 100+ | General errands within estate |
-
-### Database Schema
-
-**Add to migration:**
-
-```sql
--- Micro-Services Catalog
-CREATE TABLE public.micro_services (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    name text NOT NULL,
-    slug text UNIQUE NOT NULL,
-    description text,
-    icon text,
-    base_price decimal(10,2) NOT NULL,
-    estimated_time text,
-    category text,                  -- 'cleaning', 'delivery', 'cooking', 'errands'
-    subscription_key text NOT NULL, -- matches subscription_usage.usage_type
-    is_active boolean DEFAULT true,
-    display_order integer DEFAULT 0,
-    requires_scheduling boolean DEFAULT false,
-    created_at timestamptz DEFAULT now()
-);
-
--- Service Requests (generic for all micro-services)
-CREATE TABLE public.service_requests (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    service_id uuid REFERENCES micro_services(id) NOT NULL,
-    customer_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    estate_id uuid REFERENCES estates(id),
-    agent_id uuid REFERENCES auth.users(id),     -- Delivery Agent assigned
-    status text DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'in_progress', 'completed', 'cancelled')),
-    amount decimal(10,2) NOT NULL,
-    is_subscription_usage boolean DEFAULT false,  -- Did they use sub quota?
-    payment_status text DEFAULT 'pending',
-    scheduled_for timestamptz,
-    house_number text,
-    full_name text,
-    customer_notes text,
-    completed_at timestamptz,
-    rating integer CHECK (rating >= 1 AND rating <= 5),
-    created_at timestamptz DEFAULT now()
-);
-```
-
----
-
-## Part 3: Terminology Update - "Rider" → "Delivery Agent"
-
-### Files Requiring Changes
-
-Based on the search, 43 files contain "rider" terminology. Key files to update:
-
-| File Category | Files | Changes Required |
-|---------------|-------|------------------|
-| Rider Pages | 12 files in `src/pages/rider/` | Rename to `agent/`, update all UI text |
-| Database Tables | `rider_profiles`, `rider_notifications` | Keep table names, update column comments only |
-| UI Components | OrderTracking, Checkout, etc. | Update display text only |
-| Stores | `riderStore.ts`, `riderStatusStore.ts` | Rename to agentStore |
-
-### Implementation Strategy
-
-1. **Keep database table names** (avoid migration complexity)
-2. **Update ALL user-facing text** to use "Delivery Agent"
-3. **Rename page folders** from `rider/` to `agent/`
-4. **Update routes** from `/rider/` to `/agent/`
-5. **Update store names** from `rider*` to `agent*`
-
-**Key Text Replacements:**
+Changes:
+1. Remove `scale-105` on popular card (causes overlap issues)
+2. Use border/shadow instead for popular emphasis
+3. Make feature list more compact on mobile
 
 ```text
-"Rider Found" → "Agent Assigned"
-"Call Rider" → "Call Agent"
-"Rider is Shopping" → "Agent is Shopping"
-"Rider Dashboard" → "Agent Dashboard"
-"Become a Rider" → "Become a Delivery Agent"
+Mobile: Single column stacked cards
+Tablet (sm): 2x2 grid  
+Desktop (lg): 4 columns side by side
 ```
 
----
+### Phase 3: VendorSpotlight Mobile Optimization
 
-## Part 4: Delivery Fee Structure
+**File: `src/components/VendorSpotlight.tsx`**
 
-### Fee Logic
+Changes:
+1. Reduce height from `h-[400px] md:h-[500px]` to `h-[280px] sm:h-[350px] md:h-[450px]`
+2. Reduce text sizes on mobile: `text-2xl sm:text-4xl md:text-6xl`
+3. Make navigation arrows always visible on touch devices
+4. Stack action buttons vertically on small screens
+5. Smaller padding on mobile: `p-4 sm:p-8 md:p-12`
 
-```text
-┌─────────────────────────────┬─────────────────┐
-│ Delivery Type               │ Fee             │
-├─────────────────────────────┼─────────────────┤
-│ Within Building (same ID)   │ KSh 40          │
-│ Outside Building            │ KSh 100         │
-│ Errand Run (agent goes out) │ KSh 100 + costs │
-└─────────────────────────────┴─────────────────┘
-```
+### Phase 4: Quick Services Tab Scrolling
 
-### Multi-Vendor Surcharge
+**File: `src/pages/QuickServices.tsx`**
 
-When ordering from multiple vendors with high quantity:
-
-```text
-Base: KSh 40-100 (depending on location)
-
-Surcharge Matrix:
-┌────────────────────┬──────────────────┐
-│ Total Items        │ Extra Charge     │
-├────────────────────┼──────────────────┤
-│ 1-10 items         │ KSh 0            │
-│ 11-20 items        │ +KSh 30          │
-│ 21-30 items        │ +KSh 50          │
-│ 31+ items          │ +KSh 80          │
-└────────────────────┴──────────────────┘
-
-Multi-Vendor Premium:
-┌────────────────────┬──────────────────┐
-│ Vendors            │ Extra Charge     │
-├────────────────────┼──────────────────┤
-│ 1 vendor           │ KSh 0            │
-│ 2 vendors          │ +KSh 20          │
-│ 3+ vendors         │ +KSh 40          │
-└────────────────────┴──────────────────┘
-```
-
-### Implementation in CartContext
+Changes:
+1. Add horizontal scrolling to TabsList with `overflow-x-auto`
+2. Remove `w-full` from TabsList to allow natural width
+3. Add `flex-nowrap` and `pb-2` for scrollbar space
+4. Add scroll indicators (fade gradients on edges)
 
 ```typescript
-// Update CartContext.tsx
-const calculateDeliveryFee = (items: CartItem[], isWithinBuilding: boolean): number => {
-  const baseFee = isWithinBuilding ? 40 : 100;
-  
-  // Item count surcharge
-  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  let itemSurcharge = 0;
-  if (totalItems > 30) itemSurcharge = 80;
-  else if (totalItems > 20) itemSurcharge = 50;
-  else if (totalItems > 10) itemSurcharge = 30;
-  
-  // Multi-vendor surcharge
-  const uniqueVendors = new Set(items.map(item => item.vendorId)).size;
-  let vendorSurcharge = 0;
-  if (uniqueVendors >= 3) vendorSurcharge = 40;
-  else if (uniqueVendors === 2) vendorSurcharge = 20;
-  
-  return baseFee + itemSurcharge + vendorSurcharge;
-};
+<TabsList className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide">
 ```
 
----
+### Phase 5: ServiceCard Mobile Polish
 
-## Part 5: New Pages & Components
+**File: `src/components/services/ServiceCard.tsx`**
 
-### New Files to Create
+Changes:
+1. Stack content vertically on very small screens
+2. Move price and time to a dedicated row below description
+3. Better handling of long service names
 
 ```text
-src/
-├── contexts/
-│   └── SubscriptionContext.tsx      # Subscription state management
-├── pages/
-│   ├── MtaaLoopPlus.tsx             # Subscription landing page
-│   ├── QuickServices.tsx            # Micro-services hub
-│   ├── services/
-│   │   ├── OshaViombo.tsx           # Dish washing service
-│   │   ├── QuickCleaning.tsx        # 30-min cleaning
-│   │   ├── LaundrySorting.tsx       # Laundry organization
-│   │   ├── QuickMealPrep.tsx        # Meal preparation
-│   │   └── PackageCollection.tsx    # Gate package pickup
-│   └── agent/                        # Renamed from rider/
-│       ├── AgentDashboard.tsx
-│       ├── AgentEarnings.tsx
-│       └── ...
-├── components/
-│   ├── subscription/
-│   │   ├── SubscriptionCard.tsx     # Plan display card
-│   │   ├── SubscriptionBadge.tsx    # "Plus" badge indicator
-│   │   ├── UsageTracker.tsx         # Monthly usage display
-│   │   └── UpgradePrompt.tsx        # Upgrade CTA
-│   └── services/
-│       ├── ServiceCard.tsx          # Service display
-│       └── ServiceRequestForm.tsx   # Generic request form
+Current (cramped):
+┌─────────────────────────────────────┐
+│ 🧽 │ Title          [Included] → │
+│    │ Description...              │
+│    │ KSh 80  ⏰10min   2 left    │
+└─────────────────────────────────────┘
+
+Improved:
+┌─────────────────────────────────────┐
+│ 🧽 Osha Viombo        [Included]  │
+│    Description text goes here...   │
+│    ─────────────────────────────   │
+│    KSh 80  •  ⏰10min  •  2 left →│
+└─────────────────────────────────────┘
 ```
 
----
+### Phase 6: TrashCollection & Service Pages
 
-## Part 6: Home Page Updates
+**File: `src/pages/TrashCollection.tsx`**
 
-### Updated Category Grid
+Already well-optimized with `max-w-2xl mx-auto`, but small improvements:
+1. Make step indicators horizontal scroll on very small screens
+2. Ensure checkbox touch targets are at least 44x44px
 
-```typescript
-// In Home.tsx - Reorganize categories
-const allCategories = [
-  // 🗑️ PRIORITY #1 - Trash Collection moved to top
-  {
-    icon: Trash2,
-    name: "Trash Collection",
-    subtitle: "Quick doorstep pickup - KSh 30",
-    link: "/trash-collection",
-    gradient: "from-emerald-600 to-teal-700",
-    isPriority: true
-  },
-  // ⚡ NEW - Quick Services Hub
-  {
-    icon: Zap,
-    name: "Quick Services",
-    subtitle: "Cleaning, Dishes, Laundry & More",
-    link: "/quick-services",
-    gradient: "from-purple-500 to-pink-500",
-    isNew: true
-  },
-  // ... existing categories
-];
-```
+**Files: `src/pages/services/*.tsx`**
 
----
+All follow same pattern - ensure consistency:
+1. Consistent `max-w-lg mx-auto` container
+2. Proper spacing on form elements
+3. Bottom sticky CTA button for longer forms
 
-## Part 7: Subscription Context
+### Phase 7: Checkout Page Mobile UX
 
-### `src/contexts/SubscriptionContext.tsx`
+**File: `src/pages/Checkout.tsx`**
 
-```typescript
-interface SubscriptionState {
-  isSubscribed: boolean;
-  plan: SubscriptionPlan | null;
-  usage: {
-    deliveries: { used: number; limit: number | null };
-    trash: { used: number; limit: number | null };
-    oshaViombo: { used: number; limit: number | null };
-    cleaning: { used: number; limit: number | null };
-    laundrySort: { used: number; limit: number | null };
-    mealPrep: { used: number; limit: number | null };
-    errands: { used: number; limit: number | null };
-  };
-  benefits: {
-    cashbackPercent: number;
-    freeDelivery: boolean;
-    prioritySupport: boolean;
-    agentScheduling: boolean;
-  };
-  expiresAt: Date | null;
+Changes:
+1. Make step indicators into a compact horizontal bar
+2. Stack payment method options vertically on mobile
+3. Add proper spacing between form sections
+4. Make "Place Order" button sticky at bottom on mobile
+5. Improve phone number edit UX for mobile
+
+### Phase 8: UsageTracker Compact Mode
+
+**File: `src/components/subscription/UsageTracker.tsx`**
+
+Changes:
+1. In compact mode, show icons in a single row grid
+2. Add "See all" link to expand
+3. Better wrapping of usage items on mobile
+
+### Phase 9: Global Mobile Utilities
+
+**File: `src/index.css`**
+
+Add new utility classes:
+```css
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-// Methods:
-// - checkCanUseService(serviceType: string): boolean
-// - consumeServiceUsage(serviceType: string): Promise<void>
-// - getRemainingUsage(serviceType: string): number | 'unlimited'
-// - getEffectivePrice(serviceSlug: string): number
+/* Safe area padding for notched phones */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Minimum touch target size */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
 ```
 
----
+### Phase 10: Bottom Navigation Consideration
 
-## Part 8: Checkout Integration
-
-### Modified Checkout Flow
-
-```typescript
-// In Checkout.tsx
-
-// 1. Check subscription status
-const { isSubscribed, checkCanUseService, benefits } = useSubscription();
-
-// 2. Calculate delivery fee with subscription benefits
-const calculateDeliveryFee = () => {
-  if (isSubscribed && benefits.freeDelivery) {
-    return 0; // Included in subscription
-  }
-  
-  // Apply normal fee logic
-  const baseFee = isWithinBuilding ? 40 : 100;
-  // ... surcharge logic
-  return totalFee;
-};
-
-// 3. Apply cashback
-const cashbackAmount = isSubscribed 
-  ? Math.floor(subtotal * (benefits.cashbackPercent / 100))
-  : 0;
-```
+For future consideration - add mobile bottom navigation bar:
+- Home, Services, Cart, Account
+- Sticky at bottom with safe area padding
+- Show active state based on current route
 
 ---
-
-## Implementation Phases
-
-### Phase 1: Foundation (Week 1)
-- Database migrations for subscriptions and micro-services
-- SubscriptionContext.tsx
-- Basic subscription plans seeding
-
-### Phase 2: Subscription Pages (Week 1-2)
-- MtaaLoopPlus.tsx landing page
-- Plan comparison UI
-- Payment integration with M-PESA
-
-### Phase 3: Micro-Services (Week 2)
-- QuickServices.tsx hub
-- Individual service pages (OshaViombo, etc.)
-- Service request flow
-
-### Phase 4: Terminology Update (Week 2-3)
-- Rename rider → agent in all UI text
-- Update routes and folder structure
-- Update stores
-
-### Phase 5: Fee Logic (Week 3)
-- Update CartContext with new fee calculation
-- Multi-vendor surcharge logic
-- Subscription benefit application in Checkout
-
-### Phase 6: Integration & Testing (Week 3-4)
-- Connect all flows
-- Agent dashboard updates for micro-services
-- End-to-end testing
-
----
-
-## Files to Create
-
-| File | Purpose |
-|------|---------|
-| `supabase/migrations/XXXXX_subscription_system.sql` | All new tables |
-| `src/contexts/SubscriptionContext.tsx` | Subscription state |
-| `src/pages/MtaaLoopPlus.tsx` | Subscription landing |
-| `src/pages/QuickServices.tsx` | Services hub |
-| `src/pages/services/OshaViombo.tsx` | Dish washing |
-| `src/pages/services/QuickCleaning.tsx` | Cleaning service |
-| `src/pages/services/LaundrySorting.tsx` | Laundry sort |
-| `src/pages/services/QuickMealPrep.tsx` | Meal prep |
-| `src/pages/services/PackageCollection.tsx` | Package pickup |
-| `src/components/subscription/SubscriptionCard.tsx` | Plan card |
-| `src/components/subscription/UsageTracker.tsx` | Usage display |
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/contexts/CartContext.tsx` | Add delivery fee calculation |
-| `src/pages/Checkout.tsx` | Subscription integration, new fee logic |
-| `src/pages/Home.tsx` | Reorganize categories, add Quick Services |
-| `src/pages/TrashCollection.tsx` | Subscription usage check |
-| `src/App.tsx` | Add new routes, SubscriptionProvider |
-| `src/pages/Wallet.tsx` | Show subscription status |
-| All rider pages (12 files) | Rename to agent, update text |
+| `src/pages/Cart.tsx` | Complete mobile redesign of header, items, and summary |
+| `src/pages/MtaaLoopPlus.tsx` | Grid responsive fixes, tab scrolling |
+| `src/pages/QuickServices.tsx` | Tab list horizontal scrolling |
+| `src/pages/Checkout.tsx` | Mobile-friendly form layout, sticky CTA |
+| `src/components/VendorSpotlight.tsx` | Reduced heights, text sizes, touch-friendly arrows |
+| `src/components/subscription/SubscriptionCard.tsx` | Remove scale, better mobile layout |
+| `src/components/services/ServiceCard.tsx` | Better content stacking |
+| `src/components/subscription/UsageTracker.tsx` | Compact mode improvements |
+| `src/index.css` | Add mobile utility classes |
+
+---
+
+## Testing Checklist
+
+After implementation, test on:
+- iPhone SE (320px width) - smallest common screen
+- iPhone 14 (390px width) - standard mobile
+- iPad Mini (768px width) - tablet portrait
+- iPad Pro (1024px width) - tablet landscape
+- Desktop (1440px width) - standard desktop
+
+Key interactions to test:
+- [ ] Cart item selection and bulk actions
+- [ ] Subscription plan selection
+- [ ] Quick services navigation
+- [ ] Checkout flow completion
+- [ ] VendorSpotlight swiping
+- [ ] All touch targets are 44px minimum
 
 ---
 
 ## Summary
 
-This implementation transforms MtaaLoop into a comprehensive "Building Economy" platform by:
-
-1. **4-Tier Subscriptions** (KSh 999 - 3,599) with escalating benefits
-2. **7 Micro-Services** targeting young urban residents' daily needs
-3. **Trash Collection as #1 Priority** - the universal need
-4. **"Delivery Agent" branding** - more professional terminology
-5. **Smart Delivery Fees** - within building (40), outside (100), with surcharges
-6. **Multi-Vendor Logic** - fair surcharges for complex orders
-
-This creates sticky, recurring revenue while solving real problems for the target demographic.
-
+This plan addresses 10 key areas of mobile responsiveness:
+1. Cart page - complete header and item card redesign
+2. Subscription cards - better grid breakpoints
+3. VendorSpotlight - reduced heights and better touch UX
+4. Quick Services tabs - horizontal scrolling
+5. Service cards - improved content layout
+6. Trash Collection - minor touch target improvements
+7. Checkout - mobile-friendly form and sticky CTA
+8. Usage tracker - better compact mode
+9. Global CSS utilities for mobile
+10. Touch-friendly minimum sizes throughout
