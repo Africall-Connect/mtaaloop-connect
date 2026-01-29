@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { useCart } from "@/contexts/CartContext";
+import { useCart, CartItem } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import TimeSlotPicker from "@/components/TimeSlotPicker";
@@ -30,13 +30,7 @@ interface OrderItem {
   };
 }
 
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  // Add other fields
-}
+// Use CartItem from CartContext instead of local definition
 
 interface TimeSlot {
   date: string;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,7 +24,11 @@ interface EstateSettings {
   };
 }
 
-const EstateSettings: React.FC = () => {
+interface EstateSettingsProps {
+  estateId?: string;
+}
+
+const EstateSettings: React.FC<EstateSettingsProps> = ({ estateId }) => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -59,12 +63,14 @@ const EstateSettings: React.FC = () => {
       if (error) throw error;
       return data as EstateSettings;
     },
-    onSuccess: (data) => {
-      if (data) {
-        setSettings(data);
-      }
-    }
   });
+
+  // Update local state when data is loaded
+  useEffect(() => {
+    if (currentSettings) {
+      setSettings(currentSettings);
+    }
+  }, [currentSettings]);
 
   // Update settings mutation
   const updateMutation = useMutation({

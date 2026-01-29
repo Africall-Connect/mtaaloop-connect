@@ -35,8 +35,8 @@ const VendorsList: React.FC<VendorsListProps> = ({ estateId }) => {
     enabled: !!estateId,
   });
 
-  const toggleMutation = useMutation<void, Error, { vendorId: string; active: boolean }>(
-    async (payload: { vendorId: string; active: boolean }) => {
+const toggleMutation = useMutation({
+    mutationFn: async (payload: { vendorId: string; active: boolean }) => {
       const { vendorId, active } = payload;
       const { error } = await supabase
         .from('vendor_profiles')
@@ -44,13 +44,11 @@ const VendorsList: React.FC<VendorsListProps> = ({ estateId }) => {
         .eq('id', vendorId);
       if (error) throw error;
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['vendors', estateId] });
-        queryClient.invalidateQueries({ queryKey: ['estate', estateId] });
-      },
-    }
-  );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vendors', estateId] });
+      queryClient.invalidateQueries({ queryKey: ['estate', estateId] });
+    },
+  });
 
   if (isLoading) return <div>Loading vendors...</div>;
   if (!vendors || vendors.length === 0) return <div>No vendors found for this estate.</div>;

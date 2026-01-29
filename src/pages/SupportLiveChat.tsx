@@ -10,12 +10,14 @@ import { toast } from 'sonner';
 import type { User } from '@supabase/supabase-js';
 
 type Msg = {
-  id: string;
+  id?: string;
+  sender_id?: string;
   user_id: string;
-  user_role: 'customer' | 'vendor' | 'admin';
+  user_role?: 'customer' | 'vendor' | 'admin';
   user_name: string;
   message: string;
-  seen_by: string[];
+  content?: string;
+  seen_by?: string[];
   created_at: string;
 };
 

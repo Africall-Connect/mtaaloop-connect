@@ -8,7 +8,12 @@ import type { User } from '@supabase/supabase-js';
 
 interface Chat {
   id: string;
-  // Add other fields as needed
+  chat_id: string;
+  initiator_id: string;
+  recipient_id: string | null;
+  recipient_role: string | null;
+  is_closed: boolean;
+  created_at: string;
 }
 
 export default function AdminLiveChatAssign() {

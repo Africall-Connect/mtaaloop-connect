@@ -1,3 +1,4 @@
+import React from "react";
 import { ShoppingBag, Package, Leaf, Carrot, Apple, Soup, UtensilsCrossed, Coffee } from "lucide-react";
 
 export interface MenuItem {
@@ -25,7 +26,7 @@ export interface VendorCategory {
   slug: string;
   name: string;
   description?: string;
-  icon: string;
+  icon: string | React.ComponentType;
   productCount: number;
   subcategories?: VendorSubcategory[];
 }
@@ -34,7 +35,7 @@ export interface VendorSubcategory {
   id: string;
   slug: string;
   name: string;
-  icon: string;
+  icon: string | React.ComponentType;
   productCount: number;
   filters?: VendorFilter[];
 }

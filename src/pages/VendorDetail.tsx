@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Share2, Heart, Star, MapPin, Clock, DollarSign, CheckCircle, Phone, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { VendorProfile, Product } from "@/types/database";
+import { MenuItem } from "@/data/vendors";
 import { MenuItemCard } from "@/components/vendor/MenuItemCard";
 import { CustomizationModal } from "@/components/vendor/CustomizationModal";
 import { ReviewsSection } from "@/components/vendor/ReviewsSection";
@@ -15,13 +16,28 @@ import { VendorStory } from "@/components/vendor/VendorStory";
 import { FloatingCartButton } from "@/components/FloatingCartButton";
 import { useCart } from "@/contexts/CartContext";
 
+// Helper function to convert Product to MenuItem
+const productToMenuItem = (product: Product): MenuItem => ({
+  id: product.id,
+  name: product.name,
+  description: product.description || "",
+  price: product.price,
+  image: product.image_url || undefined,
+  category: product.category,
+  rating: 4.5, // Default rating since Product doesn't have this
+  ordersThisWeek: product.orders_this_week || 0,
+  isNew: product.is_new,
+  isPopular: product.is_popular,
+  customizations: product.customizations as MenuItem['customizations'],
+});
+
 const VendorDetail = () => {
   const { vendorId } = useParams();
   const navigate = useNavigate();
   const [vendor, setVendor] = useState<VendorProfile | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedItem, setSelectedItem] = useState<Product | null>(null);
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const { getItemCount, getTotal } = useCart();
 
   useEffect(() => {
@@ -253,15 +269,18 @@ const VendorDetail = () => {
               <h2 className="text-2xl font-bold mt-6 mb-4">{category}</h2>
               {products
                 .filter((item) => item.category === category)
-                .map((item) => (
-                  <MenuItemCard
-                    key={item.id}
-                    item={item}
-                    vendorId={vendor.id}
-                    vendorName={vendor.business_name}
-                    onCustomize={() => setSelectedItem(item)}
-                  />
-                ))}
+                .map((item) => {
+                  const menuItem = productToMenuItem(item);
+                  return (
+                    <MenuItemCard
+                      key={item.id}
+                      item={menuItem}
+                      vendorId={vendor.id}
+                      vendorName={vendor.business_name}
+                      onCustomize={() => setSelectedItem(menuItem)}
+                    />
+                  );
+                })}
             </TabsContent>
           ))}
 
@@ -269,30 +288,36 @@ const VendorDetail = () => {
             <h2 className="text-2xl font-bold mt-6 mb-4">⭐ Popular Items</h2>
             {products
               .filter((item) => item.is_popular)
-              .map((item) => (
-                <MenuItemCard
-                  key={item.id}
-                  item={item}
-                  vendorId={vendor.id}
-                  vendorName={vendor.business_name}
-                  onCustomize={() => setSelectedItem(item)}
-                />
-              ))}
+              .map((item) => {
+                const menuItem = productToMenuItem(item);
+                return (
+                  <MenuItemCard
+                    key={item.id}
+                    item={menuItem}
+                    vendorId={vendor.id}
+                    vendorName={vendor.business_name}
+                    onCustomize={() => setSelectedItem(menuItem)}
+                  />
+                );
+              })}
           </TabsContent>
 
           <TabsContent value="new" className="space-y-4">
             <h2 className="text-2xl font-bold mt-6 mb-4">🆕 New Items</h2>
             {products
               .filter((item) => item.is_new)
-              .map((item) => (
-                <MenuItemCard
-                  key={item.id}
-                  item={item}
-                  vendorId={vendor.id}
-                  vendorName={vendor.business_name}
-                  onCustomize={() => setSelectedItem(item)}
-                />
-              ))}
+              .map((item) => {
+                const menuItem = productToMenuItem(item);
+                return (
+                  <MenuItemCard
+                    key={item.id}
+                    item={menuItem}
+                    vendorId={vendor.id}
+                    vendorName={vendor.business_name}
+                    onCustomize={() => setSelectedItem(menuItem)}
+                  />
+                );
+              })}
           </TabsContent>
         </Tabs>
 
@@ -302,9 +327,9 @@ const VendorDetail = () => {
         {/* Vendor Story */}
         <VendorStory
           description={vendor.business_description}
-          categories={[]} // TODO: Fetch vendor categories
+          categories={[]}
           yearsInBusiness={vendor.years_in_business}
-          certifications={vendor.certifications}
+          certifications={Array.isArray(vendor.certifications) ? vendor.certifications : []}
         />
       </div>
 

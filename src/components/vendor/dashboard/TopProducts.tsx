@@ -11,6 +11,7 @@ interface RawProduct {
   name: string;
   total_quantity: number;
   total_revenue: number;
+  stock_quantity?: number;
 }
 
 interface ProductStats {
