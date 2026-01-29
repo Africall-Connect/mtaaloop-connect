@@ -11,7 +11,7 @@ import {
   calculateDeliveryFee,
   calculateDeliveryTime,
 } from '@/lib/vendorUtils';
-import { vendors as staticVendors } from '@/data/vendors';
+import { SUBCATEGORY_OPTIONS } from '@/lib/categories';
 
 interface Vendor {
   id: string;
@@ -91,12 +91,19 @@ export default function CategoryPage() {
     if (!slug) return '';
     const mapping: Record<string, string> = {
       'food-drinks': 'Food & Drinks',
+      'living-essentials': 'Living Essentials',
+      'groceries-food': 'Groceries & Food',
+      'restaurant': 'Restaurant',
+      'liquor-store': 'Liquor Store',
+      'utilities-services': 'Utilities & Services',
+      'home-services': 'Home Services',
+      'beauty-spa': 'Beauty & Spa',
+      'accommodation': 'Accommodation',
+      'pharmacy': 'Pharmacy',
+      // Legacy mappings for backward compatibility
       'shopping': 'Shopping',
       'health-wellness': 'Health & Wellness',
-      'beauty-spa': 'Beauty & Spa',
-      'home-services': 'Home Services',
       'transport-car': 'Transport & Car',
-      'living-essentials': 'Living Essentials',
       'special-occasions': 'Special Occasions',
     };
     return mapping[slug] || slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -109,71 +116,83 @@ export default function CategoryPage() {
     try {
       setLoading(true);
 
-      // Filter static vendors by category
-      const categoryVendors = staticVendors.filter(vendor => 
-        vendor.categories.includes(categoryName)
-      );
+      // Query vendors from database that match this category
+      const businessTypeSlug = category || '';
+      
+      const { data: vendorData, error } = await supabase
+        .from('vendor_profiles')
+        .select(`
+          id, business_name, slug, logo_url, cover_image_url, 
+          tagline, rating, delivery_time, delivery_fee, is_open,
+          latitude, longitude, total_orders, business_description,
+          operational_category
+        `)
+        .eq('is_approved', true)
+        .eq('is_active', true)
+        .or(`business_type.eq.${businessTypeSlug},category.eq.${categoryName}`)
+        .order('rating', { ascending: false });
 
-      if (categoryVendors.length === 0) {
+      if (error) throw error;
+
+      if (!vendorData || vendorData.length === 0) {
         setVendors([]);
         setSubcategoryGroups([]);
         setVendorsWithoutSub([]);
         return;
       }
 
-      // Transform static vendor data to match expected interface
-      const enrichedVendors = categoryVendors.map(vendor => {
-        const distance = customerLocation && vendor.distance
-          ? parseFloat(vendor.distance.replace(/[^\d.]/g, '')) || 1
+      // Transform database vendor data to match expected interface
+      const enrichedVendors = vendorData.map(vendor => {
+        const distance = customerLocation && vendor.latitude && vendor.longitude
+          ? Math.sqrt(
+              Math.pow(vendor.latitude - customerLocation.lat, 2) +
+              Math.pow(vendor.longitude - customerLocation.lon, 2)
+            ) * 111 // Approximate km per degree
           : 1;
         
-        const dynamicDeliveryFee = calculateDeliveryFee(distance);
-        const dynamicDeliveryTime = calculateDeliveryTime(distance);
+        const dynamicDeliveryFee = vendor.delivery_fee ?? calculateDeliveryFee(distance);
+        const dynamicDeliveryTime = vendor.delivery_time ?? calculateDeliveryTime(distance);
         
         return {
           id: vendor.id,
-          business_name: vendor.name,
+          business_name: vendor.business_name,
           slug: vendor.slug || vendor.id,
-          description: vendor.description,
-          operational_category: 'product',
-          logo_url: vendor.logo || null,
-          cover_image_url: vendor.images[0] || null,
+          description: vendor.business_description || '',
+          operational_category: vendor.operational_category || 'inventory',
+          logo_url: vendor.logo_url,
+          cover_image_url: vendor.cover_image_url,
           tagline: vendor.tagline,
-          rating: vendor.rating,
+          rating: vendor.rating || 0,
           delivery_time: dynamicDeliveryTime,
           delivery_fee: dynamicDeliveryFee,
-          is_open: vendor.isOpen ?? true,
-          operating_hours: vendor.openHours,
-          latitude: -1.286389,
-          longitude: 36.817223,
-          total_orders: 0,
+          is_open: vendor.is_open ?? true,
+          operating_hours: null,
+          latitude: vendor.latitude,
+          longitude: vendor.longitude,
+          total_orders: vendor.total_orders || 0,
           total_customers: 0,
           avg_order_value: 0,
           vendor_categories: [{
             name: categoryName,
             vendor_subcategories: []
           }],
-          vendor_products: vendor.menu.map(item => ({
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            description: item.description,
-            image_url: item.image || null
-          })),
+          vendor_products: [],
           reviews: []
         };
       });
 
-      // All vendors without subcategories (since static data doesn't have subcategory structure)
       setVendors(enrichedVendors);
       setSubcategoryGroups([]);
       setVendorsWithoutSub(enrichedVendors);
     } catch (error) {
       console.error('Error loading vendors:', error);
+      setVendors([]);
+      setSubcategoryGroups([]);
+      setVendorsWithoutSub([]);
     } finally {
       setLoading(false);
     }
-  }, [categoryName, customerLocation]);
+  }, [categoryName, category, customerLocation]);
 
   useEffect(() => {
     if (categoryName) {
