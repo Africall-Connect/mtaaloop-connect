@@ -17,12 +17,12 @@ import { VendorProfile } from "@/types/database";
 import { VendorSpotlight } from "@/components/VendorSpotlight";
 
 // Official 10 categories + Trash Collection
-const categories = [
+const allCategories = [
   {
     icon: UtensilsCrossed,
     name: "Food & Drinks",
     subtitle: "Fast Food, Traditional, Cafes & More",
-    link: "/food-drinks",
+    link: "/categories/food-drinks",
     gradient: "from-orange-500 to-red-500",
     image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=80"
   },
@@ -30,7 +30,7 @@ const categories = [
     icon: Package,
     name: "Living Essentials",
     subtitle: "Toiletries, Cleaning & Household",
-    link: "/living-essentials",
+    link: "/categories/living-essentials",
     gradient: "from-cyan-500 to-blue-500",
     image: "https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=500&q=80"
   },
@@ -38,7 +38,7 @@ const categories = [
     icon: ShoppingBag,
     name: "Groceries & Food",
     subtitle: "Fresh Produce, Meat, Dairy & Snacks",
-    link: "/groceries-food",
+    link: "/categories/groceries-food",
     gradient: "from-green-500 to-emerald-500",
     image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&q=80"
   },
@@ -46,7 +46,7 @@ const categories = [
     icon: UtensilsCrossed,
     name: "Restaurant",
     subtitle: "Dine-in Experience & Custom Menus",
-    link: "/restaurant",
+    link: "/categories/restaurant",
     gradient: "from-amber-500 to-orange-500",
     image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&q=80"
   },
@@ -54,7 +54,7 @@ const categories = [
     icon: Wine,
     name: "Liquor Store",
     subtitle: "Beer, Wine, Spirits & Beverages",
-    link: "/liquor-store",
+    link: "/categories/liquor-store",
     gradient: "from-red-600 to-rose-500",
     image: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=500&q=80"
   },
@@ -62,7 +62,7 @@ const categories = [
     icon: Droplet,
     name: "Utilities & Services",
     subtitle: "Gas & Water Delivery",
-    link: "/utilities-services",
+    link: "/categories/utilities-services",
     gradient: "from-blue-600 to-sky-500",
     image: "https://images.unsplash.com/photo-1585687433448-e0d7cba3c0a5?w=500&q=80"
   },
@@ -70,7 +70,7 @@ const categories = [
     icon: HomeIcon,
     name: "Home Services",
     subtitle: "Cleaning, Laundry & Electrical",
-    link: "/home-services",
+    link: "/categories/home-services",
     gradient: "from-teal-500 to-green-500",
     image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=500&q=80"
   },
@@ -78,7 +78,7 @@ const categories = [
     icon: Sparkles,
     name: "Beauty & Spa",
     subtitle: "Hair, Nails, Massage & Makeup",
-    link: "/beauty-spa",
+    link: "/categories/beauty-spa",
     gradient: "from-pink-500 to-purple-500",
     image: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=500&q=80"
   },
@@ -86,7 +86,7 @@ const categories = [
     icon: Hotel,
     name: "Accommodation",
     subtitle: "Guest Houses, Airbnb & Rentals",
-    link: "/accommodation",
+    link: "/categories/accommodation",
     gradient: "from-indigo-500 to-violet-500",
     image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500&q=80"
   },
@@ -94,7 +94,7 @@ const categories = [
     icon: Pill,
     name: "Pharmacy",
     subtitle: "Medicines, Consultations & Care",
-    link: "/pharmacy",
+    link: "/categories/pharmacy",
     gradient: "from-sky-500 to-cyan-400",
     image: "https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=500&q=80"
   },
@@ -121,6 +121,8 @@ const Home = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [filteredVendors, setFilteredVendors] = useState<VendorProfile[]>([]);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [categoriesWithData, setCategoriesWithData] = useState<string[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
 
   // fetch user's apartment from DB on mount
   useEffect(() => {
@@ -259,6 +261,59 @@ const Home = () => {
     }
   }, [currentApartment, loadingPref]);
 
+  // Fetch categories that have vendors with data
+  useEffect(() => {
+    const fetchCategoriesWithVendors = async () => {
+      try {
+        setLoadingCategories(true);
+        
+        // Map business_type slugs to category names
+        const businessTypeToCategory: Record<string, string> = {
+          'food-drinks': 'Food & Drinks',
+          'living-essentials': 'Living Essentials',
+          'groceries-food': 'Groceries & Food',
+          'restaurant': 'Restaurant',
+          'liquor-store': 'Liquor Store',
+          'utilities-services': 'Utilities & Services',
+          'home-services': 'Home Services',
+          'beauty-spa': 'Beauty & Spa',
+          'accommodation': 'Accommodation',
+          'pharmacy': 'Pharmacy',
+        };
+
+        // Get vendor business types and categories from vendor_profiles
+        const { data: vendorData, error } = await supabase
+          .from('vendor_profiles')
+          .select('business_type, category')
+          .eq('is_approved', true)
+          .eq('is_active', true);
+
+        if (error) throw error;
+
+        const categoriesFromBusinessType = vendorData?.map(v => 
+          businessTypeToCategory[v.business_type] || v.category
+        ).filter(Boolean) || [];
+
+        const uniqueCategories = [...new Set(categoriesFromBusinessType)];
+        setCategoriesWithData(uniqueCategories);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        // On error, show all categories as fallback
+        setCategoriesWithData(allCategories.map(c => c.name));
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
+    fetchCategoriesWithVendors();
+  }, []);
+
+  // Filter to only show categories with data (+ always show Trash Collection)
+  const displayedCategories = allCategories.filter(cat => 
+    categoriesWithData.includes(cat.name) || 
+    cat.name === "Trash Collection"
+  );
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
   };
@@ -396,40 +451,52 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Categories - Official 11 categories */}
+        {/* Categories - Only show those with data */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg md:text-2xl font-bold">What are you looking for?</h2>
           </div>
           
           {/* Mobile: 2 columns, Desktop: 3 columns */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-            {categories.map((category) => (
-              <Link key={category.name} to={category.link}>
-                <Card className="group relative overflow-hidden h-28 md:h-40 cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-primary/50">
-                  {/* Background Image */}
-                  <div 
-                    className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-110"
-                    style={{ backgroundImage: `url(${category.image})` }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30" />
-                  
-                  {/* Content */}
-                  <div className="relative p-3 md:p-4 h-full flex flex-col justify-end">
-                    <div className="w-8 h-8 md:w-12 md:h-12 rounded-lg bg-white/20 backdrop-blur-sm p-1.5 md:p-2 mb-2">
-                      <category.icon className="w-full h-full text-white" />
+          {loadingCategories ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="h-28 md:h-40 bg-muted rounded-lg animate-pulse" />
+              ))}
+            </div>
+          ) : displayedCategories.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+              {displayedCategories.map((category) => (
+                <Link key={category.name} to={category.link}>
+                  <Card className="group relative overflow-hidden h-28 md:h-40 cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-primary/50">
+                    {/* Background Image */}
+                    <div 
+                      className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-110"
+                      style={{ backgroundImage: `url(${category.image})` }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30" />
+                    
+                    {/* Content */}
+                    <div className="relative p-3 md:p-4 h-full flex flex-col justify-end">
+                      <div className="w-8 h-8 md:w-12 md:h-12 rounded-lg bg-white/20 backdrop-blur-sm p-1.5 md:p-2 mb-2">
+                        <category.icon className="w-full h-full text-white" />
+                      </div>
+                      <h3 className="text-sm md:text-base font-bold text-white line-clamp-1">
+                        {category.name}
+                      </h3>
+                      <p className="text-xs text-white/80 line-clamp-1 hidden md:block">
+                        {category.subtitle}
+                      </p>
                     </div>
-                    <h3 className="text-sm md:text-base font-bold text-white line-clamp-1">
-                      {category.name}
-                    </h3>
-                    <p className="text-xs text-white/80 line-clamp-1 hidden md:block">
-                      {category.subtitle}
-                    </p>
-                  </div>
-                </Card>
-              </Link>
-            ))}
-          </div>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No categories available yet. Check back soon!</p>
+            </div>
+          )}
         </div>
 
         {/* Minimarts in Your Area */}
