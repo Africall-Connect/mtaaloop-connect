@@ -1,12 +1,13 @@
 // Centralized category and subcategory constants
 // New streamlined structure with 9 main categories across 4 operational types
 
-// ============= Inventory Categories (4) =============
+// ============= Inventory Categories (5) =============
 export const INVENTORY_CATEGORIES = [
   "Food & Drinks",
   "Living Essentials",
   "Groceries & Food",
   "Restaurant",
+  "Liquor Store",
 ] as const;
 
 // ============= Service Categories (2) =============
@@ -26,13 +27,14 @@ export const PHARMACY_CATEGORIES = [
   "Pharmacy",
 ] as const;
 
-// ============= All Main Categories (9 total) =============
+// ============= All Main Categories (10 total) =============
 export const MAIN_CATEGORIES = [
   // Inventory
   "Food & Drinks",
   "Living Essentials",
   "Groceries & Food",
   "Restaurant",
+  "Liquor Store",
   // Service
   "Utilities & Services",
   "Home Services",
@@ -59,6 +61,7 @@ export const SUBCATEGORY_OPTIONS: Record<string, string[]> = {
     "Vegetarian & Vegan",
     "Juice Bar & Smoothies",
     "Ice Cream",
+    "Liquor",
   ],
 
   "Living Essentials": [
@@ -82,6 +85,21 @@ export const SUBCATEGORY_OPTIONS: Record<string, string[]> = {
 
   // Restaurant - Empty array, vendors create custom subcategories
   "Restaurant": [],
+
+  // Liquor Store Subcategories
+  "Liquor Store": [
+    "Beer",
+    "Wine",
+    "Spirits",
+    "Whiskey & Bourbon",
+    "Vodka",
+    "Gin",
+    "Rum",
+    "Tequila",
+    "Champagne & Sparkling",
+    "Ready-to-Drink (RTDs)",
+    "Mixers & Soft Drinks",
+  ],
 
   // Service Subcategories
   "Utilities & Services": [

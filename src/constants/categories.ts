@@ -8,6 +8,7 @@ export const MAIN_CATEGORIES = [
   { value: "Living Essentials", label: "Living Essentials" },
   { value: "Groceries & Food", label: "Groceries & Food" },
   { value: "Restaurant", label: "Restaurant" },
+  { value: "Liquor Store", label: "Liquor Store" },
   // Service
   { value: "Utilities & Services", label: "Utilities & Services" },
   { value: "Home Services", label: "Home Services" },
@@ -34,6 +35,7 @@ export const SUBCATEGORY_OPTIONS: Record<string, string[]> = {
     "Vegetarian & Vegan",
     "Juice Bar & Smoothies",
     "Ice Cream",
+    "Liquor",
   ],
 
   "Living Essentials": [
@@ -57,6 +59,21 @@ export const SUBCATEGORY_OPTIONS: Record<string, string[]> = {
 
   // Restaurant - Empty array, vendors create custom subcategories
   "Restaurant": [],
+
+  // Liquor Store Subcategories
+  "Liquor Store": [
+    "Beer",
+    "Wine",
+    "Spirits",
+    "Whiskey & Bourbon",
+    "Vodka",
+    "Gin",
+    "Rum",
+    "Tequila",
+    "Champagne & Sparkling",
+    "Ready-to-Drink (RTDs)",
+    "Mixers & Soft Drinks",
+  ],
 
   // Service Subcategories
   "Utilities & Services": [
