@@ -60,11 +60,8 @@ export default function Analytics({ estateId }: AnalyticsProps) {
     monthlyStats: []
   });
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [estateId, timeRange, fetchAnalytics]);
-
   const fetchAnalytics = useCallback(async () => {
+    setLoading(true);
     try {
       // Get date range
       const endDate = new Date();
@@ -181,6 +178,10 @@ export default function Analytics({ estateId }: AnalyticsProps) {
       setLoading(false);
     }
   }, [estateId, timeRange]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
   const exportData = () => {
     const data = {

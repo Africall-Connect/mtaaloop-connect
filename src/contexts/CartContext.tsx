@@ -9,6 +9,10 @@ export interface CartItem {
   quantity: number;
   image?: string;
   category?: string;
+  base_price?: number;
+  isMtaaLoopManaged?: boolean;
+  businessTypeId?: string;
+  productServiceId?: string;
   customizations?: {
     spiceLevel?: string;
     protein?: string[];
@@ -50,6 +54,7 @@ interface CartContextType {
   generateShareLink: () => string;
   loadSharedCart: (sharedItems: CartItem[]) => void;
   clearVendorCart: (vendorId: string) => void;
+  setItems: (items: CartItem[]) => void;
   getTotal: () => number;
   getItemCount: () => number;
   getVendorTotal: (vendorId: string) => number;
@@ -286,6 +291,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     return selectedItems.size;
   };
 
+  const setItemsDirectly = (newItems: CartItem[]) => {
+    setItems(newItems);
+  };
+
   return (
     <CartContext.Provider
       value={{
@@ -308,6 +317,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         generateShareLink,
         loadSharedCart,
         clearVendorCart,
+        setItems: setItemsDirectly,
         getTotal,
         getItemCount,
         getVendorTotal,

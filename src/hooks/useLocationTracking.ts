@@ -4,6 +4,16 @@ import { supabase } from '@/lib/supabaseClient';
 import { config } from '@/config/env';
 import { useAuth } from '@/hooks/useAuth';
 
+interface RiderLocation {
+  lat: number;
+  lng: number;
+  accuracy: number | null;
+  speed: number | null;
+  heading: string | null;
+  altitude: number | null;
+  timestamp: number;
+}
+
 interface LocationOptions {
   enableHighAccuracy?: boolean;
   timeout?: number;

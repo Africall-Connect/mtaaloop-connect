@@ -34,21 +34,19 @@ const ResidentsList: React.FC<ResidentsListProps> = ({ estateId }) => {
     enabled: !!estateId,
   });
 
-  const removeMutation = useMutation<void, Error, string>(
-    async (residentId: string) => {
+const removeMutation = useMutation({
+    mutationFn: async (residentId: string) => {
       const { error } = await supabase
         .from('residents')
         .delete()
         .eq('id', residentId);
       if (error) throw error;
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['residents', estateId] });
-        queryClient.invalidateQueries({ queryKey: ['estate', estateId] });
-      },
-    }
-  );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['residents', estateId] });
+      queryClient.invalidateQueries({ queryKey: ['estate', estateId] });
+    },
+  });
 
   if (isLoading) return <div>Loading residents...</div>;
   if (!residents || residents.length === 0) return <div>No residents found.</div>;
@@ -66,7 +64,7 @@ const ResidentsList: React.FC<ResidentsListProps> = ({ estateId }) => {
                 variant="destructive"
                 size="sm"
                 onClick={() => removeMutation.mutate(r.id)}
-                disabled={removeMutation.status === 'loading'}
+                disabled={removeMutation.isPending}
               >
               Remove
             </Button>
