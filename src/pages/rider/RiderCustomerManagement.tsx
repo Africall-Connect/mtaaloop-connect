@@ -15,6 +15,12 @@ import {
   DollarSign,
 } from 'lucide-react';
 
+interface CustomerStats {
+  id: string;
+  orderCount: number;
+  totalSpent: number;
+  orders: Array<{ created_at: string; [key: string]: unknown }>;
+}
 
 interface Customer {
   id: string;
@@ -35,13 +41,6 @@ export default function RiderCustomerManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [segmentFilter, setSegmentFilter] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
-
-
-  useEffect(() => {
-    if (user) {
-      fetchCustomers();
-    }
-  }, [user, fetchCustomers]);
 
   const fetchCustomers = useCallback(async () => {
     try {
@@ -65,7 +64,7 @@ export default function RiderCustomerManagement() {
         .select('id, customer_id, total_amount, created_at')
         .in('id', orderIds);
 
-      const customerMap = new Map<string, unknown>();
+      const customerMap = new Map<string, CustomerStats>();
 
       orders?.forEach(order => {
         const customerId = order.customer_id;
@@ -78,7 +77,7 @@ export default function RiderCustomerManagement() {
           });
         }
 
-        const customerData = customerMap.get(customerId);
+        const customerData = customerMap.get(customerId)!;
         customerData.orderCount++;
         customerData.totalSpent += Number(order.total_amount);
         customerData.orders.push(order);
@@ -93,7 +92,9 @@ export default function RiderCustomerManagement() {
 
       const enrichedCustomers = customerProfiles?.map(profile => {
         const stats = customerMap.get(profile.id);
-        const lastOrder = stats.orders.sort((a: unknown, b: unknown) =>
+        if (!stats) return null;
+        
+        const lastOrder = stats.orders.sort((a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         )[0];
 
@@ -103,7 +104,7 @@ export default function RiderCustomerManagement() {
           total_spent: stats.totalSpent,
           last_order_date: lastOrder?.created_at || null,
         };
-      }) || [];
+      }).filter(Boolean) as Customer[] || [];
 
       setCustomers(enrichedCustomers);
     } catch (error) {
@@ -112,6 +113,12 @@ export default function RiderCustomerManagement() {
       setLoading(false);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchCustomers();
+    }
+  }, [user, fetchCustomers]);
 
   const filterCustomers = () => {
     if (!searchTerm) return customers;

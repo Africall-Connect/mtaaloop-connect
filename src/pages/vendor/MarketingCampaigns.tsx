@@ -42,29 +42,6 @@ export default function MarketingCampaigns() {
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
   const [vendorProfileId, setVendorProfileId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (user) {
-      fetchCampaigns();
-    }
-  }, [user, fetchCampaigns]);
-
-  useEffect(() => {
-    const loadVendor = async () => {
-      if (!user) return;
-      const { data, error } = await supabase
-        .from('vendor_profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('is_approved', true)
-        .maybeSingle();
-
-      if (!error && data) {
-        setVendorProfileId(data.id);
-      }
-    };
-    loadVendor();
-  }, [user]);
-
   const fetchCampaigns = useCallback(async () => {
     try {
       // 1) get the vendor profile for this logged-in user
@@ -100,6 +77,28 @@ export default function MarketingCampaigns() {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (user) {
+      fetchCampaigns();
+    }
+  }, [user, fetchCampaigns]);
+
+  useEffect(() => {
+    const loadVendor = async () => {
+      if (!user) return;
+      const { data, error } = await supabase
+        .from('vendor_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('is_approved', true)
+        .maybeSingle();
+
+      if (!error && data) {
+        setVendorProfileId(data.id);
+      }
+    };
+    loadVendor();
+  }, [user]);
 
   const getCampaignStats = () => {
     const total = campaigns.length;

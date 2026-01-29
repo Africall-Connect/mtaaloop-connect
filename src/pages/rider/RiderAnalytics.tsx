@@ -16,12 +16,6 @@ export default function RiderAnalytics() {
   const [activeCustomers, setActiveCustomers] = useState(0);
   const [earningsData, setEarningsData] = useState<EarningsData[]>([]);
 
-  useEffect(() => {
-    if (user) {
-      fetchInsightsData();
-    }
-  }, [user, fetchInsightsData]);
-
   const fetchInsightsData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -40,6 +34,12 @@ export default function RiderAnalytics() {
       setLoading(false);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchInsightsData();
+    }
+  }, [user, fetchInsightsData]);
 
   const avgDeliveryFee = stats && stats.totalDeliveries > 0
     ? (stats.totalEarnings / stats.totalDeliveries).toFixed(2)

@@ -50,40 +50,6 @@ export default function CommunicationsHub() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
 
-  useEffect(() => {
-    if (user) {
-      fetchConversations();
-      setupRealtimeSubscription();
-    }
-  }, [user, fetchConversations, setupRealtimeSubscription]);
-
-  useEffect(() => {
-    if (selectedConversation) {
-      fetchMessages(selectedConversation);
-    }
-  }, [selectedConversation, fetchMessages]);
-
-  const setupRealtimeSubscription = useCallback(() => {
-    const channel = supabase
-      .channel('messages')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'messages',
-        filter: `vendor_id=eq.${user?.id}`
-      }, () => {
-        fetchConversations();
-        if (selectedConversation) {
-          fetchMessages(selectedConversation);
-        }
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, selectedConversation, fetchConversations, fetchMessages]);
-
   const fetchConversations = useCallback(async () => {
     try {
       const { data: messagesData } = await supabase
@@ -155,6 +121,40 @@ export default function CommunicationsHub() {
       console.error('Error fetching messages:', error);
     }
   }, [user, fetchConversations]);
+
+  const setupRealtimeSubscription = useCallback(() => {
+    const channel = supabase
+      .channel('messages')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'messages',
+        filter: `vendor_id=eq.${user?.id}`
+      }, () => {
+        fetchConversations();
+        if (selectedConversation) {
+          fetchMessages(selectedConversation);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, selectedConversation, fetchConversations, fetchMessages]);
+
+  useEffect(() => {
+    if (user) {
+      fetchConversations();
+      setupRealtimeSubscription();
+    }
+  }, [user, fetchConversations, setupRealtimeSubscription]);
+
+  useEffect(() => {
+    if (selectedConversation) {
+      fetchMessages(selectedConversation);
+    }
+  }, [selectedConversation, fetchMessages]);
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation) return;
