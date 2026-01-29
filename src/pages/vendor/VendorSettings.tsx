@@ -28,12 +28,6 @@ const VendorSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      fetchProfile();
-    }
-  }, [user, fetchProfile]);
-
   const fetchProfile = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -48,13 +42,21 @@ const VendorSettings = () => {
       console.error('Error fetching profile:', error);
       toast({
         title: "Error loading profile",
-        description: "Could not load your business information.",
+        description: "Could not load your profile. Please try again.",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   }, [user, toast]);
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+    }
+  }, [user, fetchProfile]);
+
+  // fetchProfile is defined above (lines 37-57)
 
   const handleSave = async () => {
     if (!profile) return;

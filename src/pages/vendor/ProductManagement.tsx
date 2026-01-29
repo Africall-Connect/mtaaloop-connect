@@ -23,15 +23,32 @@ export default function ProductManagement({ vendorId, onSwitchToCategories }: Pr
   const [checkingCategories, setCheckingCategories] = useState(true);
   const [realVendorId, setRealVendorId] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadVendorAndCheckCategories();
-  }, [vendorId, loadVendorAndCheckCategories]);
+  const fetchProducts = useCallback(async (vId?: string) => {
+    try {
+      setLoading(true);
+      const targetVendorId = vId || realVendorId;
+      if (!targetVendorId) return;
+
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('vendor_id', targetVendorId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      toast.error('Could not load products.');
+    } finally {
+      setLoading(false);
+    }
+  }, [realVendorId]);
 
   const loadVendorAndCheckCategories = useCallback(async () => {
     try {
       setCheckingCategories(true);
       
-      // Get vendor profile ID from user_id
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
@@ -44,7 +61,6 @@ export default function ProductManagement({ vendorId, onSwitchToCategories }: Pr
       if (profile) {
         setRealVendorId(profile.id);
         
-        // Check if vendor has categories
         const { data: categories } = await supabase
           .from('vendor_categories')
           .select('id')
@@ -64,27 +80,10 @@ export default function ProductManagement({ vendorId, onSwitchToCategories }: Pr
     }
   }, [fetchProducts]);
 
-  const fetchProducts = useCallback(async (vId?: string) => {
-    try {
-      setLoading(true);
-      const targetVendorId = vId || realVendorId;
-      if (!targetVendorId) return;
+  useEffect(() => {
+    loadVendorAndCheckCategories();
+  }, [vendorId, loadVendorAndCheckCategories]);
 
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('vendor_id', targetVendorId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setProducts(data || []);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      toast.error('Failed to load products');
-    } finally {
-      setLoading(false);
-    }
-  }, [realVendorId]);
 
 
   const toggleAvailability = async (product: Product) => {

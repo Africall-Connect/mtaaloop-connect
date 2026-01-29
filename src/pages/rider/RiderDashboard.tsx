@@ -94,7 +94,20 @@ export default function RiderDashboard() {
   const [loadingActive, setLoadingActive] = useState(false);
 
   // Today's deliveries state
-  const [todaysDeliveriesList, setTodaysDeliveriesList] = useState<unknown[]>([]);
+  interface TodaysDelivery {
+    id: string;
+    vendor_name?: string;
+    pickup_address?: string;
+    delivery_address?: string;
+    status?: string;
+    delivery_fee?: number;
+    delivery_time?: string;
+    orders?: {
+      vendor_profiles?: { business_name?: string };
+      delivery_address?: string;
+    };
+  }
+  const [todaysDeliveriesList, setTodaysDeliveriesList] = useState<TodaysDelivery[]>([]);
   const [loadingTodays, setLoadingTodays] = useState(false);
 
   // Recent deliveries state
@@ -646,26 +659,28 @@ export default function RiderDashboard() {
                         <p className="text-sm text-muted-foreground dark:text-gray-400">Loading...</p>
                       ) : recentDeliveries.length > 0 ? (
                         <div className="space-y-3">
-                          {recentDeliveries.slice(0, 3).map((delivery: Record<string, unknown>) => (
-                            <div key={delivery.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                          {recentDeliveries.slice(0, 3).map((delivery) => {
+                            const d = delivery as { id: string; orders?: { vendor_profiles?: { business_name?: string }; delivery_address?: string }; delivery_fee?: number; delivery_time?: string };
+                            return (
+                            <div key={d.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium truncate dark:text-gray-100">
-                                  {delivery.orders?.vendor_profiles?.business_name || 'Unknown Vendor'}
+                                  {d.orders?.vendor_profiles?.business_name || 'Unknown Vendor'}
                                 </p>
                                 <p className="text-xs text-muted-foreground dark:text-gray-400 truncate">
-                                  {delivery.orders?.delivery_address || 'N/A'}
+                                  {d.orders?.delivery_address || 'N/A'}
                                 </p>
                               </div>
                               <div className="text-right ml-2">
                                 <p className="text-sm font-medium text-green-600 dark:text-green-400">
-                                  KES {delivery.delivery_fee || 0}
+                                  KES {d.delivery_fee || 0}
                                 </p>
                                 <p className="text-xs text-muted-foreground dark:text-gray-400">
-                                  {delivery.delivery_time ? new Date(delivery.delivery_time).toLocaleDateString() : 'N/A'}
+                                  {d.delivery_time ? new Date(d.delivery_time as string).toLocaleDateString() : 'N/A'}
                                 </p>
                               </div>
                             </div>
-                          ))}
+                          );})}
                           {recentDeliveries.length > 3 && (
                             <Button variant="link" className="w-full text-xs p-0 h-auto dark:text-gray-300">
                               View All Recent Deliveries →

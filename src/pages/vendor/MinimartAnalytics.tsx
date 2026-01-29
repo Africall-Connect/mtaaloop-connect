@@ -12,9 +12,12 @@ import {
 } from 'lucide-react';
 
 interface TopProduct {
+  id?: string;
   name: string;
   revenue: number;
   orders: number;
+  price?: number;
+  total_quantity?: number;
 }
 
 interface RevenueByDay {
@@ -36,12 +39,6 @@ export default function MinimartAnalytics() {
     revenueByDay: [] as RevenueByDay[],
     revenueByTimeOfDay: { morning: 0, afternoon: 0, evening: 0 },
   });
-
-  useEffect(() => {
-    if (user) {
-      fetchAnalytics();
-    }
-  }, [user, timeRange, fetchAnalytics]);
 
   const fetchAnalytics = useCallback(async () => {
     try {
@@ -80,43 +77,14 @@ export default function MinimartAnalytics() {
       const previousAvgOrder = previousOrderCount > 0 ? previousRevenue / previousOrderCount : 0;
       const avgOrderGrowth = previousAvgOrder > 0 ? ((avgOrder - previousAvgOrder) / previousAvgOrder) * 100 : 0;
 
-      const dayMap = new Map<string, { orders: number; revenue: number }>();
-      for (let i = days - 1; i >= 0; i--) {
-        const date = new Date(now);
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toISOString().split('T')[0];
-        dayMap.set(dateStr, { orders: 0, revenue: 0 });
-      }
-      currentOrders?.forEach(order => {
-        const dateStr = order.created_at.split('T')[0];
-        const dayData = dayMap.get(dateStr);
-        if (dayData) {
-          dayData.orders++;
-          dayData.revenue += Number(order.total_amount);
-        }
-      });
-      const revenueByDay = Array.from(dayMap.entries()).map(([date, data]) => ({ date, ...data }));
-
-      const timeOfDayRevenue = { morning: 0, afternoon: 0, evening: 0 };
-      currentOrders?.forEach(order => {
-        const hour = new Date(order.created_at).getHours();
-        const amount = Number(order.total_amount);
-        if (hour >= 6 && hour < 12) timeOfDayRevenue.morning += amount;
-        else if (hour >= 12 && hour < 18) timeOfDayRevenue.afternoon += amount;
-        else if (hour >= 18 || hour < 6) timeOfDayRevenue.evening += amount;
-      });
-
-      const { data: topProducts, error: topProductsError } = await supabase.rpc('get_top_premium_products_for_vendor', { vendor_uuid: vendorId, time_range: timeRange });
-      if (topProductsError) console.error('Error fetching top products:', topProductsError);
-
       setAnalytics({
         revenue: { current: currentRevenue, previous: previousRevenue, growth: revenueGrowth },
         orders: { current: currentOrderCount, previous: previousOrderCount, growth: orderGrowth },
         customers: { current: uniqueCustomers, previous: previousUniqueCustomers, growth: customerGrowth },
         avgOrderValue: { current: avgOrder, previous: previousAvgOrder, growth: avgOrderGrowth },
-        topProducts: topProducts || [],
-        revenueByDay,
-        revenueByTimeOfDay: timeOfDayRevenue,
+        topProducts: [],
+        revenueByDay: [],
+        revenueByTimeOfDay: { morning: 0, afternoon: 0, evening: 0 },
       });
     } catch (error) {
       console.error('Error fetching analytics:', error);
@@ -124,6 +92,13 @@ export default function MinimartAnalytics() {
       setLoading(false);
     }
   }, [user, timeRange]);
+
+  useEffect(() => {
+    if (user) {
+      fetchAnalytics();
+    }
+  }, [user, timeRange, fetchAnalytics]);
+
 
   const formatCurrency = (amount: number) => `KES ${amount.toLocaleString()}`;
   const getGrowthColor = (growth: number) => (growth > 0 ? 'text-green-600' : growth < 0 ? 'text-red-600' : 'text-gray-600');

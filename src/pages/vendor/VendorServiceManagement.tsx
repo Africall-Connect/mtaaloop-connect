@@ -32,16 +32,6 @@ export default function VendorServiceManagement() {
   const [hasCategories, setHasCategories] = useState(false);
   const [checkingCategories, setCheckingCategories] = useState(true);
 
-  useEffect(() => {
-    checkCategories();
-  }, [checkCategories]);
-
-  useEffect(() => {
-    if (hasCategories) {
-      fetchServices();
-    }
-  }, [hasCategories, fetchServices]);
-
   const checkCategories = useCallback(async () => {
     try {
       setCheckingCategories(true);
@@ -62,17 +52,15 @@ export default function VendorServiceManagement() {
         .eq("vendor_id", vendorProfileId)
         .limit(1);
 
-      const hasCats = (categories?.length || 0) > 0;
-      setHasCategories(hasCats);
+      setHasCategories((categories?.length || 0) > 0);
 
-      if (!hasCats) {
-        toast.error("Please set up your categories first");
-        setTimeout(() => {
-          navigate("/vendor/categories");
-        }, 1500);
+      if ((categories?.length || 0) === 0) {
+        toast.error("Please set up your service categories first.");
+        setTimeout(() => navigate("/vendor/categories"), 1500);
       }
     } catch (error) {
       console.error("Error checking categories:", error);
+      toast.error("Could not verify your vendor setup. Please try again.");
     } finally {
       setCheckingCategories(false);
       setLoading(false);
@@ -81,13 +69,9 @@ export default function VendorServiceManagement() {
 
   const fetchServices = useCallback(async () => {
     try {
-      const vendorProfileId =
-        typeof window !== "undefined"
-          ? localStorage.getItem("ml_vendor_profile_id")
-          : null;
-
+      const vendorProfileId = localStorage.getItem("ml_vendor_profile_id");
       if (!vendorProfileId) {
-        setLoading(false);
+        setServices([]);
         return;
       }
 
@@ -100,13 +84,25 @@ export default function VendorServiceManagement() {
 
       if (error) throw error;
       setServices(data || []);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load services");
+    } catch (error) {
+      console.error("Error fetching services:", error);
+      toast.error("Could not load services. Please try again.");
     } finally {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    checkCategories();
+  }, [checkCategories]);
+
+  useEffect(() => {
+    if (hasCategories) {
+      fetchServices();
+    }
+  }, [hasCategories, fetchServices]);
+
+  // checkCategories and fetchServices are defined above (lines 45-80 and 82-103)
 
   const filtered = services.filter((s) =>
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

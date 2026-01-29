@@ -51,10 +51,12 @@ interface AnalyticsData {
 }
 
 interface AnalyticsProps {
-  estateId: string;
+  estateId?: string;
 }
 
-export default function Analytics({ estateId }: AnalyticsProps) {
+export default function Analytics({ estateId: propEstateId }: AnalyticsProps) {
+  // Get estateId from prop or from localStorage
+  const estateId = propEstateId || (typeof window !== 'undefined' ? localStorage.getItem('estate_id') : null) || '';
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('30');
   const [analytics, setAnalytics] = useState<AnalyticsData>({

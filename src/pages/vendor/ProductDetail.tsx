@@ -56,7 +56,7 @@ export default function ProductDetail() {
 
   return (
     <div className="min-h-screen bg-background">
-      <VendorNavbar vendor={{ ...vendor, slug: vendorSlug, logo: vendor.images[0] }} />
+      <VendorNavbar vendor={{ ...vendor, slug: vendorSlug, logo_url: vendor.images[0] } as any} />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Breadcrumbs */}

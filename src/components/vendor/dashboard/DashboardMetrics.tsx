@@ -21,7 +21,7 @@ interface DashboardStats {
 
 interface DashboardMetricsProps {
   stats: DashboardStats;
-  operationalCategory: 'inventory' | 'service' | 'booking' | 'minimart' | null;
+  operationalCategory: 'inventory' | 'service' | 'booking' | 'minimart' | 'pharmacy' | null;
 }
 
 export default function DashboardMetrics({ stats: initialStats, operationalCategory }: DashboardMetricsProps) {

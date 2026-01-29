@@ -23,6 +23,23 @@ export default function OrdersManagement({ vendorId }: OrdersManagementProps) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchOrders = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('vendor_id', vendorId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setOrders(data || []);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [vendorId]);
+
   useEffect(() => {
     fetchOrders();
     
@@ -47,23 +64,6 @@ export default function OrdersManagement({ vendorId }: OrdersManagementProps) {
       supabase.removeChannel(channel);
     };
   }, [vendorId, fetchOrders]);
-
-  const fetchOrders = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('vendor_id', vendorId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setOrders(data || []);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [vendorId]);
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
