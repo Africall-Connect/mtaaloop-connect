@@ -1,247 +1,24 @@
 
-# Order Tracking Status Messaging Redesign
+
+# Add Liquor Store Category Plan
 
 ## Overview
 
-This plan redesigns the order tracking status messaging in `src/pages/OrderTracking.tsx` to provide category-appropriate wording for all 9 main categories. Currently, only "Liquor Store" and "Pharmacy" have tailored messaging, but customers ordering toiletries, groceries, or home services should not see "Preparing your food."
+This plan adds **Liquor Store** as a new main category under the **Inventory** operational type, along with its subcategories. It also adds "Liquor" as a subcategory under "Food & Drinks" for vendors who sell alcohol alongside food.
 
 ---
 
-## The Problem
+## Changes Summary
 
-When a customer orders:
-- **Toiletries** from Living Essentials → sees "Preparing your food" ❌
-- **Gas Delivery** from Utilities & Services → sees "Preparing your food" ❌  
-- **Cleaning Service** from Home Services → sees "Preparing your food" ❌
+### 1. New Main Category: Liquor Store
 
-This creates a confusing and unprofessional user experience.
+| Category | Operational Type | Subcategories |
+|----------|------------------|---------------|
+| **Liquor Store** | Inventory | Beer, Wine, Spirits, Whiskey & Bourbon, Vodka, Gin, Rum, Tequila, Champagne & Sparkling, Ready-to-Drink (RTDs), Mixers & Soft Drinks |
 
----
+### 2. New Subcategory for Food & Drinks
 
-## New Category-Specific Messaging Structure
-
-### Mapping Table: Category → Status Messages
-
-| Category | Icon | "Preparing" Title | "Preparing" Description | Notification Title |
-|----------|------|-------------------|-------------------------|-------------------|
-| **Food & Drinks** | 👨‍🍳 | Preparing your order | Your delicious order is being prepared with care | Cooking Started! |
-| **Restaurant** | 👨‍🍳 | Preparing your meal | Your meal is being freshly prepared | Cooking Started! |
-| **Living Essentials** | 🧴 | Packing your items | Your items are being carefully packed | Packing Started! |
-| **Groceries & Food** | 🛒 | Packing your groceries | Your groceries are being carefully packed | Packing Started! |
-| **Utilities & Services** | 🔧 | Preparing your service | Your service request is being prepared | Service Preparing! |
-| **Home Services** | 🏠 | Preparing your service | Your home service is being arranged | Service Preparing! |
-| **Beauty & Spa** | 💅 | Preparing your appointment | Your appointment is being prepared | Appointment Ready! |
-| **Accommodation** | 🏨 | Preparing your stay | Your accommodation is being prepared | Booking Confirmed! |
-| **Pharmacy** | 💊 | Preparing your medication | Your medication is being carefully prepared | Medication Ready! |
-
----
-
-## Technical Implementation
-
-### Step 1: Create a Helper Configuration Object
-
-Create a new configuration object that maps categories to their messaging details:
-
-```typescript
-// Category-specific messaging configuration
-const CATEGORY_MESSAGING = {
-  // Inventory Categories
-  "Food & Drinks": {
-    icon: "👨‍🍳",
-    preparingTitle: "Preparing your order",
-    preparingDescription: "Your delicious order is being prepared with care",
-    notificationTitle: "Cooking Started! 👨‍🍳",
-    timelineLabel: "Preparing Your Order",
-    deliveredMessage: "Enjoy your meal!",
-  },
-  "Restaurant": {
-    icon: "👨‍🍳",
-    preparingTitle: "Preparing your meal",
-    preparingDescription: "Your meal is being freshly prepared",
-    notificationTitle: "Cooking Started! 👨‍🍳",
-    timelineLabel: "Preparing Your Meal",
-    deliveredMessage: "Enjoy your meal!",
-  },
-  "Living Essentials": {
-    icon: "🧴",
-    preparingTitle: "Packing your items",
-    preparingDescription: "Your items are being carefully packed",
-    notificationTitle: "Packing Started! 📦",
-    timelineLabel: "Packing Your Items",
-    deliveredMessage: "Enjoy your items!",
-  },
-  "Groceries & Food": {
-    icon: "🛒",
-    preparingTitle: "Packing your groceries",
-    preparingDescription: "Your groceries are being carefully packed",
-    notificationTitle: "Packing Started! 🛒",
-    timelineLabel: "Packing Your Groceries",
-    deliveredMessage: "Enjoy your groceries!",
-  },
-  // Service Categories
-  "Utilities & Services": {
-    icon: "🔧",
-    preparingTitle: "Preparing your service",
-    preparingDescription: "Your service request is being prepared",
-    notificationTitle: "Service Preparing! 🔧",
-    timelineLabel: "Preparing Your Service",
-    deliveredMessage: "Service complete!",
-  },
-  "Home Services": {
-    icon: "🏠",
-    preparingTitle: "Preparing your service",
-    preparingDescription: "Your home service is being arranged",
-    notificationTitle: "Service Preparing! 🏠",
-    timelineLabel: "Arranging Your Service",
-    deliveredMessage: "Service complete!",
-  },
-  // Booking Categories
-  "Beauty & Spa": {
-    icon: "💅",
-    preparingTitle: "Preparing your appointment",
-    preparingDescription: "Your appointment is being prepared",
-    notificationTitle: "Appointment Ready! 💅",
-    timelineLabel: "Preparing Your Appointment",
-    deliveredMessage: "Thank you for your visit!",
-  },
-  "Accommodation": {
-    icon: "🏨",
-    preparingTitle: "Preparing your stay",
-    preparingDescription: "Your accommodation is being prepared",
-    notificationTitle: "Booking Confirmed! 🏨",
-    timelineLabel: "Preparing Your Stay",
-    deliveredMessage: "Enjoy your stay!",
-  },
-  // Pharmacy (Hybrid)
-  "Pharmacy": {
-    icon: "💊",
-    preparingTitle: "Preparing your medication",
-    preparingDescription: "Your medication is being carefully prepared",
-    notificationTitle: "Medication Ready! 💊",
-    timelineLabel: "Preparing Your Medication",
-    deliveredMessage: "Take care of yourself!",
-  },
-  // Legacy support
-  "Liquor Store": {
-    icon: "🍷",
-    preparingTitle: "Preparing your drinks",
-    preparingDescription: "Your drinks are being prepared",
-    notificationTitle: "Drinks Preparing! 🍷",
-    timelineLabel: "Preparing Your Drinks",
-    deliveredMessage: "Enjoy responsibly!",
-  },
-};
-
-// Default fallback for unknown categories
-const DEFAULT_MESSAGING = {
-  icon: "📦",
-  preparingTitle: "Preparing your order",
-  preparingDescription: "Your order is being prepared",
-  notificationTitle: "Order Preparing! 📦",
-  timelineLabel: "Preparing Your Order",
-  deliveredMessage: "Enjoy!",
-};
-```
-
-### Step 2: Create Helper Function
-
-Create a helper function to get the messaging config for a category:
-
-```typescript
-const getCategoryMessaging = (category: string | null | undefined) => {
-  if (!category) return DEFAULT_MESSAGING;
-  return CATEGORY_MESSAGING[category] || DEFAULT_MESSAGING;
-};
-```
-
-### Step 3: Update `getStatusLabel()` Function (Lines 456-486)
-
-Replace the hardcoded category checks with the helper:
-
-```typescript
-const getStatusLabel = (status: string, isPremium = false) => {
-  if (isPremium) {
-    // ... existing premium logic unchanged
-  }
-  
-  const messaging = getCategoryMessaging(orderData?.category);
-  
-  switch (status) {
-    case "pending": return "Waiting for vendor to accept";
-    case "accepted": return "Vendor accepted your order";
-    case "preparing": return messaging.preparingTitle;
-    case "ready": return "Ready for pickup";
-    case "in_transit": return "Out for delivery";
-    case "delivered": return "Delivered";
-    case "cancelled": return "Order cancelled";
-    default: return "Processing order";
-  }
-};
-```
-
-### Step 4: Update Status Card Icon (Lines 1045-1054)
-
-Replace hardcoded emoji logic:
-
-```typescript
-<span className="text-4xl">
-  {orderStatus === "pending"
-    ? "⏰"
-    : orderStatus === "accepted" || orderStatus === "preparing"
-    ? getCategoryMessaging(orderData?.category).icon
-    : "🚴"}
-</span>
-```
-
-### Step 5: Update Status Description (Lines 1059-1067)
-
-Replace hardcoded description:
-
-```typescript
-<p className="text-muted-foreground mb-2">
-  {orderStatus === "pending" && "Your order will be confirmed shortly"}
-  {orderStatus === "accepted" && "The vendor is preparing your order"}
-  {orderStatus === "preparing" && getCategoryMessaging(orderData?.category).preparingDescription}
-  {orderStatus === "ready" && "Your order is ready for pickup"}
-  {orderStatus === "in_transit" && "Arriving soon"}
-</p>
-```
-
-### Step 6: Update Timeline Steps (Lines 1119-1137)
-
-Replace the "preparing" step with dynamic messaging:
-
-```typescript
-{
-  label: getCategoryMessaging(orderData?.category).timelineLabel,
-  status: "preparing",
-  done: ["preparing", "ready", "in_transit", "delivered"].includes(orderStatus),
-  icon: getCategoryMessaging(orderData?.category).icon,
-  description: getCategoryMessaging(orderData?.category).preparingDescription
-},
-```
-
-### Step 7: Update Realtime Notifications (Lines 154-185)
-
-Make notifications category-aware:
-
-```typescript
-// In the realtime subscription handler
-const messaging = getCategoryMessaging(orderData?.category);
-const statusMessages: Record<string, { title: string; description: string; emoji: string }> = {
-  accepted: {
-    title: "Order Confirmed! 🎉",
-    description: "The vendor has accepted your order and will start soon.",
-    emoji: "✅"
-  },
-  preparing: {
-    title: messaging.notificationTitle,
-    description: messaging.preparingDescription,
-    emoji: messaging.icon
-  },
-  // ... other statuses remain generic
-};
-```
+Add "Liquor" to the existing "Food & Drinks" subcategory list for restaurants/cafes that also serve alcohol.
 
 ---
 
@@ -249,55 +26,228 @@ const statusMessages: Record<string, { title: string; description: string; emoji
 
 | File | Changes |
 |------|---------|
-| `src/pages/OrderTracking.tsx` | Add CATEGORY_MESSAGING config, getCategoryMessaging() helper, update 6 locations that display status text |
+| `src/lib/categories.ts` | Add "Liquor Store" to `INVENTORY_CATEGORIES` and `MAIN_CATEGORIES`, add subcategories |
+| `src/constants/categories.ts` | Mirror the same changes |
+| `src/pages/auth/VendorSignup.tsx` | Add "Liquor Store" option to business type dropdown |
+| `src/pages/vendor/CategoryManagement.tsx` | Add "Liquor Store" to `INVENTORY_CATEGORIES` constant |
+| `src/pages/OrderTracking.tsx` | Already has "Liquor Store" messaging - no changes needed |
 
 ---
 
-## Implementation Summary
+## Detailed Changes
 
-1. **Add** `CATEGORY_MESSAGING` object with all 9+ categories (around line 67, after imports)
-2. **Add** `DEFAULT_MESSAGING` fallback object
-3. **Add** `getCategoryMessaging()` helper function
-4. **Update** `getStatusLabel()` to use helper
-5. **Update** status card icon to use helper
-6. **Update** status description to use helper
-7. **Update** timeline "preparing" step to use helper
-8. **Update** realtime notification to use helper
+### 1. `src/lib/categories.ts`
+
+**Update INVENTORY_CATEGORIES (line 5-10):**
+```typescript
+export const INVENTORY_CATEGORIES = [
+  "Food & Drinks",
+  "Living Essentials",
+  "Groceries & Food",
+  "Restaurant",
+  "Liquor Store",  // NEW
+] as const;
+```
+
+**Update MAIN_CATEGORIES (line 30-44):**
+```typescript
+export const MAIN_CATEGORIES = [
+  // Inventory
+  "Food & Drinks",
+  "Living Essentials",
+  "Groceries & Food",
+  "Restaurant",
+  "Liquor Store",  // NEW
+  // Service
+  "Utilities & Services",
+  "Home Services",
+  // Booking
+  "Beauty & Spa",
+  "Accommodation",
+  // Pharmacy (Hybrid)
+  "Pharmacy",
+] as const;
+```
+
+**Add Liquor subcategory to Food & Drinks (line 49-62):**
+```typescript
+"Food & Drinks": [
+  "Fast Food",
+  "Traditional Food",
+  "Cafes & Coffee Shops",
+  "Bakery & Pastries",
+  "International Cuisine",
+  "Pizza",
+  "Burgers & Sandwiches",
+  "Chicken & Wings",
+  "Seafood",
+  "Vegetarian & Vegan",
+  "Juice Bar & Smoothies",
+  "Ice Cream",
+  "Liquor",  // NEW - for restaurants that also serve alcohol
+],
+```
+
+**Add new Liquor Store subcategories (after line 84):**
+```typescript
+"Liquor Store": [
+  "Beer",
+  "Wine",
+  "Spirits",
+  "Whiskey & Bourbon",
+  "Vodka",
+  "Gin",
+  "Rum",
+  "Tequila",
+  "Champagne & Sparkling",
+  "Ready-to-Drink (RTDs)",
+  "Mixers & Soft Drinks",
+],
+```
+
+### 2. `src/constants/categories.ts`
+
+**Update MAIN_CATEGORIES (line 5-19):**
+Add Liquor Store option:
+```typescript
+{ value: "Liquor Store", label: "Liquor Store" },
+```
+
+**Add Liquor to Food & Drinks subcategories (line 24-37):**
+Add "Liquor" to the array.
+
+**Add Liquor Store subcategories (after line 59):**
+```typescript
+"Liquor Store": [
+  "Beer",
+  "Wine",
+  "Spirits",
+  "Whiskey & Bourbon",
+  "Vodka",
+  "Gin",
+  "Rum",
+  "Tequila",
+  "Champagne & Sparkling",
+  "Ready-to-Drink (RTDs)",
+  "Mixers & Soft Drinks",
+],
+```
+
+### 3. `src/pages/auth/VendorSignup.tsx`
+
+**Add Liquor Store option (around line 188):**
+```tsx
+{/* Inventory Categories */}
+<SelectItem value="food-drinks">Food & Drinks</SelectItem>
+<SelectItem value="living-essentials">Living Essentials</SelectItem>
+<SelectItem value="groceries-food">Groceries & Food</SelectItem>
+<SelectItem value="restaurant">Restaurant</SelectItem>
+<SelectItem value="liquor-store">Liquor Store</SelectItem>  {/* NEW */}
+```
+
+### 4. `src/pages/vendor/CategoryManagement.tsx`
+
+**Update INVENTORY_CATEGORIES constant (line 21-26):**
+```typescript
+const INVENTORY_CATEGORIES = [
+  "Food & Drinks",
+  "Living Essentials",
+  "Groceries & Food",
+  "Restaurant",
+  "Liquor Store",  // NEW
+] as const;
+```
+
+### 5. Database Trigger Update (SQL)
+
+Update the trigger to include liquor-store mapping:
+
+```sql
+CREATE OR REPLACE FUNCTION public.assign_vendor_operational_category()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  NEW.operational_category := 'inventory';
+
+  CASE NEW.business_type
+    -- INVENTORY categories (5 - now includes Liquor Store)
+    WHEN 'food-drinks' THEN NEW.operational_category := 'inventory';
+    WHEN 'living-essentials' THEN NEW.operational_category := 'inventory';
+    WHEN 'groceries-food' THEN NEW.operational_category := 'inventory';
+    WHEN 'restaurant' THEN NEW.operational_category := 'inventory';
+    WHEN 'liquor-store' THEN NEW.operational_category := 'inventory';
+
+    -- SERVICE categories (2)
+    WHEN 'utilities-services' THEN NEW.operational_category := 'service';
+    WHEN 'home-services' THEN NEW.operational_category := 'service';
+
+    -- BOOKING categories (2)
+    WHEN 'beauty-spa' THEN NEW.operational_category := 'booking';
+    WHEN 'accommodation' THEN NEW.operational_category := 'booking';
+
+    -- PHARMACY (special hybrid type)
+    WHEN 'pharmacy' THEN NEW.operational_category := 'pharmacy';
+    
+    -- Legacy fallbacks
+    WHEN 'groceries-essentials' THEN NEW.operational_category := 'inventory';
+    WHEN 'fashion-clothing' THEN NEW.operational_category := 'inventory';
+    WHEN 'electronics-gadgets' THEN NEW.operational_category := 'inventory';
+    WHEN 'minimart' THEN NEW.operational_category := 'inventory';
+    WHEN 'repairs-maintenance' THEN NEW.operational_category := 'service';
+    WHEN 'health-wellness' THEN NEW.operational_category := 'booking';
+    ELSE NEW.operational_category := 'inventory';
+  END CASE;
+
+  RETURN NEW;
+END;
+$function$;
+```
 
 ---
 
-## Example User Experiences After Implementation
+## Order Tracking - Already Configured
 
-### Living Essentials (Toiletries)
-- **Icon**: 🧴
-- **Title**: "Packing your items"
-- **Description**: "Your items are being carefully packed"
-- **Timeline**: "Packing Your Items"
+The `src/pages/OrderTracking.tsx` file already has proper messaging for "Liquor Store" category (lines 155-162):
 
-### Utilities & Services (Gas Delivery)
-- **Icon**: 🔧
-- **Title**: "Preparing your service"
-- **Description**: "Your service request is being prepared"
-- **Timeline**: "Preparing Your Service"
+```typescript
+"Liquor Store": {
+  icon: "🍷",
+  preparingTitle: "Preparing your drinks",
+  preparingDescription: "Your drinks are being prepared",
+  notificationTitle: "Drinks Preparing! 🍷",
+  timelineLabel: "Preparing Your Drinks",
+  deliveredMessage: "Enjoy responsibly!",
+},
+```
 
-### Beauty & Spa (Hair Salon)
-- **Icon**: 💅
-- **Title**: "Preparing your appointment"
-- **Description**: "Your appointment is being prepared"
-- **Timeline**: "Preparing Your Appointment"
+No changes needed here - it's already properly configured!
 
 ---
 
-## Legacy Support
+## Final Category Count
 
-The configuration includes "Liquor Store" for backwards compatibility with existing orders that may have this category value in the database.
+After this change, the system will have **10 main categories**:
+
+| # | Category | Type |
+|---|----------|------|
+| 1 | Food & Drinks | Inventory |
+| 2 | Living Essentials | Inventory |
+| 3 | Groceries & Food | Inventory |
+| 4 | Restaurant | Inventory |
+| 5 | **Liquor Store** | Inventory (NEW) |
+| 6 | Utilities & Services | Service |
+| 7 | Home Services | Service |
+| 8 | Beauty & Spa | Booking |
+| 9 | Accommodation | Booking |
+| 10 | Pharmacy | Pharmacy (Hybrid) |
 
 ---
 
-## Benefits
+## Technical Notes
 
-1. **Professional UX** - Customers see contextually appropriate messaging
-2. **Maintainable** - Single configuration object for all categories
-3. **Extensible** - Easy to add new categories in the future
-4. **Type-safe** - Clear structure prevents messaging errors
-5. **Fallback** - Unknown categories still get reasonable messaging
+1. **business_type value**: Uses `liquor-store` (kebab-case) to match existing naming convention
+2. **Category display name**: Uses "Liquor Store" (title case) for user-facing display
+3. **Subcategory "Liquor" in Food & Drinks**: Allows food vendors to also sell alcohol without changing their main category
+4. **Age restriction note**: The UI already handles Liquor Store with "(18+)" messaging where appropriate
+
