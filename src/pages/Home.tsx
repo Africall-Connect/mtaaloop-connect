@@ -121,6 +121,7 @@ const Home = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [filteredVendors, setFilteredVendors] = useState<VendorProfile[]>([]);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [categoriesWithData, setCategoriesWithData] = useState<Set<string>>(new Set());
 
   // fetch user's apartment from DB on mount
   useEffect(() => {
@@ -253,9 +254,72 @@ const Home = () => {
       }
     };
 
+    // Fetch categories that have vendors
+    const fetchCategoriesWithData = async () => {
+      try {
+        let query = supabase
+          .from('vendor_profiles')
+          .select('business_type')
+          .eq('is_approved', true)
+          .eq('is_active', true);
+
+        if (currentApartment && currentApartment.id !== 'general-location') {
+          query = query.eq('estate_id', currentApartment.id);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        // Map business_type to category names
+        const categorySet = new Set<string>();
+        data?.forEach(vendor => {
+          const bt = vendor.business_type?.toLowerCase() || '';
+          // Map vendor business types to our category names
+          if (bt.includes('food') || bt.includes('restaurant') || bt.includes('cafe') || bt.includes('fast food')) {
+            categorySet.add('Food & Drinks');
+          }
+          if (bt.includes('restaurant') || bt === 'restaurant') {
+            categorySet.add('Restaurant');
+          }
+          if (bt.includes('grocery') || bt.includes('groceries') || bt.includes('supermarket')) {
+            categorySet.add('Groceries & Food');
+          }
+          if (bt.includes('living') || bt.includes('essential') || bt.includes('toiletries') || bt.includes('household')) {
+            categorySet.add('Living Essentials');
+          }
+          if (bt.includes('liquor') || bt.includes('wine') || bt.includes('beer') || bt.includes('spirits')) {
+            categorySet.add('Liquor Store');
+          }
+          if (bt.includes('utility') || bt.includes('gas') || bt.includes('water delivery')) {
+            categorySet.add('Utilities & Services');
+          }
+          if (bt.includes('home service') || bt.includes('cleaning') || bt.includes('laundry') || bt.includes('electrical')) {
+            categorySet.add('Home Services');
+          }
+          if (bt.includes('beauty') || bt.includes('spa') || bt.includes('salon') || bt.includes('barber') || bt.includes('nail')) {
+            categorySet.add('Beauty & Spa');
+          }
+          if (bt.includes('accommodation') || bt.includes('airbnb') || bt.includes('guest house') || bt.includes('rental')) {
+            categorySet.add('Accommodation');
+          }
+          if (bt.includes('pharmacy') || bt.includes('chemist') || bt.includes('medicine')) {
+            categorySet.add('Pharmacy');
+          }
+        });
+
+        // Always include Trash Collection as a special service
+        categorySet.add('Trash Collection');
+
+        setCategoriesWithData(categorySet);
+      } catch (error) {
+        console.error('Failed to load category data:', error);
+      }
+    };
+
     if (!loadingPref) {
       fetchVendors();
       fetchMinimarts();
+      fetchCategoriesWithData();
     }
   }, [currentApartment, loadingPref]);
 
@@ -402,34 +466,43 @@ const Home = () => {
             <h2 className="text-lg md:text-2xl font-bold">What are you looking for?</h2>
           </div>
           
-          {/* Mobile: 2 columns, Desktop: 3 columns */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-            {categories.map((category) => (
-              <Link key={category.name} to={category.link}>
-                <Card className="group relative overflow-hidden h-28 md:h-40 cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-primary/50">
-                  {/* Background Image */}
-                  <div 
-                    className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-110"
-                    style={{ backgroundImage: `url(${category.image})` }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30" />
-                  
-                  {/* Content */}
-                  <div className="relative p-3 md:p-4 h-full flex flex-col justify-end">
-                    <div className="w-8 h-8 md:w-12 md:h-12 rounded-lg bg-white/20 backdrop-blur-sm p-1.5 md:p-2 mb-2">
-                      <category.icon className="w-full h-full text-white" />
-                    </div>
-                    <h3 className="text-sm md:text-base font-bold text-white line-clamp-1">
-                      {category.name}
-                    </h3>
-                    <p className="text-xs text-white/80 line-clamp-1 hidden md:block">
-                      {category.subtitle}
-                    </p>
-                  </div>
-                </Card>
-              </Link>
-            ))}
-          </div>
+          {/* Mobile: 2 columns, Desktop: 3 columns - Only show categories with data */}
+          {categories.filter(cat => categoriesWithData.has(cat.name)).length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+              {categories
+                .filter(category => categoriesWithData.has(category.name))
+                .map((category) => (
+                  <Link key={category.name} to={category.link}>
+                    <Card className="group relative overflow-hidden h-28 md:h-40 cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-primary/50">
+                      {/* Background Image */}
+                      <div 
+                        className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-110"
+                        style={{ backgroundImage: `url(${category.image})` }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30" />
+                      
+                      {/* Content */}
+                      <div className="relative p-3 md:p-4 h-full flex flex-col justify-end">
+                        <div className="w-8 h-8 md:w-12 md:h-12 rounded-lg bg-white/20 backdrop-blur-sm p-1.5 md:p-2 mb-2">
+                          <category.icon className="w-full h-full text-white" />
+                        </div>
+                        <h3 className="text-sm md:text-base font-bold text-white line-clamp-1">
+                          {category.name}
+                        </h3>
+                        <p className="text-xs text-white/80 line-clamp-1 hidden md:block">
+                          {category.subtitle}
+                        </p>
+                      </div>
+                    </Card>
+                  </Link>
+                ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No vendors available in your area yet.</p>
+              <p className="text-sm mt-1">Check back soon!</p>
+            </div>
+          )}
         </div>
 
         {/* Minimarts in Your Area */}
