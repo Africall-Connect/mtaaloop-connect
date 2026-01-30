@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { verifyAuth, createUnauthorizedResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,6 +13,17 @@ serve(async (req) => {
   }
 
   try {
+    // 🔐 JWT Verification - require authenticated user
+    const authResult = await verifyAuth(req);
+    if (!authResult.authenticated || !authResult.userId) {
+      return createUnauthorizedResponse(
+        authResult.error || "Authentication required",
+        corsHeaders
+      );
+    }
+
+    console.log(`[generate-image] Request from user: ${authResult.userId}`);
+
     const { prompt, model = "google/gemini-2.5-flash-image" } = await req.json();
     
     if (!prompt || typeof prompt !== 'string') {
@@ -76,7 +88,7 @@ serve(async (req) => {
       );
     }
 
-    console.log("Image generated successfully");
+    console.log(`Image generated successfully for user: ${authResult.userId}`);
 
     return new Response(
       JSON.stringify({ imageUrl, text, success: true }),
