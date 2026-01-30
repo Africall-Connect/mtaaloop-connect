@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     // 1. Fetch the order to get the amount and user details
     const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
-      .select("total_amount, user_email, user_id")
+      .select("total_amount, user_email, customer_id")
       .eq("id", order_id)
       .single();
 
@@ -49,15 +49,33 @@ Deno.serve(async (req) => {
     }
 
     // 🔐 Ownership check: user must own the order
-    if (order.user_id !== userId) {
-      console.warn(`[payments-init] User ${userId} tried to pay for order owned by ${order.user_id}`);
+    if (order.customer_id !== userId) {
+      console.warn(`[payments-init] User ${userId} tried to pay for order owned by ${order.customer_id}`);
       return createForbiddenResponse(
         "You can only pay for your own orders",
         corsHeaders
       );
     }
 
-    // 2. Create a new payment record
+    // 2. Resolve user email - from order first, then fallback to auth.users
+    let userEmail = order.user_email;
+    
+    if (!userEmail && order.customer_id) {
+      const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(order.customer_id);
+      if (!userError && userData?.user?.email) {
+        userEmail = userData.user.email;
+      }
+    }
+
+    if (!userEmail) {
+      console.error("No email found for order:", order_id);
+      return new Response(JSON.stringify({ error: "User email not found" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // 3. Create a new payment record
     const { data: payment, error: paymentInsertError } = await supabaseAdmin
       .from("payments")
       .insert({
@@ -78,7 +96,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 3. Initialize transaction with Paystack
+    // 4. Initialize transaction with Paystack
     const callbackUrl = `${Deno.env.get("SITE_URL") || "https://mtaa-loop-connect.vercel.app"}/payment/callback`;
     
     const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {
@@ -88,7 +106,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        email: order.user_email,
+        email: userEmail,
         amount: order.total_amount * 100, // Amount in kobo
         currency: "KES",
         reference: payment.id,

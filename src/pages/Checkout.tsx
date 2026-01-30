@@ -493,6 +493,7 @@ const Checkout = () => {
             house: deliveryAddress.house_number,
             full_name: fullName,
             status: "pending",
+            user_email: user?.email,
           },
         ])
         .select("*")
@@ -590,6 +591,7 @@ const Checkout = () => {
             category: orderDetails.category,
             house: deliveryAddress.house_number,
             full_name: fullName,
+            user_email: user?.email,
           },
         ]);
 
