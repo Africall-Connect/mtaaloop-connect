@@ -2,19 +2,20 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Package,
-  MapPin,
   CreditCard,
   Wallet,
-  Star,
   Gift,
   Settings,
   HelpCircle,
   LogOut,
   ArrowLeft,
   Send,
+  ChevronRight,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -41,6 +42,8 @@ const Account = () => {
   const { toast } = useToast();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState<string>("");
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
 
@@ -54,7 +57,7 @@ const Account = () => {
     }, 500);
   };
 
-  // fetch current logged in user
+  // Fetch current logged in user
   useEffect(() => {
     const fetchUser = async () => {
       setLoading(true);
@@ -69,6 +72,9 @@ const Account = () => {
           navigate("/auth/login");
           return;
         }
+
+        // Set email immediately (available from auth)
+        setEmail(user.email ?? "");
 
         // Fetch from customer_profiles table
         const { data: customerProfile, error: profileError } = await supabase
@@ -86,7 +92,7 @@ const Account = () => {
           .select("id", { count: "exact" })
           .eq("customer_id", user.id)
           .eq("status", "delivered");
-          
+
         const { data: premiumOrdersData, error: premiumOrdersError } = await supabase
           .from("premium_orders")
           .select("id", { count: "exact" })
@@ -128,10 +134,7 @@ const Account = () => {
             user.email?.split("@")[0] ||
             "MtaaLoop User";
 
-          const phone =
-            metadata?.phone ||
-            metadata?.phone_number ||
-            "";
+          const phone = metadata?.phone || metadata?.phone_number || "";
 
           setProfile({
             name: fullName,
@@ -161,106 +164,155 @@ const Account = () => {
   const stats = [
     { label: "Total Orders", value: profile?.totalOrders ?? 0 },
     { label: "Member Since", value: profile?.memberSince ?? "..." },
-    // Removed Loyalty Points and Money Saved per customer-side requirements
   ];
 
   const links = [
-  { icon: Package, label: "My Orders", href: "/account/orders" },
-  // { icon: MapPin, label: "Saved Addresses", href: "/account/addresses" },
-  { icon: CreditCard, label: "Payment Methods", href: "/account/payments" },
-  { icon: Wallet, label: "Wallet & Points", href: "/account/wallet" },
-  // { icon: Star, label: "My Reviews", href: "/account/reviews" },
-  { icon: Gift, label: "Refer Friends", href: "/refer" },
-  { icon: Settings, label: "Settings", href: "/account/settings" },
-  { icon: HelpCircle, label: "Help & Support", href: "/help" },
-  { icon: Send, label: "Inbox", href: "/inbox" },
-  { icon: HelpCircle, label: "Live Support", href: "/support-live-chat" },
+    { icon: Package, label: "My Orders", href: "/account/orders" },
+    { icon: CreditCard, label: "Payment Methods", href: "/account/payments" },
+    { icon: Wallet, label: "Wallet & Points", href: "/account/wallet" },
+    { icon: Gift, label: "Refer Friends", href: "/refer" },
+    { icon: Settings, label: "Settings", href: "/account/settings" },
+    { icon: HelpCircle, label: "Help & Support", href: "/help" },
+    { icon: Send, label: "Inbox", href: "/inbox" },
+    { icon: HelpCircle, label: "Live Support", href: "/support-live-chat", highlight: true },
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background">
       <div className="container px-4 py-6 max-w-4xl mx-auto">
+        {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <Link to="/home">
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" className="hover:bg-primary/10">
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
-          <h1 className="text-3xl font-bold">👤 Account</h1>
+          <h1 className="text-2xl font-bold">Account</h1>
         </div>
 
-        <Card className="p-6 mb-6">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-4xl overflow-hidden">
-              {profile?.avatarUrl ? (
-                <img
-                  src={profile.avatarUrl}
-                  alt="Avatar"
-                  className="w-full h-full object-cover"
-                />
+        {/* Hero Profile Card */}
+        <Card className="relative overflow-hidden mb-6 border-primary/10">
+          {/* Gradient Background */}
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-primary/10 to-blue-500/20" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+          
+          <div className="relative p-6">
+            <div className="flex items-center gap-4 mb-4">
+              {/* Avatar */}
+              {loading ? (
+                <Skeleton className="w-20 h-20 rounded-full" />
               ) : (
-                profile?.name?.charAt(0)?.toUpperCase() ?? "👤"
+                <div className="w-20 h-20 rounded-full bg-primary/20 border-2 border-primary/30 flex items-center justify-center text-4xl overflow-hidden shadow-lg">
+                  {profile?.avatarUrl ? (
+                    <img
+                      src={profile.avatarUrl}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-10 h-10 text-primary" />
+                  )}
+                </div>
               )}
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold">
-                {loading ? "Loading..." : profile?.name ?? "MtaaLoop User"}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {loading ? "..." : profile?.email ?? ""}
-              </p>
-              {profile?.phone ? (
-                <p className="text-sm text-muted-foreground">{profile.phone}</p>
-              ) : null}
-            </div>
-          </div>
-          <Button variant="outline" className="w-full" onClick={() => navigate("/account/settings")}> 
-            Edit Profile
-          </Button>
-        </Card>
-
-        <Card className="p-6 mb-6">
-          <h3 className="text-xl font-bold mb-4">📊 Your Stats</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-2xl font-bold text-primary mb-1">{stat.value}</div>
-                <div className="text-sm text-muted-foreground">{stat.label}</div>
+              
+              {/* User Info */}
+              <div className="flex-1 min-w-0">
+                {loading ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-6 w-40" />
+                    <Skeleton className="h-4 w-56" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                ) : (
+                  <>
+                    <h2 className="text-xl font-bold truncate">
+                      {profile?.name ?? "MtaaLoop User"}
+                    </h2>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {email || profile?.email}
+                    </p>
+                    {profile?.phone && (
+                      <p className="text-sm text-muted-foreground">{profile.phone}</p>
+                    )}
+                  </>
+                )}
               </div>
-            ))}
+            </div>
+            
+            <Button 
+              variant="outline" 
+              className="w-full bg-background/80 backdrop-blur hover:bg-primary/10 border-primary/20" 
+              onClick={() => navigate("/account/settings")}
+            >
+              Edit Profile
+            </Button>
           </div>
         </Card>
 
-        <div className="space-y-2">
-          <h3 className="font-semibold mb-4">Quick Links</h3>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          {stats.map((stat) => (
+            <Card 
+              key={stat.label} 
+              className="p-4 bg-card/80 backdrop-blur border-primary/10 hover:border-primary/30 transition-colors"
+            >
+              {loading ? (
+                <div className="text-center space-y-2">
+                  <Skeleton className="h-8 w-16 mx-auto" />
+                  <Skeleton className="h-4 w-24 mx-auto" />
+                </div>
+              ) : (
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary mb-1">{stat.value}</div>
+                  <div className="text-xs text-muted-foreground">{stat.label}</div>
+                </div>
+              )}
+            </Card>
+          ))}
+        </div>
+
+        {/* Quick Links */}
+        <div className="space-y-2 mb-6">
+          <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wide">
+            Quick Links
+          </h3>
           {links.map((link) => (
             <Link key={link.label} to={link.href}>
               <Card
-                className={`p-4 hover:bg-muted/50 transition-colors cursor-pointer ${
-                  link.label === "Live Support"
-                    ? "bg-primary/10 border-primary/20 text-primary"
+                className={`p-4 hover:bg-primary/5 hover:border-primary/20 transition-all cursor-pointer group ${
+                  link.highlight
+                    ? "bg-primary/10 border-primary/20"
                     : ""
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <link.icon className="w-5 h-5" />
-                  <span className="font-medium">{link.label}</span>
-                  <span className="ml-auto">→</span>
+                  <div className={`p-2 rounded-full transition-colors ${
+                    link.highlight 
+                      ? "bg-primary text-primary-foreground" 
+                      : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
+                  }`}>
+                    <link.icon className="w-5 h-5" />
+                  </div>
+                  <span className="font-medium flex-1">{link.label}</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                 </div>
               </Card>
             </Link>
           ))}
-
-          <Card
-            className="p-4 hover:bg-destructive/10 transition-colors cursor-pointer border-destructive/20"
-            onClick={handleLogout}
-          >
-            <div className="flex items-center gap-3 text-destructive">
-              <LogOut className="w-5 h-5" />
-              <span className="font-medium">Logout</span>
-            </div>
-          </Card>
         </div>
+
+        {/* Logout Button */}
+        <Card
+          className="p-4 hover:bg-destructive/10 transition-colors cursor-pointer border-destructive/20 group"
+          onClick={handleLogout}
+        >
+          <div className="flex items-center gap-3 text-destructive">
+            <div className="p-2 rounded-full bg-destructive/10 group-hover:bg-destructive group-hover:text-destructive-foreground transition-colors">
+              <LogOut className="w-5 h-5" />
+            </div>
+            <span className="font-medium">Logout</span>
+          </div>
+        </Card>
       </div>
     </div>
   );
