@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Form,
   FormControl,
@@ -110,20 +111,18 @@ export function PreConsultationForm({ onSubmit, onBack }: PreConsultationFormPro
             render={({ field }) => (
               <FormItem>
                 <FormLabel>How long have you had these symptoms? *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select duration" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {SYMPTOM_DURATIONS.map(opt => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
+                <FormControl>
+                  <RadioGroup value={field.value} onValueChange={field.onChange} className="space-y-2">
+                    {SYMPTOM_DURATIONS.map((opt) => (
+                      <div key={opt.value} className="flex items-center space-x-2">
+                        <RadioGroupItem value={opt.value} id={`symptom_duration_${opt.value}`} />
+                        <Label htmlFor={`symptom_duration_${opt.value}`} className="cursor-pointer font-normal">
+                          {opt.label}
+                        </Label>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </RadioGroup>
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -135,7 +134,7 @@ export function PreConsultationForm({ onSubmit, onBack }: PreConsultationFormPro
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Age Group *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select age group" />

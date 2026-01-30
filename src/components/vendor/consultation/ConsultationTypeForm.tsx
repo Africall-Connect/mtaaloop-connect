@@ -7,13 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 import {
   Form,
   FormControl,
@@ -29,7 +23,7 @@ import { Loader2, Stethoscope } from 'lucide-react';
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100),
   description: z.string().max(500).optional(),
-  duration_minutes: z.coerce.number().min(15).max(120),
+  duration_minutes: z.coerce.number().min(15).max(60),
   price: z.coerce.number().min(0),
   requires_prescription: z.boolean(),
   is_active: z.boolean(),
@@ -49,7 +43,9 @@ export function ConsultationTypeForm({ initialData, onSubmit, onCancel }: Consul
     defaultValues: {
       name: initialData?.name || '',
       description: initialData?.description || '',
-      duration_minutes: initialData?.duration_minutes || 30,
+      duration_minutes: [15, 30, 45, 60].includes(initialData?.duration_minutes ?? -1)
+        ? (initialData?.duration_minutes as 15 | 30 | 45 | 60)
+        : 30,
       price: initialData?.price || 0,
       requires_prescription: initialData?.requires_prescription || false,
       is_active: initialData?.is_active ?? true,
@@ -119,24 +115,27 @@ export function ConsultationTypeForm({ initialData, onSubmit, onCancel }: Consul
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Duration</FormLabel>
-                <Select
-                  onValueChange={(value) => field.onChange(parseInt(value))}
-                  defaultValue={field.value.toString()}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select duration" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="15">15 minutes</SelectItem>
-                    <SelectItem value="30">30 minutes</SelectItem>
-                    <SelectItem value="45">45 minutes</SelectItem>
-                    <SelectItem value="60">60 minutes</SelectItem>
-                    <SelectItem value="90">90 minutes</SelectItem>
-                    <SelectItem value="120">120 minutes</SelectItem>
-                  </SelectContent>
-                </Select>
+                <FormControl>
+                  <div className="space-y-2">
+                    <Slider
+                      value={[field.value]}
+                      min={15}
+                      max={60}
+                      step={15}
+                      onValueChange={(value) => field.onChange(value[0])}
+                    />
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      {[15, 30, 45, 60].map((m) => (
+                        <span key={m} className={m === field.value ? 'text-foreground font-medium' : undefined}>
+                          {m}m
+                        </span>
+                      ))}
+                    </div>
+                    <div className="text-sm">
+                      Selected: <span className="font-medium">{field.value} minutes</span>
+                    </div>
+                  </div>
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
