@@ -1,247 +1,450 @@
 
-# Implementation Plan
+# Booking System Enhancement Plan
 
 ## Overview
 
-This plan addresses three issues:
-1. Landing page header cleanup - replace cart/account with Login button
-2. Account page redesign with themed UI and faster loading  
-3. Fix order cancellation error caused by invalid payment_status value
+This plan enhances the booking operational_category to mirror the pharmacy consultation system, providing a complete booking management experience for vendors (spas, salons, accommodation, etc.) and a polished customer booking flow.
 
 ---
 
-## Issue 1: Landing Page Header
+## Current State Analysis
 
-### Problem
-The Index.tsx landing page has cart and account icons in the header, but since this is the public landing page (for non-logged-in users), these don't make sense.
+### Vendor Side (VendorBookingManagement.tsx)
+- Basic form with name, category, subcategory, description, price, toggles
+- Manual slot creation using datetime-local inputs (one at a time)
+- Uses `booking_slots` table linked to products
+- No recurring availability management
+- No auto-generation of slots
 
-### Solution
-Replace the cart and account buttons with a single "Log In" button positioned on the right side of the header.
+### Customer Side (BookingView.tsx)
+- Basic calendar + list of slots
+- No date filtering (shows all slots)
+- No service type selection flow
+- No customer notes field
+- Plain design, lacks polish
 
-### Changes to Index.tsx
+### Reference: Pharmacy Consultation System
+- 4-tab management: Types, Hours, Slots, Bookings
+- Weekly availability scheduler with day toggles
+- Auto-generate slots for date ranges
+- Slot blocking/unblocking
+- Multi-step customer booking flow with pre-info collection
+- Themed UI with progress indicators
 
-**Mobile header (lines 363-383):**
-- Remove ShoppingBag button
-- Remove User button  
-- Add single "Log In" button
+---
 
-**Desktop header (lines 411-429):**
-- Remove ShoppingBag button
-- Remove Account button
-- Add single "Log In" button with LogIn icon
+## Database Schema Changes
+
+### New Tables Required
+
+**1. `booking_service_types`** - Similar to `consultation_types`
+```sql
+CREATE TABLE booking_service_types (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  vendor_id UUID NOT NULL REFERENCES vendor_profiles(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  duration_minutes INTEGER NOT NULL DEFAULT 60,
+  price NUMERIC NOT NULL,
+  category TEXT,
+  subcategory TEXT,
+  requires_address BOOLEAN DEFAULT FALSE,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+**2. `booking_availability`** - Weekly recurring hours
+```sql
+CREATE TABLE booking_availability (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  vendor_id UUID NOT NULL REFERENCES vendor_profiles(id) ON DELETE CASCADE,
+  day_of_week INTEGER NOT NULL CHECK (day_of_week >= 0 AND day_of_week <= 6),
+  start_time TIME NOT NULL,
+  end_time TIME NOT NULL,
+  is_available BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(vendor_id, day_of_week)
+);
+```
+
+**3. `booking_time_slots`** - Generated specific time slots (replaces/enhances existing `booking_slots`)
+```sql
+CREATE TABLE booking_time_slots (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  vendor_id UUID NOT NULL REFERENCES vendor_profiles(id) ON DELETE CASCADE,
+  service_type_id UUID REFERENCES booking_service_types(id) ON DELETE SET NULL,
+  slot_date DATE NOT NULL,
+  slot_start TIME NOT NULL,
+  slot_end TIME NOT NULL,
+  is_available BOOLEAN DEFAULT TRUE,
+  is_blocked BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+**4. `booking_reservations`** - Customer bookings
+```sql
+CREATE TABLE booking_reservations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slot_id UUID REFERENCES booking_time_slots(id) ON DELETE SET NULL,
+  customer_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  vendor_id UUID NOT NULL REFERENCES vendor_profiles(id) ON DELETE CASCADE,
+  service_type_id UUID NOT NULL REFERENCES booking_service_types(id) ON DELETE CASCADE,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'in_progress', 'completed', 'cancelled', 'no_show')),
+  amount NUMERIC NOT NULL,
+  payment_status TEXT DEFAULT 'pending' CHECK (payment_status IN ('pending', 'paid', 'refunded', 'failed')),
+  customer_notes TEXT,
+  vendor_notes TEXT,
+  booking_date DATE NOT NULL,
+  booking_time TIME NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+---
+
+## Vendor Side Implementation
+
+### New File Structure
 
 ```text
-Before:
-[Logo] [Search...............] [Cart] [Account]
-
-After:
-[Logo] [Search...............] [Log In]
+src/
+├── types/
+│   └── booking.ts              # New booking types (mirror consultation.ts pattern)
+├── lib/
+│   └── bookingUtils.ts         # Slot generation utilities
+├── components/
+│   └── vendor/
+│       └── booking/
+│           ├── BookingServiceForm.tsx    # Add/edit service types
+│           ├── BookingAvailabilityScheduler.tsx
+│           ├── BookingSlotCalendar.tsx
+│           └── BookingReservationPanel.tsx
+└── pages/
+    └── vendor/
+        └── VendorBookingManagement.tsx   # Refactored with tabs
 ```
 
----
+### VendorBookingManagement.tsx Redesign
 
-## Issue 2: Account.tsx Redesign
-
-### Problems
-1. Plain white background - doesn't match MtaaLoop's vibrant theme
-2. Customer info takes time to load with no visual feedback
-3. Layout is basic and not visually engaging
-
-### Solution
-
-**Theme Improvements:**
-- Add gradient background matching Home.tsx theme
-- Use Card components with subtle shadows and hover effects
-- Add decorative elements (gradient overlays, icons)
-- Use brand colors for highlights
-
-**Loading Optimization:**
-- Add skeleton loaders for each data section
-- Show partial data as it loads (email available immediately from auth)
-- Separate quick-loading data from slower queries
-
-**Layout Enhancements:**
+Refactor to use 4 tabs similar to PharmacyConsultationManagement:
 
 ```text
 +----------------------------------------------------------+
-|  [Back]                     Account                       |
+|  [Back]  Booking Management                               |
+|          Manage services, availability, and bookings      |
 +----------------------------------------------------------+
-|  [Gradient Hero Banner with Avatar]                       |
-|  +------------------+                                     |
-|  |  [Avatar/Initial]|  Name (with skeleton if loading)   |
-|  |                  |  email@example.com                  |
-|  +------------------+  Member since: Jan 2024             |
+|  [Services] [Hours] [Slots] [Bookings (3)]               |
 +----------------------------------------------------------+
-|  +------------+  +------------+                           |
-|  | Orders     |  | Member     |                           |
-|  | [count]    |  | Since      |                           |
-|  +------------+  +------------+                           |
-+----------------------------------------------------------+
-|  Quick Links                                              |
-|  [Icon] My Orders                    >                    |
-|  [Icon] Payment Methods              >                    |
-|  [Icon] Wallet & Points              >                    |
-|  [Icon] Refer Friends                >                    |
-|  [Icon] Settings                     >                    |
-|  [Icon] Help & Support               >                    |
-|  [Icon] Inbox                        >                    |
-|  [Icon] Live Support                 >                    |
-+----------------------------------------------------------+
-|  [Logout Button - Red accent]                             |
+|                                                          |
+|  TAB CONTENT AREA                                        |
+|                                                          |
 +----------------------------------------------------------+
 ```
 
-**Code Structure:**
-```typescript
-// Skeleton state for loading
-{loading ? (
-  <div className="space-y-4">
-    <Skeleton className="h-20 w-20 rounded-full" />
-    <Skeleton className="h-6 w-48" />
-    <Skeleton className="h-4 w-32" />
-  </div>
-) : (
-  <div>
-    {/* Actual profile content */}
-  </div>
-)}
-```
+**Tab 1: Services**
+- List of booking service types with cards
+- Add/Edit dialog with form fields:
+  - Name (required)
+  - Description
+  - Duration (slider: 15/30/45/60/90/120 minutes)
+  - Price
+  - Category/Subcategory (from vendor_categories)
+  - Requires on-site location toggle
+  - Active toggle
+
+**Tab 2: Hours (Availability)**
+- Weekly schedule with day toggles (Sun-Sat)
+- Start/End time selectors for each day
+- "Copy Monday to Weekdays" quick action
+- Save button
+
+**Tab 3: Slots**
+- Calendar view showing dates with slots
+- "Generate Week" button to auto-create slots
+- Click date to see day's slots
+- Click slot to block/unblock
+- Color-coded: green (available), blue (booked), gray (blocked)
+
+**Tab 4: Bookings**
+- List of customer reservations
+- Status badges (pending, confirmed, completed, etc.)
+- Click to open detail panel
+- Update status, add vendor notes
 
 ---
 
-## Issue 3: Order Cancellation Error
-
-### Problem
-The database constraint `orders_payment_status_chk` only allows:
-- `'pending'`
-- `'paid'`
-- `'failed'`
-- `'refunded'`
-
-But the code in OrderTracking.tsx tries to set `payment_status: 'cancelled'` which violates the constraint.
-
-### Solution
-
-When cancelling an order, instead of setting `payment_status` to `'cancelled'`, we should:
-1. Keep `payment_status` unchanged OR set it to `'refunded'` if payment was made
-2. Only update the `status` field to `'cancelled'`
-
-**Fix in OrderTracking.tsx (lines 807-815):**
+### types/booking.ts (New)
 
 ```typescript
-// Before (WRONG):
-const { error: orderError } = await supabase
-  .from("orders")
-  .update({
-    status: "cancelled",
-    payment_status: "cancelled",  // <-- This violates the constraint
-    cancellation_reason: cancelReason,
-    cancelled_at: new Date().toISOString(),
-  })
-  .eq("id", orderId);
+export type BookingStatus = 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'no_show';
+export type BookingPaymentStatus = 'pending' | 'paid' | 'refunded' | 'failed';
 
-// After (CORRECT):
-const newPaymentStatus = orderData?.payment_status === 'paid' ? 'refunded' : orderData?.payment_status;
+export interface BookingServiceType {
+  id: string;
+  vendor_id: string;
+  name: string;
+  description: string | null;
+  duration_minutes: number;
+  price: number;
+  category: string | null;
+  subcategory: string | null;
+  requires_address: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
-const { error: orderError } = await supabase
-  .from("orders")
-  .update({
-    status: "cancelled",
-    payment_status: newPaymentStatus,  // <-- Keep existing or set to 'refunded' if paid
-    cancellation_reason: cancelReason,
-    cancelled_at: new Date().toISOString(),
-  })
-  .eq("id", orderId);
+export interface BookingAvailability {
+  id: string;
+  vendor_id: string;
+  day_of_week: number; // 0-6
+  start_time: string; // HH:MM
+  end_time: string;
+  is_available: boolean;
+  created_at: string;
+}
+
+export interface BookingTimeSlot {
+  id: string;
+  vendor_id: string;
+  service_type_id: string | null;
+  slot_date: string; // YYYY-MM-DD
+  slot_start: string; // HH:MM
+  slot_end: string;
+  is_available: boolean;
+  is_blocked: boolean;
+  created_at: string;
+}
+
+export interface BookingReservation {
+  id: string;
+  slot_id: string | null;
+  customer_id: string;
+  vendor_id: string;
+  service_type_id: string;
+  status: BookingStatus;
+  amount: number;
+  payment_status: BookingPaymentStatus;
+  customer_notes: string | null;
+  vendor_notes: string | null;
+  booking_date: string;
+  booking_time: string;
+  created_at: string;
+  updated_at: string;
+  // Joined
+  service_type?: BookingServiceType;
+  vendor?: { id: string; business_name: string; logo_url: string | null; business_address: string };
+}
+
+export const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
+
+export const BOOKING_STATUS_LABELS: Record<BookingStatus, { label: string; color: string }> = {
+  pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
+  confirmed: { label: 'Confirmed', color: 'bg-blue-100 text-blue-800' },
+  in_progress: { label: 'In Progress', color: 'bg-purple-100 text-purple-800' },
+  completed: { label: 'Completed', color: 'bg-green-100 text-green-800' },
+  cancelled: { label: 'Cancelled', color: 'bg-gray-100 text-gray-800' },
+  no_show: { label: 'No Show', color: 'bg-red-100 text-red-800' },
+};
 ```
-
-This logic:
-- If payment was `'paid'`, change to `'refunded'` (indicating refund needed)
-- If payment was `'pending'` or `'failed'`, keep the same value
-- Never set to `'cancelled'` which isn't allowed
 
 ---
 
-## Files to Modify
+## Customer Side Implementation
 
-| File | Changes |
-|------|---------|
-| `src/pages/Index.tsx` | Replace cart/account with Log In button |
-| `src/pages/Account.tsx` | Full redesign with theme + skeleton loaders |
-| `src/pages/OrderTracking.tsx` | Fix payment_status update logic |
+### New Component: BookingFlow.tsx
 
----
+Multi-step wizard similar to ConsultationBookingFlow:
 
-## Technical Details
+```text
+Step 1: Select Service
++----------------------------------------------------------+
+|  [Back]  Book a Service                                   |
+|          Vendor Name • Address • Rating                   |
++----------------------------------------------------------+
+|  ① ─── ② ─── ③ ─── ④                                    |
++----------------------------------------------------------+
+|  Select a Service                                         |
+|                                                          |
+|  +------------------------------------------------+      |
+|  | Spa Massage                                    |      |
+|  | Full body relaxation massage                   |      |
+|  | 60 min • KES 2,500                   [Select] |      |
+|  +------------------------------------------------+      |
++----------------------------------------------------------+
 
-### Index.tsx Header Changes
+Step 2: Select Date & Time
++----------------------------------------------------------+
+|  [Calendar]          |  Tuesday, January 30              |
+|                      |                                   |
+|                      |  Morning (6 AM - 12 PM)           |
+|                      |  [9:00 AM] [9:30 AM] [10:00 AM]   |
+|                      |                                   |
+|                      |  Afternoon (12 PM - 5 PM)         |
+|                      |  [1:00 PM] [2:00 PM] [3:00 PM]    |
++----------------------------------------------------------+
+|  [Continue]                                              |
++----------------------------------------------------------+
 
-Mobile layout (lines 356-394):
-```tsx
-<div className="flex items-center justify-between">
-  <div className="flex items-center gap-2">
-    <img src="/logo.png" alt="Mtaaloop" className="h-8 w-8" />
-    <span className="font-bold text-lg text-primary">Mtaaloop</span>
-  </div>
-  <Button
-    variant="outline"
-    size="sm"
-    onClick={() => navigate("/auth/login")}
-  >
-    <LogIn className="h-4 w-4 mr-2" />
-    Log In
-  </Button>
-</div>
+Step 3: Add Notes
++----------------------------------------------------------+
+|  Add Notes for the Vendor                                |
+|                                                          |
+|  [Textarea: Any special requests or information...]      |
+|                                                          |
+|  Examples:                                               |
+|  • Specific preferences (e.g., pressure level)           |
+|  • Allergies or sensitivities                            |
+|  • Special occasions                                     |
+|                                                          |
+|  [Continue]                                              |
++----------------------------------------------------------+
+
+Step 4: Confirm Booking
++----------------------------------------------------------+
+|  Confirm Your Booking                                     |
+|                                                          |
+|  [Service Icon]  Spa Massage                             |
+|                  Vendor Name                              |
+|                                          KES 2,500       |
+|  ─────────────────────────────────────────────────       |
+|  📅 Tuesday, January 30, 2024                            |
+|  🕐 9:00 AM - 10:00 AM EAT                               |
+|  📍 123 Business Address                                 |
+|  ─────────────────────────────────────────────────       |
+|  Notes: Light pressure preferred                         |
+|  ─────────────────────────────────────────────────       |
+|                                                          |
+|  [ ] I confirm and agree to booking terms               |
+|                                                          |
+|  [Confirm Booking]                                       |
++----------------------------------------------------------+
 ```
 
-Desktop layout (lines 396-431):
-```tsx
-<div className="flex items-center gap-2">
-  <Button variant="outline" onClick={() => navigate("/auth/login")}>
-    <LogIn className="h-4 w-4 mr-2" />
-    Log In
-  </Button>
-</div>
-```
+### Enhanced BookingView.tsx
 
-### Account.tsx Theme Implementation
+Redesign the customer-facing booking view:
 
-Background gradient:
-```tsx
-<div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background">
-```
-
-Hero section with gradient overlay:
-```tsx
-<div className="relative bg-gradient-to-r from-primary/20 via-primary/10 to-blue-500/20 rounded-2xl p-6 mb-6 overflow-hidden">
-  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
-  {/* Avatar and info */}
-</div>
-```
-
-Stats cards with themed borders:
-```tsx
-<Card className="p-4 bg-card/80 backdrop-blur border-primary/10 hover:border-primary/30 transition-colors">
-```
-
-Quick links with hover effects:
-```tsx
-<Card className="p-4 hover:bg-primary/5 hover:border-primary/20 transition-all cursor-pointer group">
-  <div className="flex items-center gap-3">
-    <div className="p-2 rounded-full bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-      <Icon className="w-5 h-5" />
+```typescript
+export function BookingView({ vendor, products }: BookingViewProps) {
+  const [showBookingFlow, setShowBookingFlow] = useState(false);
+  const [serviceTypes, setServiceTypes] = useState<BookingServiceType[]>([]);
+  
+  // Fetch service types from booking_service_types
+  useEffect(() => {
+    fetchServiceTypes(vendor.id);
+  }, [vendor.id]);
+  
+  return (
+    <div className="space-y-8">
+      {/* Header Section */}
+      <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-2xl p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-3 bg-primary/20 rounded-full">
+            <CalendarCheck className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">Book a Session</h2>
+            <p className="text-muted-foreground">Choose a service and pick your preferred time</p>
+          </div>
+        </div>
+      </div>
+      
+      {/* Service Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {serviceTypes.map(service => (
+          <ServiceCard
+            key={service.id}
+            service={service}
+            onBook={() => { setSelectedService(service); setShowBookingFlow(true); }}
+          />
+        ))}
+      </div>
+      
+      {/* Booking Flow Modal */}
+      <Dialog open={showBookingFlow} onOpenChange={setShowBookingFlow}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <BookingFlow
+            vendor={vendor}
+            initialService={selectedService}
+            onClose={() => setShowBookingFlow(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
-    <span className="font-medium">{label}</span>
-    <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-  </div>
-</Card>
+  );
+}
 ```
+
+---
+
+## Files to Create/Modify
+
+| Action | File | Description |
+|--------|------|-------------|
+| Create | `supabase/migrations/XXXXX_booking_system_schema.sql` | New tables for booking system |
+| Create | `src/types/booking.ts` | TypeScript types for booking system |
+| Create | `src/lib/bookingUtils.ts` | Slot generation utilities |
+| Create | `src/components/vendor/booking/BookingServiceForm.tsx` | Service type form |
+| Create | `src/components/vendor/booking/BookingAvailabilityScheduler.tsx` | Weekly hours manager |
+| Create | `src/components/vendor/booking/BookingSlotCalendar.tsx` | Slot calendar with generation |
+| Create | `src/components/vendor/booking/BookingReservationPanel.tsx` | Booking detail panel |
+| Create | `src/components/booking/BookingFlow.tsx` | Customer booking wizard |
+| Create | `src/components/booking/BookingServiceCard.tsx` | Service card for customers |
+| Create | `src/components/booking/BookingTimeSlotGrid.tsx` | Time slot picker |
+| Modify | `src/pages/vendor/VendorBookingManagement.tsx` | Refactor with 4-tab structure |
+| Modify | `src/pages/vendor/views/BookingView.tsx` | Use new booking components |
+
+---
+
+## Implementation Order
+
+1. **Database Migration** - Create new tables with RLS policies
+2. **Types & Utils** - Create booking.ts and bookingUtils.ts
+3. **Vendor Components** - Build the 4 tab components
+4. **VendorBookingManagement.tsx** - Refactor with new tab structure
+5. **Customer Components** - Build BookingFlow wizard
+6. **BookingView.tsx** - Integrate new customer experience
+
+---
+
+## Theme & Styling
+
+### Vendor Side
+- Background: `bg-background` (dark mode compatible)
+- Cards: `bg-card border rounded-lg`
+- Active tabs: Primary color
+- Status badges with semantic colors
+
+### Customer Side
+- Gradient headers: `bg-gradient-to-r from-primary/10 via-primary/5`
+- Service cards with hover animations
+- Progress steps with primary color indicators
+- Time slots with clear selection states
 
 ---
 
 ## Mobile Responsiveness
 
-All changes maintain:
-- Minimum 44px touch targets
-- Proper spacing on smaller screens
-- Readable text at all breakpoints
-- Skeleton loaders that match content size
+- 44px minimum touch targets for all buttons
+- Single column layouts on mobile
+- Horizontal scroll for time slot grids when needed
+- Collapsible calendar on mobile
+- Full-width buttons in booking flow
+
+---
+
+## Summary
+
+| Before | After |
+|--------|-------|
+| Manual slot creation (datetime-local) | Auto-generated slots from weekly schedule |
+| Single form dialog | 4-tab management interface |
+| Basic booking list | Rich detail panel with status updates |
+| Plain customer view | Multi-step booking wizard |
+| No customer notes | Customer notes field in booking flow |
+| One-by-one slot management | Bulk slot generation + blocking |
