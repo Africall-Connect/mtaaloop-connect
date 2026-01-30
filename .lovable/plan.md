@@ -1,388 +1,117 @@
 
+# Fix: Checkout Email Not Being Passed to Paystack
 
-# JWT Verification for Edge Functions - Implementation Plan
+## Problem Identified
 
-## Overview
+The Paystack checkout modal displays "no-email@mtaaloop.com" instead of your actual email (misaroonserio@gmail.com) because:
 
-This plan adds JWT verification using `getClaims()` to all authenticated edge functions, ensuring that only authorized users can access protected endpoints while maintaining public access for webhooks.
+1. **Missing database column**: The `orders` table does not have a `user_email` column
+2. **Missing data in order creation**: When creating an order in Checkout.tsx, the user's email is not being saved
+3. **Edge function expects missing data**: The `payments-paystack-init` function tries to read `order.user_email` which returns `null`
+4. **Paystack fallback**: Paystack uses a default email from your dashboard settings when it receives an empty/null email
 
----
+## Solution
 
-## Current State Analysis
+### Step 1: Add `user_email` column to orders table
 
-### Edge Functions Inventory
+Create a new migration to add the missing column:
 
-| Function | Current Auth | Should Require JWT | Notes |
-|----------|-------------|-------------------|-------|
-| `payments-paystack-init` | ❌ None | ✅ Yes | User must be logged in to initiate payment |
-| `payments-verify` | ❌ None | ✅ Yes | User verifying their own payment |
-| `admin-vendor-payouts` | ⚠️ Shared secret only | ✅ Yes + Admin role | Admin-only endpoint |
-| `get-users` | ❌ None | ✅ Yes + Admin role | Lists all users - admin only |
-| `generate-image` | ❌ None | ✅ Yes | User-facing feature |
-| `payments-paystack-webhook` | ✅ HMAC signature | ❌ No | Public webhook from Paystack |
-| `pusher-trigger` | ⚠️ verify_jwt=true in config | ❌ Keep as-is | Already configured |
+```sql
+-- Add user_email column to orders table
+ALTER TABLE public.orders 
+ADD COLUMN IF NOT EXISTS user_email TEXT;
 
-### Current config.toml Settings
-
-```toml
-[functions.generate-image]
-verify_jwt = false
-
-[functions.pusher-trigger]
-verify_jwt = true
+-- Optionally set a default based on customer_id for existing orders
+UPDATE public.orders o
+SET user_email = u.email
+FROM auth.users u
+WHERE o.customer_id = u.id
+AND o.user_email IS NULL;
 ```
 
-Most functions have no explicit JWT configuration, defaulting to no verification.
+### Step 2: Update Checkout.tsx to include user email
 
----
+When creating regular orders (around line 581-594), add the user's email:
 
-## Implementation Strategy
-
-### Create Shared Auth Helper
-
-Create a reusable auth verification module that all functions can import:
-
-```text
-supabase/functions/_shared/
-├── cors.ts          (existing)
-└── auth.ts          (new - JWT verification helper)
-```
-
-### auth.ts Helper Functions
-
+**Current code:**
 ```typescript
-// Verify JWT and return user claims
-export async function verifyAuth(req: Request, supabase: SupabaseClient): Promise<{
-  authenticated: boolean;
-  userId?: string;
-  email?: string;
-  role?: string;
-  error?: string;
-}>
-
-// Check if user has specific role (queries user_roles table)
-export async function requireRole(
-  supabase: SupabaseClient, 
-  userId: string, 
-  requiredRole: string
-): Promise<{ authorized: boolean; error?: string }>
-
-// Combined helper for protected endpoints
-export function createUnauthorizedResponse(message: string, corsHeaders: Record<string, string>)
+const { error: orderError } = await supabase.from("orders").insert([
+  {
+    id: orderId,
+    customer_id: user?.id,
+    vendor_id: orderDetails.vendorId,
+    estate_id: orderDetails.estateId,
+    total_amount: orderDetails.totalAmount,
+    delivery_address: orderDetails.deliveryAddress,
+    customer_notes: orderDetails.customerNotes,
+    category: orderDetails.category,
+    house: deliveryAddress.house_number,
+    full_name: fullName,
+  },
+]);
 ```
 
----
-
-## Changes Per Function
-
-### 1. payments-paystack-init (User Auth Required)
-
-**Purpose**: Users initiate payment for their orders
-
-**Changes**:
-- Add JWT verification using `getClaims()`
-- Verify the user owns the order being paid for
-- Return 401 if not authenticated
-
+**Updated code:**
 ```typescript
-// Add after CORS handling
-const authHeader = req.headers.get('Authorization');
-if (!authHeader?.startsWith('Bearer ')) {
-  return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-    status: 401,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+const { error: orderError } = await supabase.from("orders").insert([
+  {
+    id: orderId,
+    customer_id: user?.id,
+    vendor_id: orderDetails.vendorId,
+    estate_id: orderDetails.estateId,
+    total_amount: orderDetails.totalAmount,
+    delivery_address: orderDetails.deliveryAddress,
+    customer_notes: orderDetails.customerNotes,
+    category: orderDetails.category,
+    house: deliveryAddress.house_number,
+    full_name: fullName,
+    user_email: user?.email,  // Add user email for Paystack
+  },
+]);
+```
+
+### Step 3: Add fallback in edge function
+
+Update the edge function to fetch email from auth.users if not in order:
+
+**In `payments-paystack-init/index.ts`:**
+```typescript
+// After fetching order, add fallback for email
+let userEmail = order.user_email;
+
+// If no email in order, fetch from auth.users
+if (!userEmail && order.user_id) {
+  const { data: userData } = await supabaseAdmin.auth.admin.getUserById(order.user_id);
+  userEmail = userData?.user?.email;
+}
+
+// Final fallback (should never reach this if user is authenticated)
+if (!userEmail) {
+  console.error("No email found for order:", order_id);
+  return new Response(JSON.stringify({ error: "User email not found" }), {
+    status: 400,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
 
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  global: { headers: { Authorization: authHeader } },
-});
-
-const token = authHeader.replace('Bearer ', '');
-const { data: claims, error: authError } = await supabaseClient.auth.getClaims(token);
-if (authError || !claims?.claims) {
-  return new Response(JSON.stringify({ error: 'Invalid token' }), {
-    status: 401,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}
-
-const userId = claims.claims.sub;
-// Continue with order validation...
+// Use userEmail in Paystack request
+body: JSON.stringify({
+  email: userEmail,
+  // ... rest of payload
+}),
 ```
 
-**Additional Security**: Verify user owns the order:
-```typescript
-const { data: order } = await supabaseAdmin
-  .from("orders")
-  .select("user_id, total_amount, user_email")
-  .eq("id", order_id)
-  .single();
+## Files to Modify
 
-if (order.user_id !== userId) {
-  return new Response(JSON.stringify({ error: 'Forbidden' }), {
-    status: 403,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}
-```
+| File | Change |
+|------|--------|
+| `src/pages/Checkout.tsx` | Add `user_email: user?.email` to all order insert statements |
+| `supabase/functions/payments-paystack-init/index.ts` | Add fallback to fetch email from auth.users if not in order |
+| New migration SQL | Add `user_email` column to orders table |
 
----
+## Summary
 
-### 2. payments-verify (User Auth Required)
-
-**Purpose**: Users verify their payment status
-
-**Changes**:
-- Add JWT verification
-- Verify user owns the payment/order being checked
-
-```typescript
-// After getting the payment, verify ownership
-const { data: order } = await supabaseAdmin
-  .from("orders")
-  .select("user_id")
-  .eq("id", payment.order_id)
-  .single();
-
-if (order.user_id !== userId) {
-  return new Response(JSON.stringify({ error: 'Forbidden' }), {
-    status: 403,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}
-```
-
----
-
-### 3. admin-vendor-payouts (Admin Role Required)
-
-**Purpose**: Admin manages vendor payouts
-
-**Changes**:
-- Replace shared secret with JWT + admin role check
-- Keep shared secret as fallback for automated systems
-
-```typescript
-// Primary: JWT-based admin auth
-const authHeader = req.headers.get('Authorization');
-if (authHeader?.startsWith('Bearer ')) {
-  const token = authHeader.replace('Bearer ', '');
-  const { data: claims } = await supabaseClient.auth.getClaims(token);
-  
-  if (claims?.claims?.sub) {
-    // Check admin role in user_roles table
-    const { data: roleData } = await supabaseAdmin
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', claims.claims.sub)
-      .eq('role', 'admin')
-      .single();
-    
-    if (!roleData) {
-      return new Response(JSON.stringify({ error: 'Admin access required' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-    // Authorized as admin, continue...
-  }
-}
-
-// Fallback: shared secret for automated systems
-const secretHeader = req.headers.get('x-admin-secret');
-if (!secretHeader || secretHeader !== adminSecret) {
-  return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-    status: 401,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}
-```
-
----
-
-### 4. get-users (Admin Role Required)
-
-**Purpose**: List all users for admin dashboard
-
-**Changes**:
-- Add JWT verification
-- Require admin role
-
-```typescript
-// Verify admin access
-const authHeader = req.headers.get('Authorization');
-if (!authHeader?.startsWith('Bearer ')) {
-  return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-    status: 401,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}
-
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  global: { headers: { Authorization: authHeader } },
-});
-
-const token = authHeader.replace('Bearer ', '');
-const { data: claims, error: authError } = await supabaseClient.auth.getClaims(token);
-if (authError || !claims?.claims) {
-  return new Response(JSON.stringify({ error: 'Invalid token' }), {
-    status: 401,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}
-
-// Check admin role
-const { data: roleData } = await supabaseAdmin
-  .from('user_roles')
-  .select('role')
-  .eq('user_id', claims.claims.sub)
-  .eq('role', 'admin')
-  .single();
-
-if (!roleData) {
-  return new Response(JSON.stringify({ error: 'Admin access required' }), {
-    status: 403,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}
-```
-
----
-
-### 5. generate-image (User Auth Required)
-
-**Purpose**: AI image generation for logged-in users
-
-**Changes**:
-- Add JWT verification
-- Optional: Rate limiting per user
-
-```typescript
-const authHeader = req.headers.get('Authorization');
-if (!authHeader?.startsWith('Bearer ')) {
-  return new Response(
-    JSON.stringify({ error: 'Authentication required' }),
-    { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
-}
-
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  global: { headers: { Authorization: authHeader } },
-});
-
-const token = authHeader.replace('Bearer ', '');
-const { data: claims, error: authError } = await supabaseClient.auth.getClaims(token);
-if (authError || !claims?.claims) {
-  return new Response(
-    JSON.stringify({ error: 'Invalid or expired token' }),
-    { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
-}
-
-// Can use claims.claims.sub for rate limiting or logging
-const userId = claims.claims.sub;
-console.log(`Image generation requested by user: ${userId}`);
-```
-
----
-
-### 6. payments-paystack-webhook (No JWT - Keep As-Is)
-
-**Reason**: Webhooks come from Paystack servers, not authenticated users
-
-**Current Security**: HMAC SHA512 signature verification ✅
-
-No changes needed - already properly secured.
-
----
-
-## Config Updates
-
-### supabase/config.toml
-
-```toml
-[functions.payments-paystack-init]
-verify_jwt = false  # We verify in code for better error handling
-
-[functions.payments-verify]
-verify_jwt = false  # We verify in code for better error handling
-
-[functions.admin-vendor-payouts]
-verify_jwt = false  # We verify in code with role check
-
-[functions.get-users]
-verify_jwt = false  # We verify in code with role check
-
-[functions.generate-image]
-verify_jwt = false  # We verify in code
-
-[functions.payments-paystack-webhook]
-verify_jwt = false  # Uses HMAC signature instead
-
-[functions.pusher-trigger]
-verify_jwt = true  # Keep existing
-```
-
-**Note**: Setting `verify_jwt = false` in config and verifying in code gives us:
-- Custom error messages
-- Ability to combine JWT with other auth methods
-- Role-based access control
-- Ownership verification
-
----
-
-## Files to Create/Modify
-
-| Action | File | Description |
-|--------|------|-------------|
-| Create | `supabase/functions/_shared/auth.ts` | Shared JWT verification helpers |
-| Modify | `supabase/functions/payments-paystack-init/index.ts` | Add user JWT verification + ownership check |
-| Modify | `supabase/functions/payments-verify/index.ts` | Add user JWT verification + ownership check |
-| Modify | `supabase/functions/admin-vendor-payouts/index.ts` | Add JWT + admin role check |
-| Modify | `supabase/functions/get-users/index.ts` | Add JWT + admin role check |
-| Modify | `supabase/functions/generate-image/index.ts` | Add user JWT verification |
-| Modify | `supabase/config.toml` | Add function configurations |
-
----
-
-## Frontend Compatibility
-
-The frontend already passes the Authorization header automatically when using `supabase.functions.invoke()`. The Supabase client includes the user's JWT in requests when logged in.
-
-Example from existing code:
-```typescript
-const { data, error } = await supabase.functions.invoke("payments-paystack-init", {
-  body: { order_id: orderId },
-});
-// Authorization header is automatically included by Supabase client
-```
-
-**No frontend changes required** - the client SDK handles this.
-
----
-
-## Security Summary
-
-| Function | Before | After |
-|----------|--------|-------|
-| payments-paystack-init | Anyone can initiate | User must own the order |
-| payments-verify | Anyone can verify any payment | User must own the payment |
-| admin-vendor-payouts | Shared secret only | JWT + Admin role (with secret fallback) |
-| get-users | Anyone can list users | Admin role required |
-| generate-image | Anyone can generate | Authenticated users only |
-| payments-paystack-webhook | HMAC signature | No change (correct) |
-
----
-
-## Implementation Order
-
-1. Create `_shared/auth.ts` helper module
-2. Update `config.toml` with function settings
-3. Update `payments-paystack-init` with JWT + ownership
-4. Update `payments-verify` with JWT + ownership  
-5. Update `admin-vendor-payouts` with JWT + admin role
-6. Update `get-users` with JWT + admin role
-7. Update `generate-image` with JWT
-8. Test each endpoint
-
+The fix ensures:
+- Your actual email (from Supabase Auth) is saved when creating orders
+- The Paystack payment modal shows your correct email
+- Backward compatibility for existing orders via edge function fallback
