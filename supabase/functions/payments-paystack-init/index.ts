@@ -1,15 +1,12 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { verifyAuth, createUnauthorizedResponse, createForbiddenResponse } from "../_shared/auth.ts";
+import { corsHeaders } from "../_shared/cors.ts";
 
 const PAYSTACK_SECRET_KEY = Deno.env.get("PAYSTACK_SECRET_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 Deno.serve(async (req) => {
   // Handle CORS preflight request
@@ -18,6 +15,16 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // 🔐 JWT Verification
+    const authResult = await verifyAuth(req);
+    if (!authResult.authenticated || !authResult.userId) {
+      return createUnauthorizedResponse(
+        authResult.error || "Authentication required",
+        corsHeaders
+      );
+    }
+    const userId = authResult.userId;
+
     const { order_id } = await req.json();
     if (!order_id) {
       return new Response(JSON.stringify({ error: "order_id is required" }), {
@@ -29,7 +36,7 @@ Deno.serve(async (req) => {
     // 1. Fetch the order to get the amount and user details
     const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
-      .select("total_amount, user_email") // Assuming user_email is on the order
+      .select("total_amount, user_email, user_id")
       .eq("id", order_id)
       .single();
 
@@ -39,6 +46,15 @@ Deno.serve(async (req) => {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // 🔐 Ownership check: user must own the order
+    if (order.user_id !== userId) {
+      console.warn(`[payments-init] User ${userId} tried to pay for order owned by ${order.user_id}`);
+      return createForbiddenResponse(
+        "You can only pay for your own orders",
+        corsHeaders
+      );
     }
 
     // 2. Create a new payment record
@@ -63,6 +79,8 @@ Deno.serve(async (req) => {
     }
 
     // 3. Initialize transaction with Paystack
+    const callbackUrl = `${Deno.env.get("SITE_URL") || "https://mtaa-loop-connect.vercel.app"}/payment/callback`;
+    
     const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
       headers: {
@@ -70,13 +88,11 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        email: order.user_email, // Paystack requires an email
+        email: order.user_email,
         amount: order.total_amount * 100, // Amount in kobo
         currency: "KES",
-        reference: payment.id, // Use our internal payment ID as the reference
-        // This URL is where Paystack will redirect the user after payment is attempted.
-        // It points to our frontend, which will then call the `payments-verify` function.
-        callback_url: `${Deno.env.get("https://mtaa-loop-connect.vercel.app/")}/payment/callback`,
+        reference: payment.id,
+        callback_url: callbackUrl,
         metadata: { order_id: order_id },
       }),
     });
