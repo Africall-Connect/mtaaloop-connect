@@ -1,275 +1,354 @@
 
-
-# Home Page Redesign Plan
+# Home.tsx + VendorHome.tsx Redesign Plan
 
 ## Overview
 
-This redesign transforms the Home page from a category-centric layout to a **product-first marketplace** inspired by Greenspoon's design. The key changes are:
+This plan addresses two major improvements:
 
-1. **Replace Vendor Spotlight** with a Featured Product Banner (eBay-style)
-2. **Replace Category Grid** with a horizontal category navigation + product grid
-3. Keep the same visual theme and mobile-first approach
+1. **Home.tsx**: Add a dedicated "Pharmacy Consultations" section for booking health consultations
+2. **VendorHome.tsx**: Stabilize and redesign the vendor page with working subcategory filtering, search, and theming
 
 ---
 
-## Design Changes
+## Part 1: Add Pharmacy Consultation Section to Home.tsx
 
-### 1. Featured Product Banner (Replacing Spotlight)
+### Current State
+- Home page has products, categories, minimarts, and MtaaLoop Essentials
+- No pharmacy/consultation booking section exists
 
-Instead of cycling through vendors, display a **randomly selected product** with a compelling "Shop Now" CTA:
+### Solution
+Add a new themed section below the product grid that showcases pharmacy consultations with a CTA to book.
+
+### New Section Design
 
 ```text
 +----------------------------------------------------------+
-|  [Product Image - Full Width Banner]                      |
+|  [Stethoscope Icon]  Health & Consultation Services       |
 |                                                          |
-|  "Today's Pick"                                           |
-|  Fresh Mango Juice - 1L                                  |
-|  KES 250                                                 |
+|  +------------+  +------------+  +------------+          |
+|  | Pharmacy 1 |  | Pharmacy 2 |  | Pharmacy 3 |          |
+|  | [Logo]     |  | [Logo]     |  | [Logo]     |          |
+|  | Name       |  | Name       |  | Name       |          |
+|  | [Book Now] |  | [Book Now] |  | [Book Now] |          |
+|  +------------+  +------------+  +------------+          |
 |                                                          |
-|  [Shop Now]  [See More Like This]                        |
+|  [View All Pharmacies]  [My Consultations]               |
 +----------------------------------------------------------+
 ```
 
-**Features:**
-- Randomly picks a product from available products
-- Auto-rotates every 8 seconds
-- Shows product image, name, price, vendor name
-- "Shop Now" adds to cart, "See More" goes to vendor page
-- Compact height on mobile (180px), taller on desktop (280px)
-
-### 2. Horizontal Category Tabs (Replacing Category Grid)
-
-A sticky horizontal scrollable category bar with filter chips:
-
-```text
-[All] [Food & Drinks] [Groceries] [Pharmacy] [Beauty] [Home] ...
-```
-
-**Features:**
-- Horizontal scroll with snap behavior
-- Active category highlighted
-- Sticky below header on scroll (optional)
-- Includes priority categories: Trash Collection, Quick Services
-
-### 3. Product Grid Layout
-
-Products displayed in a compact grid directly below category tabs:
-
-```text
-+--------+  +--------+  +--------+  +--------+
-|  IMG   |  |  IMG   |  |  IMG   |  |  IMG   |
-|--------|  |--------|  |--------|  |--------|
-| Name   |  | Name   |  | Name   |  | Name   |
-| KES XX |  | KES XX |  | KES XX |  | KES XX |
-| Vendor |  | Vendor |  | Vendor |  | Vendor |
-| [+]    |  | [+]    |  | [+]    |  | [+]    |
-+--------+  +--------+  +--------+  +--------+
-```
-
-**Features:**
-- 2 columns on mobile, 3-4 on desktop
-- Compact cards with product image, name, price, vendor tag
-- Quick add-to-cart button
-- Category and vendor badge overlay
-- Filter by selected category tab
+### Implementation
+- Add a new section after the product grid but before minimarts
+- Fetch pharmacies that offer consultations (operational_category = 'pharmacy')
+- Display pharmacy cards with gradient backgrounds matching the theme
+- Each card has:
+  - Pharmacy logo/placeholder
+  - Business name
+  - "Book Consultation" button that navigates to the pharmacy's page
+- Bottom row has:
+  - "View All Pharmacies" button (navigates to `/health`)
+  - "My Consultations" button (navigates to `/my-consultations`)
 
 ---
 
-## New Components to Create
+## Part 2: VendorHome.tsx Redesign
 
-### 1. `FeaturedProductBanner.tsx`
+### Current Problems
 
-A banner component that:
-- Fetches a random product from the database
-- Displays with attractive gradient overlay
-- Auto-rotates through featured products
-- Shows "Shop Now" CTA
+1. **Subcategory switching reloads the page**: Currently navigates to `/vendor/:slug/category/:categorySlug` which is a separate page (VendorCategory.tsx)
+2. **White/plain design**: Minimal theming, doesn't match the vibrant MtaaLoop brand
+3. **Search and filters don't work**: Input exists but has no functionality
 
-### 2. `CategoryTabsNav.tsx`
+### Solution
 
-Horizontal category navigation:
-- Fetches categories from database
-- Horizontal scroll with active state
-- onClick filters the product grid
-- Always includes Trash Collection and Quick Services
-
-### 3. `HomeProductGrid.tsx`
-
-Product grid component:
-- Accepts filtered products
-- Compact card design (similar to Index.tsx CompactProductCard)
-- Add to cart functionality
-- Shows vendor name badge
+Consolidate everything into VendorHome.tsx with:
+- Client-side subcategory filtering (no page reload)
+- Working search functionality
+- Working sort/filter options
+- Themed design with gradients and brand colors
 
 ---
 
-## Data Flow
+### Architecture Changes
 
+**Before:**
 ```text
-Home.tsx
-  |
-  ├── Fetch products with vendor info (like Index.tsx)
-  |     FROM products
-  |     JOIN vendor_profiles
-  |     WHERE is_available = true
-  |           AND vendor is_approved/is_active
-  |
-  ├── Extract unique categories from products
-  |
-  ├── State: selectedCategory (null = all)
-  |
-  ├── Filter products by selectedCategory
-  |
-  └── Render:
-        ├── FeaturedProductBanner (random product)
-        ├── CategoryTabsNav (category filters)
-        └── HomeProductGrid (filtered products)
+VendorHome.tsx → Loads all products
+    ↓ Click subcategory
+VendorCategory.tsx → Separate page, reloads data
+```
+
+**After:**
+```text
+VendorHome.tsx → Loads all products + handles filtering in-state
+    ↓ Click subcategory
+Same page, filters products client-side
 ```
 
 ---
 
-## Layout Structure
+### New VendorHome.tsx Structure
 
 ```text
-+------------------------------------------+
-|  Header (unchanged)                       |
-+------------------------------------------+
-|  Welcome + Search (unchanged, compact)    |
-+------------------------------------------+
-|  Featured Product Banner                  |
-|  (Random product - "Shop Now")           |
-+------------------------------------------+
-|  [All] [Food] [Groceries] [Pharmacy]...  |  <- Category Tabs
-+------------------------------------------+
-|  "Showing 24 products in Food & Drinks"  |
-+------------------------------------------+
-|  +------+  +------+  +------+  +------+  |
-|  | Prod |  | Prod |  | Prod |  | Prod |  |
-|  +------+  +------+  +------+  +------+  |
-|  +------+  +------+  +------+  +------+  |
-|  | Prod |  | Prod |  | Prod |  | Prod |  |
-|  +------+  +------+  +------+  +------+  |
-+------------------------------------------+
-|  Load More / Infinite Scroll              |
-+------------------------------------------+
-|  MtaaLoop Essentials (keep as is)         |
-+------------------------------------------+
++----------------------------------------------------------+
+|  [Back] [Search Bar - WORKING]  [Cart] [Profile]          |
++----------------------------------------------------------+
+|  [Logo]  Vendor Name                                      |
+|          ★ 4.8 (120) • Location • Open • 30 min delivery |
++----------------------------------------------------------+
+|  [Hero Banner with gradient overlay]                      |
+|  "Welcome to {Vendor}"                                    |
+|  "{Tagline}"                                              |
++----------------------------------------------------------+
+|  [All] [Subcategory 1] [Subcategory 2] [Subcategory 3]   | <- NO page reload
++----------------------------------------------------------+
+|  Sort: [Dropdown]  [Filters Button]                       |
++----------------------------------------------------------+
+|  Showing X products in {Category}                         |
++----------------------------------------------------------+
+|  +------+  +------+  +------+  +------+                  |
+|  | Prod |  | Prod |  | Prod |  | Prod |                  |
+|  +------+  +------+  +------+  +------+                  |
++----------------------------------------------------------+
 ```
 
 ---
 
-## Files to Modify/Create
+### State Management for VendorHome.tsx
 
-| Action | File | Description |
-|--------|------|-------------|
-| Create | `src/components/home/FeaturedProductBanner.tsx` | Random product banner with CTA |
-| Create | `src/components/home/CategoryTabsNav.tsx` | Horizontal category filter tabs |
-| Create | `src/components/home/HomeProductCard.tsx` | Compact product card for grid |
-| Create | `src/components/home/HomeProductGrid.tsx` | Grid layout for products |
-| Modify | `src/pages/Home.tsx` | Refactor to use new components |
-| Delete | N/A | VendorSpotlight import removed (component kept for other uses) |
+```typescript
+// Existing state
+const [vendor, setVendor] = useState<VendorWithProducts | null>(null);
+const [products, setProducts] = useState<Product[]>([]);
+const [subcategories, setSubcategories] = useState<...>([]);
+const [loading, setLoading] = useState(true);
+
+// NEW: Client-side filtering state
+const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
+const [searchQuery, setSearchQuery] = useState("");
+const [sortBy, setSortBy] = useState<'popular' | 'price-low' | 'price-high' | 'newest'>('popular');
+
+// Computed filtered products
+const filteredProducts = useMemo(() => {
+  let result = products;
+  
+  // Filter by subcategory
+  if (selectedSubcategory) {
+    result = result.filter(p => 
+      p.subcategory === selectedSubcategory || 
+      p.category === selectedSubcategory
+    );
+  }
+  
+  // Filter by search
+  if (searchQuery.trim()) {
+    const q = searchQuery.toLowerCase();
+    result = result.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      p.description?.toLowerCase().includes(q)
+    );
+  }
+  
+  // Sort
+  switch (sortBy) {
+    case 'price-low': result.sort((a, b) => a.price - b.price); break;
+    case 'price-high': result.sort((a, b) => b.price - a.price); break;
+    case 'newest': result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); break;
+    case 'popular': 
+    default: result.sort((a, b) => (b.is_popular ? 1 : 0) - (a.is_popular ? 1 : 0)); break;
+  }
+  
+  return result;
+}, [products, selectedSubcategory, searchQuery, sortBy]);
+```
+
+---
+
+### VendorNavbar.tsx Changes
+
+1. **Remove navigation on subcategory click**: Instead of navigating to `/vendor/:slug/category/:categorySlug`, call a callback prop
+2. **Add search functionality**: Connect input to a callback prop
+3. **Keep the same visual design** but pass the filter handlers
+
+```typescript
+interface VendorNavbarProps {
+  vendor: ...;
+  selectedSubcategory: string | null;
+  onSubcategoryChange: (slug: string | null) => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+}
+```
+
+---
+
+### Theme Improvements for VendorHome.tsx
+
+**Current**: Plain white background, minimal colors
+
+**Updated**:
+- Background gradient: `bg-gradient-to-br from-background via-primary/5 to-background`
+- Hero banner: Full-width with vendor cover image + gradient overlay
+- Category tabs: Primary color when active, subtle hover states
+- Product cards: Enhanced shadows, hover animations, themed borders
+- Section separators: Subtle gradient lines
+
+---
+
+### View Components Updates
+
+The existing view components (InventoryView, PharmacyView, ServiceView, BookingView) will:
+- Receive `filteredProducts` instead of `products`
+- Not change their internal structure
+- Work with the filtered data
+
+---
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/pages/Home.tsx` | Add Pharmacy Consultation section |
+| `src/pages/vendor/VendorHome.tsx` | Full redesign with client-side filtering, search, sort, theming |
+| `src/components/vendor/VendorNavbar.tsx` | Make subcategory tabs call callback instead of navigate; connect search |
+| `src/pages/vendor/views/InventoryView.tsx` | Minor theme updates (remove emoji placeholders) |
 
 ---
 
 ## Technical Details
 
-### Product Fetching (in Home.tsx)
+### Home.tsx: Pharmacy Section
 
+Add state and fetch:
 ```typescript
-// Fetch products with vendor info
-const { data } = await supabase
-  .from("products")
-  .select(`
-    id, name, description, category, subcategory, 
-    price, image_url, is_available, vendor_id,
-    vendor_profiles!inner (
-      id, business_name, slug, is_approved, is_active
-    )
-  `)
-  .eq("is_available", true)
-  .eq("vendor_profiles.is_approved", true)
-  .eq("vendor_profiles.is_active", true)
-  .order("name", { ascending: true })
-  .limit(50);
-```
-
-### Category Extraction
-
-```typescript
-// Extract unique categories from products
-const categories = useMemo(() => {
-  const cats = new Set<string>();
-  products.forEach(p => cats.add(p.category));
-  return Array.from(cats).sort();
-}, [products]);
-```
-
-### Featured Product Selection
-
-```typescript
-// Pick random product, refresh every 8s
-const [featuredProduct, setFeaturedProduct] = useState<Product | null>(null);
+const [pharmacies, setPharmacies] = useState<VendorProfile[]>([]);
 
 useEffect(() => {
-  if (products.length === 0) return;
-  
-  const pickRandom = () => {
-    const idx = Math.floor(Math.random() * products.length);
-    setFeaturedProduct(products[idx]);
+  const fetchPharmacies = async () => {
+    const { data } = await supabase
+      .from('vendor_profiles')
+      .select('*')
+      .eq('operational_category', 'pharmacy')
+      .eq('is_approved', true)
+      .eq('is_active', true)
+      .limit(4);
+    setPharmacies(data || []);
   };
-  
-  pickRandom();
-  const interval = setInterval(pickRandom, 8000);
-  return () => clearInterval(interval);
-}, [products]);
+  fetchPharmacies();
+}, []);
+```
+
+Render section:
+```tsx
+{pharmacies.length > 0 && (
+  <section className="mb-8">
+    <div className="flex items-center gap-3 mb-4">
+      <div className="p-2 bg-primary/10 rounded-full">
+        <Stethoscope className="h-5 w-5 text-primary" />
+      </div>
+      <div>
+        <h2 className="text-lg md:text-2xl font-bold">Health & Consultations</h2>
+        <p className="text-xs md:text-sm text-muted-foreground">
+          Book pharmacy consultations
+        </p>
+      </div>
+    </div>
+    
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {pharmacies.map(pharmacy => (
+        <PharmacyCard key={pharmacy.id} pharmacy={pharmacy} />
+      ))}
+    </div>
+    
+    <div className="flex gap-3 mt-4">
+      <Button variant="outline" onClick={() => navigate('/health')}>
+        View All Pharmacies
+      </Button>
+      <Button variant="outline" onClick={() => navigate('/my-consultations')}>
+        My Consultations
+      </Button>
+    </div>
+  </section>
+)}
 ```
 
 ---
 
-## Mobile Responsiveness
+### VendorNavbar.tsx: Callback Pattern
 
-| Element | Mobile | Desktop |
-|---------|--------|---------|
-| Featured Banner | 180px height | 280px height |
-| Category Tabs | Horizontal scroll | Horizontal scroll (wider) |
-| Product Grid | 2 columns | 4 columns |
-| Product Card | Compact (image 4:3) | Slightly larger |
-| Welcome Section | Single line | Multi-line with subtitle |
+Change from:
+```tsx
+onClick={() => navigate(`/vendor/${vendor.slug}/category/${category.slug}`)}
+```
 
----
-
-## Sections Retained
-
-The following sections remain unchanged:
-- **Header** (logo, location, cart, profile)
-- **Search bar**
-- **Location Info Bar**
-- **Minimarts in Your Area** (if data exists)
-- **MtaaLoop Essentials** (MtaaLoop Mart card)
-- **Popular Vendors Near You** (optional, can be removed if redundant)
-- **Apartment Switcher Modal**
+To:
+```tsx
+onClick={() => onSubcategoryChange(isAllProducts ? null : category.slug)}
+```
 
 ---
 
-## Visual Theme
+### VendorHome.tsx: Themed Product Grid
 
-Keeping the current theme:
-- Primary color accents
-- Card-based design with shadows on hover
-- Gradient overlays for featured banner
-- White/light background with muted section backgrounds
-- Mobile-first touch targets (min 44px)
+Replace the plain view rendering with a themed wrapper:
+```tsx
+<div className="bg-gradient-to-br from-background via-primary/5 to-background min-h-screen">
+  <VendorNavbar 
+    vendor={vendor}
+    selectedSubcategory={selectedSubcategory}
+    onSubcategoryChange={setSelectedSubcategory}
+    searchQuery={searchQuery}
+    onSearchChange={setSearchQuery}
+  />
+  
+  {/* Hero Banner */}
+  <div className="relative h-48 md:h-64 overflow-hidden">
+    <img src={vendor.cover_image_url} className="..." />
+    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+    <div className="absolute bottom-4 left-6">
+      <h1 className="text-3xl font-bold text-white drop-shadow-lg">...</h1>
+    </div>
+  </div>
+  
+  {/* Filters Bar */}
+  <div className="sticky top-[var(--navbar-height)] z-30 bg-background/95 backdrop-blur border-b px-6 py-3">
+    <div className="flex items-center justify-between">
+      <p className="text-sm text-muted-foreground">
+        {filteredProducts.length} products {selectedSubcategory ? `in ${selectedSubcategory}` : ''}
+      </p>
+      <div className="flex items-center gap-3">
+        <Select value={sortBy} onValueChange={setSortBy}>...</Select>
+      </div>
+    </div>
+  </div>
+  
+  {/* Products */}
+  <div className="px-6 py-8">
+    {vendor.operational_category === 'inventory' && <InventoryView products={filteredProducts} />}
+    {vendor.operational_category === 'pharmacy' && <PharmacyView products={filteredProducts} />}
+    ...
+  </div>
+</div>
+```
 
 ---
 
 ## Summary
 
-| Before | After |
-|--------|-------|
-| Vendor Spotlight (carousel) | Featured Product Banner (random product) |
-| "What are you looking for?" category grid | Horizontal category tabs |
-| Category cards with images | Product grid with category filter |
-| Vendor-centric | Product-centric |
+| Issue | Solution |
+|-------|----------|
+| No pharmacy booking in Home.tsx | Add themed section with pharmacy cards and booking CTAs |
+| Subcategory causes page reload | Move filtering to VendorHome.tsx state, use callbacks |
+| Plain white vendor page | Add gradients, themed colors, better card styling |
+| Search bar doesn't work | Connect to state, filter products client-side |
+| Sort/filters don't work | Add sortBy state with useMemo filtering |
 
-This redesign makes the homepage more **product-focused** and **action-oriented**, similar to Greenspoon's approach where users see actual products immediately rather than navigating through categories first.
+---
 
+## Mobile Responsiveness
+
+All changes maintain:
+- 44px minimum touch targets
+- 2-column grids on mobile, 4-column on desktop
+- Horizontal scroll with snap for category tabs
+- Sticky navigation elements
+- Safe area padding for notched phones
