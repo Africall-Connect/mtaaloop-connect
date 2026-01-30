@@ -200,7 +200,19 @@ export default function VendorCategory() {
 
   return (
     <div className="min-h-screen bg-background">
-      <VendorNavbar vendor={{ ...vendor, slug: vendorSlug, vendor_categories: dbCategories }} />
+      <VendorNavbar 
+        vendor={{ ...vendor, slug: vendorSlug, vendor_categories: dbCategories }} 
+        selectedSubcategory={categorySlug || null}
+        onSubcategoryChange={(slug) => {
+          if (slug === null) {
+            navigate(`/vendor/${vendorSlug}`);
+          } else {
+            navigate(`/vendor/${vendorSlug}/category/${slug}`);
+          }
+        }}
+        searchQuery=""
+        onSearchChange={() => {}}
+      />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Breadcrumbs */}

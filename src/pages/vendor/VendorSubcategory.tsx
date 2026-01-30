@@ -39,7 +39,13 @@ export default function VendorSubcategory() {
 
   return (
     <div className="min-h-screen bg-background">
-      <VendorNavbar vendor={{ ...vendor, slug: vendorSlug, logo_url: vendor.images[0] } as any} />
+      <VendorNavbar 
+        vendor={{ ...vendor, slug: vendorSlug, logo_url: vendor.images[0] } as any} 
+        selectedSubcategory={subcategorySlug || null}
+        onSubcategoryChange={() => {}}
+        searchQuery=""
+        onSearchChange={() => {}}
+      />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Breadcrumbs */}
