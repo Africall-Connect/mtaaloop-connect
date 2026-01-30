@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Plus, Edit2, Check, X } from "lucide-react";
+import { ArrowLeft, Plus, Edit2, Check, X, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -17,6 +17,12 @@ import PromoCodeInput from "@/components/PromoCodeInput";
 import { toast } from "sonner";
 import { initiateMpesaPayment, checkPaymentStatus } from "@/services/paymentService";
 import OrderAnimation from "@/components/order/OrderAnimation";
+import {
+  validateDeliveryStep,
+  validateMpesaPhone,
+  validatePaymentStep,
+  sanitizeCheckoutData,
+} from "@/lib/schemas/checkoutSchema";
 
 interface OrderItem {
   product_id: string;
@@ -85,6 +91,9 @@ const Checkout = () => {
   const [retryOrderId, setRetryOrderId] = useState<string | null>(searchParams.get("retry_order"));
   const [paystackError, setPaystackError] = useState<string | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
+  
+  // Form validation errors
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchPreferencesAndAddress = async () => {
@@ -219,8 +228,19 @@ const Checkout = () => {
   const total = discountedSubtotal + deliveryFee;
 
   const validatePhoneNumber = (phone: string) => {
-    const kenyaPhoneRegex = /^(\+254|0)[17]\d{8}$/;
-    return kenyaPhoneRegex.test(phone);
+    const result = validateMpesaPhone(phone);
+    return result.valid;
+  };
+  
+  // Clear specific field error when user starts typing
+  const clearFieldError = (field: string) => {
+    if (formErrors[field]) {
+      setFormErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
   const handleEditPhone = () => {
@@ -229,12 +249,15 @@ const Checkout = () => {
   };
 
   const handleSavePhone = () => {
-    if (validatePhoneNumber(tempPhone)) {
+    const phoneValidation = validateMpesaPhone(tempPhone);
+    if (phoneValidation.valid) {
       setMpesaPhone(tempPhone);
       setIsEditingPhone(false);
+      clearFieldError("mpesaPhone");
       toast.success("Phone number updated successfully");
     } else {
-      toast.error("Please enter a valid Kenyan phone number (e.g., 0712345678 or +254712345678)");
+      setFormErrors((prev) => ({ ...prev, mpesaPhone: phoneValidation.error || "Invalid phone number" }));
+      toast.error(phoneValidation.error || "Invalid phone number");
     }
   };
 
@@ -244,10 +267,51 @@ const Checkout = () => {
   };
 
   const handlePlaceOrder = async () => {
+    // Validate all form data before submission
+    const deliveryValidation = validateDeliveryStep({
+      estate_name: deliveryAddress.estate_name,
+      house_number: deliveryAddress.house_number,
+      instructions,
+      deliveryType,
+    });
+
+    if (!deliveryValidation.success) {
+      setFormErrors(deliveryValidation.errors);
+      toast.error("Please fix the delivery details errors");
+      setStep(1);
+      return;
+    }
+
+    // Validate payment method specific fields
+    const paymentValidation = validatePaymentStep(paymentMethod, {
+      mpesaPhone,
+      tillNumber,
+      paybillNumber,
+      accountNumber,
+    });
+
+    if (!paymentValidation.success) {
+      setFormErrors(paymentValidation.errors);
+      toast.error("Please fix the payment details errors");
+      setStep(2);
+      return;
+    }
+
     if (!agreedToTerms) {
+      setFormErrors((prev) => ({ ...prev, agreedToTerms: "You must agree to Terms & Conditions" }));
       toast.error("Please agree to Terms & Conditions");
       return;
     }
+
+    // Sanitize data before sending to API
+    const sanitized = sanitizeCheckoutData({
+      instructions,
+      houseNumber: deliveryAddress.house_number,
+      phone: mpesaPhone,
+    });
+
+    // Clear all errors on successful validation
+    setFormErrors({});
 
     const mtaaLoopMartItems = items.filter((item) => item.vendorId === "MtaaLoopMart");
     const minimartItems = items.filter((item) => item.category === "Minimart");
@@ -749,7 +813,7 @@ const Checkout = () => {
           <Card className="p-6 space-y-6">
             <h2 className="text-2xl font-bold">📍 Delivery Details</h2>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label htmlFor="estate_name">Estate Name</Label>
               <Input
                 id="estate_name"
@@ -758,29 +822,58 @@ const Checkout = () => {
                 readOnly
                 className="bg-muted"
               />
+              {formErrors["deliveryAddress.estate_name"] && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {formErrors["deliveryAddress.estate_name"]}
+                </p>
+              )}
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label htmlFor="house_number">House/Apartment Number</Label>
               <Input
                 id="house_number"
                 placeholder="e.g. House 123A"
                 value={deliveryAddress.house_number}
-                onChange={(e) =>
+                onChange={(e) => {
+                  clearFieldError("deliveryAddress.house_number");
                   setDeliveryAddress({
                     ...deliveryAddress,
                     house_number: e.target.value,
-                  })
-                }
+                  });
+                }}
+                className={formErrors["deliveryAddress.house_number"] ? "border-destructive" : ""}
+                maxLength={50}
               />
+              {formErrors["deliveryAddress.house_number"] && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {formErrors["deliveryAddress.house_number"]}
+                </p>
+              )}
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label>📝 Delivery Instructions</Label>
               <Textarea
                 placeholder='Example: "Ring doorbell twice" or "Leave at door if no answer"'
                 value={instructions}
-                onChange={(e) => setInstructions(e.target.value)}
+                onChange={(e) => {
+                  clearFieldError("instructions");
+                  setInstructions(e.target.value);
+                }}
+                className={formErrors.instructions ? "border-destructive" : ""}
+                maxLength={500}
               />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{formErrors.instructions && (
+                  <span className="text-destructive flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {formErrors.instructions}
+                  </span>
+                )}</span>
+                <span>{instructions.length}/500</span>
+              </div>
             </div>
 
             <div className="space-y-3">
@@ -834,10 +927,21 @@ const Checkout = () => {
             <Button
               className="w-full"
               onClick={() => {
-                if (!deliveryAddress.house_number.trim()) {
-                  toast.error("Please enter your House/Apartment Number");
+                const validation = validateDeliveryStep({
+                  estate_name: deliveryAddress.estate_name,
+                  house_number: deliveryAddress.house_number,
+                  instructions,
+                  deliveryType,
+                });
+                
+                if (!validation.success) {
+                  setFormErrors(validation.errors);
+                  const firstError = Object.values(validation.errors)[0];
+                  toast.error(firstError || "Please fix the form errors");
                   return;
                 }
+                
+                setFormErrors({});
                 setStep(2);
               }}
             >
@@ -871,45 +975,57 @@ const Checkout = () => {
                         M-PESA
                       </Label>
                       <div className="mt-2 space-y-2">
-                        <div className="text-sm flex items-center gap-2">
-                          Phone:
-                          {isEditingPhone ? (
-                            <div className="flex items-center gap-1">
-                              <Input
-                                value={tempPhone}
-                                onChange={(e) => setTempPhone(e.target.value)}
-                                placeholder="0712345678"
-                                className="w-32 h-6 text-xs"
-                              />
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-6 w-6 p-0"
-                                onClick={handleSavePhone}
-                              >
-                                <Check className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-6 w-6 p-0"
-                                onClick={handleCancelEdit}
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <>
-                              {mpesaPhone}
-                              <Button
-                                variant="link"
-                                className="p-0 h-auto text-xs"
-                                onClick={handleEditPhone}
-                              >
-                                <Edit2 className="h-3 w-3 mr-1" />
-                                Edit
-                              </Button>
-                            </>
+                        <div className="text-sm flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            Phone:
+                            {isEditingPhone ? (
+                              <div className="flex items-center gap-1">
+                                <Input
+                                  value={tempPhone}
+                                  onChange={(e) => {
+                                    setTempPhone(e.target.value);
+                                    clearFieldError("mpesaPhone");
+                                  }}
+                                  placeholder="0712345678"
+                                  className={`w-32 h-6 text-xs ${formErrors.mpesaPhone ? "border-destructive" : ""}`}
+                                  maxLength={13}
+                                />
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0"
+                                  onClick={handleSavePhone}
+                                >
+                                  <Check className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0"
+                                  onClick={handleCancelEdit}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <>
+                                {mpesaPhone || <span className="text-muted-foreground">Not set</span>}
+                                <Button
+                                  variant="link"
+                                  className="p-0 h-auto text-xs"
+                                  onClick={handleEditPhone}
+                                >
+                                  <Edit2 className="h-3 w-3 mr-1" />
+                                  Edit
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                          {formErrors.mpesaPhone && (
+                            <p className="text-xs text-destructive flex items-center gap-1">
+                              <AlertCircle className="h-3 w-3" />
+                              {formErrors.mpesaPhone}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -1082,7 +1198,7 @@ const Checkout = () => {
                   {paymentMethod === "paystack" && "Paystack Checkout"}
                 </div>
                 {appliedPromo && (
-                  <div className="mt-2 p-2 bg-green-50 rounded text-sm">
+                  <div className="mt-2 p-2 bg-success/10 rounded text-sm">
                     🎟️ {appliedPromo.code} applied: Save KSh {discount}
                   </div>
                 )}
@@ -1110,7 +1226,7 @@ const Checkout = () => {
                 <span>KSh {subtotal}</span>
               </div>
               {appliedPromo && (
-                <div className="flex justify-between text-green-600">
+                <div className="flex justify-between text-success">
                   <span>Discount ({appliedPromo.code})</span>
                   <span>-KSh {discount}</span>
                 </div>
@@ -1125,15 +1241,29 @@ const Checkout = () => {
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="terms"
-                checked={agreedToTerms}
-                onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-              />
-              <Label htmlFor="terms" className="text-sm cursor-pointer">
-                I agree to Terms & Conditions
-              </Label>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="terms"
+                  checked={agreedToTerms}
+                  onCheckedChange={(checked) => {
+                    setAgreedToTerms(checked as boolean);
+                    if (checked) {
+                      clearFieldError("agreedToTerms");
+                    }
+                  }}
+                  className={formErrors.agreedToTerms ? "border-destructive" : ""}
+                />
+                <Label htmlFor="terms" className="text-sm cursor-pointer">
+                  I agree to Terms & Conditions
+                </Label>
+              </div>
+              {formErrors.agreedToTerms && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {formErrors.agreedToTerms}
+                </p>
+              )}
             </div>
 
             {/* Desktop buttons - hidden on mobile */}
