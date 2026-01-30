@@ -1,522 +1,308 @@
 
-# Pharmacy Consultation System - Complete Design & Implementation Plan
+
+# Database Migration: Pharmacy Consultation System
 
 ## Overview
 
-This plan creates a **dedicated Pharmacy Consultation system** that separates consultations from the generic booking system. It includes new database tables, vendor management interfaces, and a customer booking flow with pre-consultation health information collection.
+This migration creates a complete database schema for the Pharmacy Consultation system with 5 new tables, proper RLS policies, helper functions, and auto-sync triggers. The tables are designed to integrate with the existing `vendor_profiles` table using `vendor_id` references.
 
 ---
 
-## Part 1: Database Schema Design
+## Tables to Create
 
-### New Tables to Create
+### 1. consultation_types
+Stores the types of consultations each pharmacy offers.
 
-```text
-+----------------------------------+
-|      consultation_types          |
-+----------------------------------+
-| id (uuid, PK)                    |
-| vendor_id (uuid, FK)             |
-| name (text)                      |
-| description (text)               |
-| duration_minutes (int)           |
-| price (numeric)                  |
-| is_active (boolean)              |
-| requires_prescription (boolean)  |
-| created_at (timestamptz)         |
-| updated_at (timestamptz)         |
-+----------------------------------+
-         |
-         | 1:N
-         v
-+----------------------------------+
-|   consultation_availability      |
-+----------------------------------+
-| id (uuid, PK)                    |
-| vendor_id (uuid, FK)             |
-| day_of_week (int, 0-6)           | -- 0=Sunday, 6=Saturday
-| start_time (time)                | -- e.g., '09:00'
-| end_time (time)                  | -- e.g., '17:00'
-| is_available (boolean)           |
-| created_at (timestamptz)         |
-+----------------------------------+
-         |
-         | Referenced by
-         v
-+----------------------------------+
-|     consultation_slots           |
-+----------------------------------+
-| id (uuid, PK)                    |
-| vendor_id (uuid, FK)             |
-| consultation_type_id (uuid, FK)  |
-| slot_date (date)                 |
-| slot_start (time)                |
-| slot_end (time)                  |
-| is_available (boolean)           | -- Auto-blocked when booked
-| is_blocked (boolean)             | -- Manually blocked by vendor
-| created_at (timestamptz)         |
-+----------------------------------+
-         |
-         | 1:1
-         v
-+----------------------------------+
-|   consultation_bookings          |
-+----------------------------------+
-| id (uuid, PK)                    |
-| slot_id (uuid, FK)               |
-| customer_id (uuid, FK)           |
-| vendor_id (uuid, FK)             |
-| consultation_type_id (uuid, FK)  |
-| status (enum)                    | -- pending, confirmed, completed, cancelled, no_show
-| amount (numeric)                 |
-| payment_status (enum)            | -- pending, paid, refunded
-| customer_notes (text)            |
-| pharmacist_notes (text)          |
-| booking_date (date)              |
-| booking_time (time)              |
-| created_at (timestamptz)         |
-| updated_at (timestamptz)         |
-+----------------------------------+
-         |
-         | 1:1
-         v
-+----------------------------------+
-|   consultation_pre_info          |
-+----------------------------------+
-| id (uuid, PK)                    |
-| booking_id (uuid, FK)            |
-| symptoms (text)                  |
-| symptom_duration (text)          |
-| has_allergies (boolean)          |
-| allergies_details (text)         |
-| has_chronic_conditions (boolean) |
-| chronic_conditions (text[])      |
-| current_medications (text)       |
-| is_pregnant (boolean)            |
-| is_breastfeeding (boolean)       |
-| age_group (enum)                 | -- child, adult, senior
-| additional_notes (text)          |
-| created_at (timestamptz)         |
-+----------------------------------+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid (PK) | Primary key |
+| vendor_id | uuid (FK) | References vendor_profiles.id |
+| name | text | e.g., "General Health Consultation" |
+| description | text | Optional description |
+| duration_minutes | integer | 15, 30, 45, or 60 |
+| price | numeric(10,2) | Price in KSh |
+| is_active | boolean | Default true |
+| requires_prescription | boolean | Default false |
+| created_at | timestamptz | Auto-set |
+| updated_at | timestamptz | Auto-updated |
+
+### 2. consultation_availability
+Stores weekly recurring business hours for each pharmacy.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid (PK) | Primary key |
+| vendor_id | uuid (FK) | References vendor_profiles.id |
+| day_of_week | integer | 0=Sunday to 6=Saturday |
+| start_time | time | e.g., '09:00' |
+| end_time | time | e.g., '17:00' |
+| is_available | boolean | Default true |
+| created_at | timestamptz | Auto-set |
+
+### 3. consultation_slots
+Stores individual bookable time slots generated from availability.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid (PK) | Primary key |
+| vendor_id | uuid (FK) | References vendor_profiles.id |
+| consultation_type_id | uuid (FK) | References consultation_types.id (nullable) |
+| slot_date | date | The date of the slot |
+| slot_start | time | Start time |
+| slot_end | time | End time |
+| is_available | boolean | Auto-blocked when booked |
+| is_blocked | boolean | Manually blocked by vendor |
+| created_at | timestamptz | Auto-set |
+
+### 4. consultation_bookings
+Stores customer consultation bookings.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid (PK) | Primary key |
+| slot_id | uuid (FK) | References consultation_slots.id (nullable) |
+| customer_id | uuid (FK) | References auth.users.id (NOT NULL) |
+| vendor_id | uuid (FK) | References vendor_profiles.id |
+| consultation_type_id | uuid (FK) | References consultation_types.id |
+| status | text | pending, confirmed, in_progress, completed, cancelled, no_show |
+| amount | numeric(10,2) | Price paid |
+| payment_status | text | pending, paid, refunded, failed |
+| customer_notes | text | Optional notes from customer |
+| pharmacist_notes | text | Notes from pharmacist |
+| booking_date | date | The scheduled date |
+| booking_time | time | The scheduled time |
+| created_at | timestamptz | Auto-set |
+| updated_at | timestamptz | Auto-updated |
+
+### 5. consultation_pre_info
+Stores pre-consultation health information (sensitive medical data).
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid (PK) | Primary key |
+| booking_id | uuid (FK) | References consultation_bookings.id (UNIQUE) |
+| symptoms | text | Patient's symptoms |
+| symptom_duration | text | How long symptoms have lasted |
+| has_allergies | boolean | Default false |
+| allergies_details | text | Optional allergy details |
+| has_chronic_conditions | boolean | Default false |
+| chronic_conditions | text[] | Array of conditions |
+| current_medications | text | Current medications |
+| is_pregnant | boolean | Default false |
+| is_breastfeeding | boolean | Default false |
+| age_group | text | infant, child, teen, adult, senior |
+| additional_notes | text | Optional extra info |
+| created_at | timestamptz | Auto-set |
+
+---
+
+## Security Definer Helper Functions
+
+To avoid RLS recursion when checking vendor ownership, we create helper functions:
+
+### is_consultation_vendor()
+```sql
+CREATE OR REPLACE FUNCTION public.is_consultation_vendor(_user_id uuid, _vendor_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.vendor_profiles
+    WHERE id = _vendor_id
+      AND user_id = _user_id
+  )
+$$;
 ```
 
-### Enum Types
+### get_customer_vendor_id()
+```sql
+CREATE OR REPLACE FUNCTION public.get_customer_vendor_id(_booking_id uuid)
+RETURNS uuid
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT vendor_id
+  FROM public.consultation_bookings
+  WHERE id = _booking_id
+$$;
+```
+
+---
+
+## RLS Policies
+
+### consultation_types
+
+| Operation | Policy | Condition |
+|-----------|--------|-----------|
+| SELECT (public) | "Anyone can view active consultation types" | is_active = true |
+| SELECT (vendor) | "Vendors view own consultation types" | is_consultation_vendor(auth.uid(), vendor_id) |
+| INSERT | "Vendors create consultation types" | is_consultation_vendor(auth.uid(), vendor_id) |
+| UPDATE | "Vendors update own consultation types" | is_consultation_vendor(auth.uid(), vendor_id) |
+| DELETE | "Vendors delete own consultation types" | is_consultation_vendor(auth.uid(), vendor_id) |
+
+### consultation_availability
+
+| Operation | Policy | Condition |
+|-----------|--------|-----------|
+| SELECT | "Vendors view own availability" | is_consultation_vendor(auth.uid(), vendor_id) |
+| INSERT | "Vendors create availability" | is_consultation_vendor(auth.uid(), vendor_id) |
+| UPDATE | "Vendors update availability" | is_consultation_vendor(auth.uid(), vendor_id) |
+| DELETE | "Vendors delete availability" | is_consultation_vendor(auth.uid(), vendor_id) |
+
+### consultation_slots
+
+| Operation | Policy | Condition |
+|-----------|--------|-----------|
+| SELECT (public) | "Anyone can view available slots" | is_available = true AND is_blocked = false |
+| SELECT (vendor) | "Vendors view all own slots" | is_consultation_vendor(auth.uid(), vendor_id) |
+| INSERT | "Vendors create slots" | is_consultation_vendor(auth.uid(), vendor_id) |
+| UPDATE | "Vendors update slots" | is_consultation_vendor(auth.uid(), vendor_id) |
+| DELETE | "Vendors delete slots" | is_consultation_vendor(auth.uid(), vendor_id) |
+
+### consultation_bookings
+
+| Operation | Policy | Condition |
+|-----------|--------|-----------|
+| SELECT (customer) | "Customers view own bookings" | customer_id = auth.uid() |
+| SELECT (vendor) | "Vendors view pharmacy bookings" | is_consultation_vendor(auth.uid(), vendor_id) |
+| INSERT | "Authenticated users create bookings" | customer_id = auth.uid() |
+| UPDATE (customer) | "Customers can cancel own bookings" | customer_id = auth.uid() AND status IN ('pending', 'confirmed') |
+| UPDATE (vendor) | "Vendors update booking status" | is_consultation_vendor(auth.uid(), vendor_id) |
+
+### consultation_pre_info
+
+| Operation | Policy | Condition |
+|-----------|--------|-----------|
+| SELECT (customer) | "Customers view own pre-info" | EXISTS (SELECT 1 FROM consultation_bookings WHERE id = booking_id AND customer_id = auth.uid()) |
+| SELECT (vendor) | "Vendors view pre-info for their bookings" | is_consultation_vendor(auth.uid(), get_customer_vendor_id(booking_id)) |
+| INSERT | "Customers create pre-info" | EXISTS (SELECT 1 FROM consultation_bookings WHERE id = booking_id AND customer_id = auth.uid()) |
+
+---
+
+## Triggers
+
+### Auto-update updated_at
+```sql
+CREATE TRIGGER update_consultation_types_updated_at
+  BEFORE UPDATE ON consultation_types
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_consultation_bookings_updated_at
+  BEFORE UPDATE ON consultation_bookings
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+```
+
+### Auto-block slot when booked
+```sql
+CREATE OR REPLACE FUNCTION auto_block_slot_on_booking()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- When a booking is created, mark the slot as unavailable
+  IF TG_OP = 'INSERT' AND NEW.slot_id IS NOT NULL THEN
+    UPDATE consultation_slots
+    SET is_available = false
+    WHERE id = NEW.slot_id;
+  END IF;
+  
+  -- When a booking is cancelled, make the slot available again
+  IF TG_OP = 'UPDATE' AND NEW.status = 'cancelled' AND OLD.status != 'cancelled' THEN
+    UPDATE consultation_slots
+    SET is_available = true
+    WHERE id = NEW.slot_id AND is_blocked = false;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_auto_block_slot_on_booking
+  AFTER INSERT OR UPDATE ON consultation_bookings
+  FOR EACH ROW EXECUTE FUNCTION auto_block_slot_on_booking();
+```
+
+---
+
+## Indexes
 
 ```sql
--- Consultation status
-CREATE TYPE consultation_status AS ENUM (
-  'pending', 'confirmed', 'in_progress', 'completed', 'cancelled', 'no_show'
-);
+-- consultation_types
+CREATE INDEX idx_consultation_types_vendor_id ON consultation_types(vendor_id);
+CREATE INDEX idx_consultation_types_is_active ON consultation_types(is_active);
 
--- Payment status
-CREATE TYPE consultation_payment_status AS ENUM (
-  'pending', 'paid', 'refunded', 'failed'
-);
+-- consultation_availability
+CREATE INDEX idx_consultation_availability_vendor_id ON consultation_availability(vendor_id);
+CREATE INDEX idx_consultation_availability_day_of_week ON consultation_availability(day_of_week);
 
--- Age group for pre-consultation info
-CREATE TYPE age_group AS ENUM (
-  'infant', 'child', 'teen', 'adult', 'senior'
-);
-```
+-- consultation_slots
+CREATE INDEX idx_consultation_slots_vendor_id ON consultation_slots(vendor_id);
+CREATE INDEX idx_consultation_slots_slot_date ON consultation_slots(slot_date);
+CREATE INDEX idx_consultation_slots_available ON consultation_slots(is_available, is_blocked);
 
-### RLS Policies
+-- consultation_bookings
+CREATE INDEX idx_consultation_bookings_customer_id ON consultation_bookings(customer_id);
+CREATE INDEX idx_consultation_bookings_vendor_id ON consultation_bookings(vendor_id);
+CREATE INDEX idx_consultation_bookings_status ON consultation_bookings(status);
+CREATE INDEX idx_consultation_bookings_booking_date ON consultation_bookings(booking_date);
 
-| Table | Policy | Who |
-|-------|--------|-----|
-| consultation_types | SELECT, INSERT, UPDATE, DELETE | Vendor (own rows) |
-| consultation_availability | SELECT, INSERT, UPDATE, DELETE | Vendor (own rows) |
-| consultation_slots | SELECT | Customer (available only), Vendor (all own) |
-| consultation_slots | INSERT, UPDATE, DELETE | Vendor (own rows) |
-| consultation_bookings | SELECT | Customer (own bookings), Vendor (own pharmacy bookings) |
-| consultation_bookings | INSERT | Customer (authenticated) |
-| consultation_bookings | UPDATE | Vendor (status updates), Customer (cancel only) |
-| consultation_pre_info | SELECT, INSERT | Customer (own), Vendor (for their bookings) |
-
----
-
-## Part 2: Vendor Dashboard - Consultation Management
-
-### 2.1 New Page: `src/pages/vendor/PharmacyConsultationManagement.tsx`
-
-**Features:**
-- **Tab 1: Consultation Types**
-  - Create/Edit consultation types (name, description, duration, price)
-  - Toggle active/inactive
-  - Mark if requires prescription follow-up
-  
-- **Tab 2: Business Hours & Availability**
-  - Weekly schedule grid (Monday-Sunday)
-  - Set open/close times for each day (EAT timezone)
-  - Mark days as unavailable (e.g., closed on Sundays)
-  
-- **Tab 3: Time Slots**
-  - Calendar view showing slots
-  - Auto-generate slots based on business hours + consultation durations
-  - Manually block specific slots (vacation, breaks)
-  - Color-coded: Available (green), Booked (blue), Blocked (gray)
-  
-- **Tab 4: Bookings**
-  - List of upcoming/past bookings
-  - View customer pre-consultation info
-  - Update status (confirm, complete, no-show)
-  - Add pharmacist notes
-
-### 2.2 Component: `src/components/vendor/consultation/ConsultationTypeForm.tsx`
-
-Form fields:
-- Name (e.g., "General Health Consultation", "Medication Review")
-- Description
-- Duration (dropdown: 15, 30, 45, 60 minutes)
-- Price (KSh)
-- Requires prescription follow-up (checkbox)
-- Is active (toggle)
-
-### 2.3 Component: `src/components/vendor/consultation/AvailabilityScheduler.tsx`
-
-Weekly grid showing:
-- Days of week (rows)
-- Time slots (columns, 30-min increments)
-- Click to toggle availability
-- Preset "Copy from Monday" button
-
-### 2.4 Component: `src/components/vendor/consultation/SlotCalendar.tsx`
-
-- Month/Week view toggle
-- Shows slots with status badges
-- Click slot to see details or block/unblock
-- Generate slots button (auto-creates based on availability)
-
-### 2.5 Component: `src/components/vendor/consultation/BookingDetailPanel.tsx`
-
-Slide-in panel showing:
-- Customer name & contact
-- Booking date/time
-- Consultation type
-- Pre-consultation health info (symptoms, medications, conditions)
-- Status actions (Confirm, Complete, Mark No-Show)
-- Pharmacist notes textarea
-
----
-
-## Part 3: Customer Flow - Booking a Consultation
-
-### 3.1 Update: `src/pages/vendor/views/PharmacyView.tsx`
-
-Replace the current generic booking with a dedicated consultation interface:
-
-**Consultation Tab Changes:**
-- List of available consultation types (cards)
-- Select consultation type first
-- Then show calendar with available slots
-- Click slot to proceed to booking form
-
-### 3.2 New Component: `src/components/pharmacy/ConsultationBookingFlow.tsx`
-
-Multi-step flow:
-
-**Step 1: Select Consultation Type**
-- Show pharmacy info (name, location, rating)
-- Display available consultation types as cards
-- Each card shows: name, duration, price
-
-**Step 2: Select Date & Time**
-- Calendar (disable past dates)
-- Available time slots for selected date
-- Auto-filter based on business hours
-- Show EAT timezone indicator
-
-**Step 3: Pre-Consultation Info**
-- Symptoms description (textarea, required)
-- Symptom duration (dropdown: Today, 1-3 days, 1 week, etc.)
-- Medical history checkboxes:
-  - [ ] I have allergies (show text input if checked)
-  - [ ] I have chronic conditions (show multi-select: Diabetes, Hypertension, Asthma, etc.)
-  - [ ] I'm currently on medication (show textarea if checked)
-  - [ ] I'm pregnant or breastfeeding
-- Age group (dropdown)
-- Additional notes (optional textarea)
-
-**Step 4: Confirmation**
-- Summary card showing:
-  - Pharmacy name & location
-  - Consultation type, date, time
-  - Duration & price
-  - Pre-consultation summary
-- Agree to terms checkbox
-- "Confirm Booking" button
-
-### 3.3 New Component: `src/components/pharmacy/ConsultationCard.tsx`
-
-Display card for a consultation type:
-- Icon (Stethoscope)
-- Name
-- Description (truncated)
-- Duration badge
-- Price
-- "Book Now" button
-
-### 3.4 New Component: `src/components/pharmacy/TimeSlotGrid.tsx`
-
-- Grid of available slots
-- Morning (6AM-12PM), Afternoon (12PM-5PM), Evening (5PM-9PM) sections
-- Each slot shows time, click to select
-- Selected slot highlighted
-- Grayed out unavailable slots
-
-### 3.5 New Component: `src/components/pharmacy/PreConsultationForm.tsx`
-
-Form collecting health info:
-- Zod validation
-- Required: symptoms, symptom_duration, age_group
-- Conditional fields based on checkboxes
-- Clear visual hierarchy
-
----
-
-## Part 4: Customer View - My Consultations
-
-### 4.1 New Page: `src/pages/MyConsultations.tsx`
-
-List of customer's consultation bookings:
-- Tabs: Upcoming | Past | Cancelled
-- Each card shows:
-  - Pharmacy name & logo
-  - Consultation type
-  - Date & time
-  - Status badge
-  - Actions: Cancel (if pending/confirmed), View Details
-
-### 4.2 Component: `src/components/pharmacy/ConsultationDetailModal.tsx`
-
-Modal showing full booking details:
-- Pharmacy info
-- Booking info
-- Pre-consultation summary (what customer submitted)
-- Pharmacist notes (if any, after completion)
-- Cancel button (if applicable)
-
----
-
-## Part 5: Integration Points
-
-### 5.1 Update Vendor Dashboard Navigation
-
-In `src/pages/vendor/NewVendorDashboard.tsx`, change the pharmacy consultation button:
-
-```typescript
-// Current (goes to generic bookings)
-<Button onClick={() => navigate('/vendor/bookings')}>
-  <Stethoscope /> Consultations
-</Button>
-
-// New (goes to dedicated consultation management)
-<Button onClick={() => navigate('/vendor/consultations')}>
-  <Stethoscope /> Consultations
-</Button>
-```
-
-### 5.2 Add New Routes
-
-In `src/App.tsx`:
-
-```typescript
-// Vendor routes
-<Route path="/vendor/consultations" element={<PharmacyConsultationManagement />} />
-
-// Customer routes
-<Route path="/my-consultations" element={<MyConsultations />} />
-```
-
-### 5.3 Update PharmacyView
-
-Replace the generic booking system with the new consultation flow when the vendor is a pharmacy.
-
-### 5.4 Bottom Navigation / Account Menu
-
-Add "My Consultations" link in user account menu.
-
----
-
-## Part 6: Business Logic
-
-### 6.1 Slot Generation Logic
-
-```typescript
-function generateSlots(
-  vendorId: string,
-  consultationType: ConsultationType,
-  availability: ConsultationAvailability[],
-  dateRange: { start: Date; end: Date }
-): ConsultationSlot[] {
-  // For each day in range:
-  //   1. Check if day_of_week has availability
-  //   2. Get start_time and end_time
-  //   3. Generate slots based on consultation duration
-  //   4. Skip if slot already exists
-  //   5. Return array of slots to insert
-}
-```
-
-### 6.2 EAT Timezone Handling
-
-- Store times in UTC in database
-- Convert to EAT (Africa/Nairobi, UTC+3) in UI
-- All time displays show "EAT" indicator
-
-### 6.3 Auto-Block Booked Slots
-
-When a booking is created:
-1. Update `consultation_slots.is_available = false`
-2. If booking cancelled, revert to `is_available = true`
-
-### 6.4 Booking Status Flow
-
-```text
-[pending] -> [confirmed] -> [in_progress] -> [completed]
-    |             |
-    v             v
-[cancelled]   [no_show]
+-- consultation_pre_info
+CREATE INDEX idx_consultation_pre_info_booking_id ON consultation_pre_info(booking_id);
 ```
 
 ---
 
-## Part 7: TypeScript Types
+## Realtime
 
-### New Types: `src/types/consultation.ts`
+Enable realtime for bookings so vendors see new bookings instantly:
 
-```typescript
-export interface ConsultationType {
-  id: string;
-  vendor_id: string;
-  name: string;
-  description: string | null;
-  duration_minutes: number;
-  price: number;
-  is_active: boolean;
-  requires_prescription: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ConsultationAvailability {
-  id: string;
-  vendor_id: string;
-  day_of_week: number; // 0-6, Sunday = 0
-  start_time: string; // HH:MM
-  end_time: string;
-  is_available: boolean;
-  created_at: string;
-}
-
-export interface ConsultationSlot {
-  id: string;
-  vendor_id: string;
-  consultation_type_id: string;
-  slot_date: string; // YYYY-MM-DD
-  slot_start: string; // HH:MM
-  slot_end: string;
-  is_available: boolean;
-  is_blocked: boolean;
-  created_at: string;
-}
-
-export interface ConsultationBooking {
-  id: string;
-  slot_id: string;
-  customer_id: string;
-  vendor_id: string;
-  consultation_type_id: string;
-  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'no_show';
-  amount: number;
-  payment_status: 'pending' | 'paid' | 'refunded' | 'failed';
-  customer_notes: string | null;
-  pharmacist_notes: string | null;
-  booking_date: string;
-  booking_time: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ConsultationPreInfo {
-  id: string;
-  booking_id: string;
-  symptoms: string;
-  symptom_duration: string;
-  has_allergies: boolean;
-  allergies_details: string | null;
-  has_chronic_conditions: boolean;
-  chronic_conditions: string[] | null;
-  current_medications: string | null;
-  is_pregnant: boolean;
-  is_breastfeeding: boolean;
-  age_group: 'infant' | 'child' | 'teen' | 'adult' | 'senior';
-  additional_notes: string | null;
-  created_at: string;
-}
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE consultation_bookings;
 ```
 
 ---
 
-## Part 8: Files Summary
+## Migration File
 
-### Database Migration
-| File | Description |
-|------|-------------|
-| `supabase/migrations/[timestamp]_pharmacy_consultation_system.sql` | Creates all tables, enums, RLS policies |
+A single migration file will be created:
 
-### Vendor Dashboard
-| File | Description |
-|------|-------------|
-| `src/pages/vendor/PharmacyConsultationManagement.tsx` | Main consultation management page |
-| `src/components/vendor/consultation/ConsultationTypeForm.tsx` | Create/edit consultation types |
-| `src/components/vendor/consultation/AvailabilityScheduler.tsx` | Weekly hours grid |
-| `src/components/vendor/consultation/SlotCalendar.tsx` | Calendar with slots |
-| `src/components/vendor/consultation/BookingDetailPanel.tsx` | View/manage individual booking |
+**File**: `supabase/migrations/[timestamp]_pharmacy_consultation_system.sql`
 
-### Customer Flow
-| File | Description |
-|------|-------------|
-| `src/components/pharmacy/ConsultationBookingFlow.tsx` | Multi-step booking wizard |
-| `src/components/pharmacy/ConsultationCard.tsx` | Display consultation type |
-| `src/components/pharmacy/TimeSlotGrid.tsx` | Time slot picker |
-| `src/components/pharmacy/PreConsultationForm.tsx` | Health info form |
-| `src/pages/MyConsultations.tsx` | Customer's consultation history |
-| `src/components/pharmacy/ConsultationDetailModal.tsx` | View booking details |
-
-### Types & Utils
-| File | Description |
-|------|-------------|
-| `src/types/consultation.ts` | TypeScript interfaces |
-| `src/lib/consultationUtils.ts` | Slot generation, timezone helpers |
-
-### Updates
-| File | Description |
-|------|-------------|
-| `src/App.tsx` | Add new routes |
-| `src/pages/vendor/NewVendorDashboard.tsx` | Update consultation button |
-| `src/pages/vendor/views/PharmacyView.tsx` | Integrate new booking flow |
+This file will contain:
+1. Helper functions (security definer)
+2. All 5 tables with constraints
+3. RLS enabled on all tables
+4. All RLS policies
+5. All indexes
+6. Triggers for updated_at and auto-blocking
+7. Realtime publication
 
 ---
 
-## Implementation Order
+## Summary
 
-1. **Database First**: Create migration with all tables and RLS
-2. **Types**: Add TypeScript interfaces
-3. **Vendor Management**: Build consultation type + availability management
-4. **Slot System**: Implement slot generation and calendar
-5. **Customer Booking Flow**: Multi-step wizard with pre-consultation form
-6. **Booking Management**: Vendor view of bookings
-7. **My Consultations**: Customer history page
-8. **Integration**: Update routes and navigation
-9. **Testing**: End-to-end flow verification
+| Table | Purpose |
+|-------|---------|
+| consultation_types | What consultations a pharmacy offers |
+| consultation_availability | Weekly recurring business hours |
+| consultation_slots | Individual bookable time slots |
+| consultation_bookings | Customer bookings with status tracking |
+| consultation_pre_info | Sensitive health info collected before consultation |
 
----
+**Security Features**:
+- Security definer functions to avoid RLS recursion
+- Vendors can only access their own pharmacy data
+- Customers can only see/modify their own bookings
+- Pre-info is only visible to the customer who created it and the pharmacy
+- Admin access via existing `has_role()` function
 
-## Technical Notes
+**Automation**:
+- Slots auto-blocked when booked
+- Slots auto-released when booking cancelled
+- Timestamps auto-updated
 
-- **Timezone**: All times stored as UTC, displayed as EAT (Africa/Nairobi)
-- **Slot Duration**: Derived from consultation type, not hardcoded
-- **Availability**: Weekly recurring, not date-specific (simpler for vendors)
-- **Blocking**: Vendors can manually block slots (vacation, emergency)
-- **Pre-info Privacy**: Only visible to the pharmacy, not stored in cart/order
-- **No Cart Integration**: Consultations bypass cart, direct booking flow
