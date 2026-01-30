@@ -1,308 +1,275 @@
 
 
-# Database Migration: Pharmacy Consultation System
+# Home Page Redesign Plan
 
 ## Overview
 
-This migration creates a complete database schema for the Pharmacy Consultation system with 5 new tables, proper RLS policies, helper functions, and auto-sync triggers. The tables are designed to integrate with the existing `vendor_profiles` table using `vendor_id` references.
+This redesign transforms the Home page from a category-centric layout to a **product-first marketplace** inspired by Greenspoon's design. The key changes are:
+
+1. **Replace Vendor Spotlight** with a Featured Product Banner (eBay-style)
+2. **Replace Category Grid** with a horizontal category navigation + product grid
+3. Keep the same visual theme and mobile-first approach
 
 ---
 
-## Tables to Create
+## Design Changes
 
-### 1. consultation_types
-Stores the types of consultations each pharmacy offers.
+### 1. Featured Product Banner (Replacing Spotlight)
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid (PK) | Primary key |
-| vendor_id | uuid (FK) | References vendor_profiles.id |
-| name | text | e.g., "General Health Consultation" |
-| description | text | Optional description |
-| duration_minutes | integer | 15, 30, 45, or 60 |
-| price | numeric(10,2) | Price in KSh |
-| is_active | boolean | Default true |
-| requires_prescription | boolean | Default false |
-| created_at | timestamptz | Auto-set |
-| updated_at | timestamptz | Auto-updated |
+Instead of cycling through vendors, display a **randomly selected product** with a compelling "Shop Now" CTA:
 
-### 2. consultation_availability
-Stores weekly recurring business hours for each pharmacy.
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid (PK) | Primary key |
-| vendor_id | uuid (FK) | References vendor_profiles.id |
-| day_of_week | integer | 0=Sunday to 6=Saturday |
-| start_time | time | e.g., '09:00' |
-| end_time | time | e.g., '17:00' |
-| is_available | boolean | Default true |
-| created_at | timestamptz | Auto-set |
-
-### 3. consultation_slots
-Stores individual bookable time slots generated from availability.
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid (PK) | Primary key |
-| vendor_id | uuid (FK) | References vendor_profiles.id |
-| consultation_type_id | uuid (FK) | References consultation_types.id (nullable) |
-| slot_date | date | The date of the slot |
-| slot_start | time | Start time |
-| slot_end | time | End time |
-| is_available | boolean | Auto-blocked when booked |
-| is_blocked | boolean | Manually blocked by vendor |
-| created_at | timestamptz | Auto-set |
-
-### 4. consultation_bookings
-Stores customer consultation bookings.
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid (PK) | Primary key |
-| slot_id | uuid (FK) | References consultation_slots.id (nullable) |
-| customer_id | uuid (FK) | References auth.users.id (NOT NULL) |
-| vendor_id | uuid (FK) | References vendor_profiles.id |
-| consultation_type_id | uuid (FK) | References consultation_types.id |
-| status | text | pending, confirmed, in_progress, completed, cancelled, no_show |
-| amount | numeric(10,2) | Price paid |
-| payment_status | text | pending, paid, refunded, failed |
-| customer_notes | text | Optional notes from customer |
-| pharmacist_notes | text | Notes from pharmacist |
-| booking_date | date | The scheduled date |
-| booking_time | time | The scheduled time |
-| created_at | timestamptz | Auto-set |
-| updated_at | timestamptz | Auto-updated |
-
-### 5. consultation_pre_info
-Stores pre-consultation health information (sensitive medical data).
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid (PK) | Primary key |
-| booking_id | uuid (FK) | References consultation_bookings.id (UNIQUE) |
-| symptoms | text | Patient's symptoms |
-| symptom_duration | text | How long symptoms have lasted |
-| has_allergies | boolean | Default false |
-| allergies_details | text | Optional allergy details |
-| has_chronic_conditions | boolean | Default false |
-| chronic_conditions | text[] | Array of conditions |
-| current_medications | text | Current medications |
-| is_pregnant | boolean | Default false |
-| is_breastfeeding | boolean | Default false |
-| age_group | text | infant, child, teen, adult, senior |
-| additional_notes | text | Optional extra info |
-| created_at | timestamptz | Auto-set |
-
----
-
-## Security Definer Helper Functions
-
-To avoid RLS recursion when checking vendor ownership, we create helper functions:
-
-### is_consultation_vendor()
-```sql
-CREATE OR REPLACE FUNCTION public.is_consultation_vendor(_user_id uuid, _vendor_id uuid)
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.vendor_profiles
-    WHERE id = _vendor_id
-      AND user_id = _user_id
-  )
-$$;
+```text
++----------------------------------------------------------+
+|  [Product Image - Full Width Banner]                      |
+|                                                          |
+|  "Today's Pick"                                           |
+|  Fresh Mango Juice - 1L                                  |
+|  KES 250                                                 |
+|                                                          |
+|  [Shop Now]  [See More Like This]                        |
++----------------------------------------------------------+
 ```
 
-### get_customer_vendor_id()
-```sql
-CREATE OR REPLACE FUNCTION public.get_customer_vendor_id(_booking_id uuid)
-RETURNS uuid
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT vendor_id
-  FROM public.consultation_bookings
-  WHERE id = _booking_id
-$$;
+**Features:**
+- Randomly picks a product from available products
+- Auto-rotates every 8 seconds
+- Shows product image, name, price, vendor name
+- "Shop Now" adds to cart, "See More" goes to vendor page
+- Compact height on mobile (180px), taller on desktop (280px)
+
+### 2. Horizontal Category Tabs (Replacing Category Grid)
+
+A sticky horizontal scrollable category bar with filter chips:
+
+```text
+[All] [Food & Drinks] [Groceries] [Pharmacy] [Beauty] [Home] ...
+```
+
+**Features:**
+- Horizontal scroll with snap behavior
+- Active category highlighted
+- Sticky below header on scroll (optional)
+- Includes priority categories: Trash Collection, Quick Services
+
+### 3. Product Grid Layout
+
+Products displayed in a compact grid directly below category tabs:
+
+```text
++--------+  +--------+  +--------+  +--------+
+|  IMG   |  |  IMG   |  |  IMG   |  |  IMG   |
+|--------|  |--------|  |--------|  |--------|
+| Name   |  | Name   |  | Name   |  | Name   |
+| KES XX |  | KES XX |  | KES XX |  | KES XX |
+| Vendor |  | Vendor |  | Vendor |  | Vendor |
+| [+]    |  | [+]    |  | [+]    |  | [+]    |
++--------+  +--------+  +--------+  +--------+
+```
+
+**Features:**
+- 2 columns on mobile, 3-4 on desktop
+- Compact cards with product image, name, price, vendor tag
+- Quick add-to-cart button
+- Category and vendor badge overlay
+- Filter by selected category tab
+
+---
+
+## New Components to Create
+
+### 1. `FeaturedProductBanner.tsx`
+
+A banner component that:
+- Fetches a random product from the database
+- Displays with attractive gradient overlay
+- Auto-rotates through featured products
+- Shows "Shop Now" CTA
+
+### 2. `CategoryTabsNav.tsx`
+
+Horizontal category navigation:
+- Fetches categories from database
+- Horizontal scroll with active state
+- onClick filters the product grid
+- Always includes Trash Collection and Quick Services
+
+### 3. `HomeProductGrid.tsx`
+
+Product grid component:
+- Accepts filtered products
+- Compact card design (similar to Index.tsx CompactProductCard)
+- Add to cart functionality
+- Shows vendor name badge
+
+---
+
+## Data Flow
+
+```text
+Home.tsx
+  |
+  ├── Fetch products with vendor info (like Index.tsx)
+  |     FROM products
+  |     JOIN vendor_profiles
+  |     WHERE is_available = true
+  |           AND vendor is_approved/is_active
+  |
+  ├── Extract unique categories from products
+  |
+  ├── State: selectedCategory (null = all)
+  |
+  ├── Filter products by selectedCategory
+  |
+  └── Render:
+        ├── FeaturedProductBanner (random product)
+        ├── CategoryTabsNav (category filters)
+        └── HomeProductGrid (filtered products)
 ```
 
 ---
 
-## RLS Policies
+## Layout Structure
 
-### consultation_types
-
-| Operation | Policy | Condition |
-|-----------|--------|-----------|
-| SELECT (public) | "Anyone can view active consultation types" | is_active = true |
-| SELECT (vendor) | "Vendors view own consultation types" | is_consultation_vendor(auth.uid(), vendor_id) |
-| INSERT | "Vendors create consultation types" | is_consultation_vendor(auth.uid(), vendor_id) |
-| UPDATE | "Vendors update own consultation types" | is_consultation_vendor(auth.uid(), vendor_id) |
-| DELETE | "Vendors delete own consultation types" | is_consultation_vendor(auth.uid(), vendor_id) |
-
-### consultation_availability
-
-| Operation | Policy | Condition |
-|-----------|--------|-----------|
-| SELECT | "Vendors view own availability" | is_consultation_vendor(auth.uid(), vendor_id) |
-| INSERT | "Vendors create availability" | is_consultation_vendor(auth.uid(), vendor_id) |
-| UPDATE | "Vendors update availability" | is_consultation_vendor(auth.uid(), vendor_id) |
-| DELETE | "Vendors delete availability" | is_consultation_vendor(auth.uid(), vendor_id) |
-
-### consultation_slots
-
-| Operation | Policy | Condition |
-|-----------|--------|-----------|
-| SELECT (public) | "Anyone can view available slots" | is_available = true AND is_blocked = false |
-| SELECT (vendor) | "Vendors view all own slots" | is_consultation_vendor(auth.uid(), vendor_id) |
-| INSERT | "Vendors create slots" | is_consultation_vendor(auth.uid(), vendor_id) |
-| UPDATE | "Vendors update slots" | is_consultation_vendor(auth.uid(), vendor_id) |
-| DELETE | "Vendors delete slots" | is_consultation_vendor(auth.uid(), vendor_id) |
-
-### consultation_bookings
-
-| Operation | Policy | Condition |
-|-----------|--------|-----------|
-| SELECT (customer) | "Customers view own bookings" | customer_id = auth.uid() |
-| SELECT (vendor) | "Vendors view pharmacy bookings" | is_consultation_vendor(auth.uid(), vendor_id) |
-| INSERT | "Authenticated users create bookings" | customer_id = auth.uid() |
-| UPDATE (customer) | "Customers can cancel own bookings" | customer_id = auth.uid() AND status IN ('pending', 'confirmed') |
-| UPDATE (vendor) | "Vendors update booking status" | is_consultation_vendor(auth.uid(), vendor_id) |
-
-### consultation_pre_info
-
-| Operation | Policy | Condition |
-|-----------|--------|-----------|
-| SELECT (customer) | "Customers view own pre-info" | EXISTS (SELECT 1 FROM consultation_bookings WHERE id = booking_id AND customer_id = auth.uid()) |
-| SELECT (vendor) | "Vendors view pre-info for their bookings" | is_consultation_vendor(auth.uid(), get_customer_vendor_id(booking_id)) |
-| INSERT | "Customers create pre-info" | EXISTS (SELECT 1 FROM consultation_bookings WHERE id = booking_id AND customer_id = auth.uid()) |
+```text
++------------------------------------------+
+|  Header (unchanged)                       |
++------------------------------------------+
+|  Welcome + Search (unchanged, compact)    |
++------------------------------------------+
+|  Featured Product Banner                  |
+|  (Random product - "Shop Now")           |
++------------------------------------------+
+|  [All] [Food] [Groceries] [Pharmacy]...  |  <- Category Tabs
++------------------------------------------+
+|  "Showing 24 products in Food & Drinks"  |
++------------------------------------------+
+|  +------+  +------+  +------+  +------+  |
+|  | Prod |  | Prod |  | Prod |  | Prod |  |
+|  +------+  +------+  +------+  +------+  |
+|  +------+  +------+  +------+  +------+  |
+|  | Prod |  | Prod |  | Prod |  | Prod |  |
+|  +------+  +------+  +------+  +------+  |
++------------------------------------------+
+|  Load More / Infinite Scroll              |
++------------------------------------------+
+|  MtaaLoop Essentials (keep as is)         |
++------------------------------------------+
+```
 
 ---
 
-## Triggers
+## Files to Modify/Create
 
-### Auto-update updated_at
-```sql
-CREATE TRIGGER update_consultation_types_updated_at
-  BEFORE UPDATE ON consultation_types
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+| Action | File | Description |
+|--------|------|-------------|
+| Create | `src/components/home/FeaturedProductBanner.tsx` | Random product banner with CTA |
+| Create | `src/components/home/CategoryTabsNav.tsx` | Horizontal category filter tabs |
+| Create | `src/components/home/HomeProductCard.tsx` | Compact product card for grid |
+| Create | `src/components/home/HomeProductGrid.tsx` | Grid layout for products |
+| Modify | `src/pages/Home.tsx` | Refactor to use new components |
+| Delete | N/A | VendorSpotlight import removed (component kept for other uses) |
 
-CREATE TRIGGER update_consultation_bookings_updated_at
-  BEFORE UPDATE ON consultation_bookings
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+---
+
+## Technical Details
+
+### Product Fetching (in Home.tsx)
+
+```typescript
+// Fetch products with vendor info
+const { data } = await supabase
+  .from("products")
+  .select(`
+    id, name, description, category, subcategory, 
+    price, image_url, is_available, vendor_id,
+    vendor_profiles!inner (
+      id, business_name, slug, is_approved, is_active
+    )
+  `)
+  .eq("is_available", true)
+  .eq("vendor_profiles.is_approved", true)
+  .eq("vendor_profiles.is_active", true)
+  .order("name", { ascending: true })
+  .limit(50);
 ```
 
-### Auto-block slot when booked
-```sql
-CREATE OR REPLACE FUNCTION auto_block_slot_on_booking()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- When a booking is created, mark the slot as unavailable
-  IF TG_OP = 'INSERT' AND NEW.slot_id IS NOT NULL THEN
-    UPDATE consultation_slots
-    SET is_available = false
-    WHERE id = NEW.slot_id;
-  END IF;
+### Category Extraction
+
+```typescript
+// Extract unique categories from products
+const categories = useMemo(() => {
+  const cats = new Set<string>();
+  products.forEach(p => cats.add(p.category));
+  return Array.from(cats).sort();
+}, [products]);
+```
+
+### Featured Product Selection
+
+```typescript
+// Pick random product, refresh every 8s
+const [featuredProduct, setFeaturedProduct] = useState<Product | null>(null);
+
+useEffect(() => {
+  if (products.length === 0) return;
   
-  -- When a booking is cancelled, make the slot available again
-  IF TG_OP = 'UPDATE' AND NEW.status = 'cancelled' AND OLD.status != 'cancelled' THEN
-    UPDATE consultation_slots
-    SET is_available = true
-    WHERE id = NEW.slot_id AND is_blocked = false;
-  END IF;
+  const pickRandom = () => {
+    const idx = Math.floor(Math.random() * products.length);
+    setFeaturedProduct(products[idx]);
+  };
   
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trigger_auto_block_slot_on_booking
-  AFTER INSERT OR UPDATE ON consultation_bookings
-  FOR EACH ROW EXECUTE FUNCTION auto_block_slot_on_booking();
+  pickRandom();
+  const interval = setInterval(pickRandom, 8000);
+  return () => clearInterval(interval);
+}, [products]);
 ```
 
 ---
 
-## Indexes
+## Mobile Responsiveness
 
-```sql
--- consultation_types
-CREATE INDEX idx_consultation_types_vendor_id ON consultation_types(vendor_id);
-CREATE INDEX idx_consultation_types_is_active ON consultation_types(is_active);
-
--- consultation_availability
-CREATE INDEX idx_consultation_availability_vendor_id ON consultation_availability(vendor_id);
-CREATE INDEX idx_consultation_availability_day_of_week ON consultation_availability(day_of_week);
-
--- consultation_slots
-CREATE INDEX idx_consultation_slots_vendor_id ON consultation_slots(vendor_id);
-CREATE INDEX idx_consultation_slots_slot_date ON consultation_slots(slot_date);
-CREATE INDEX idx_consultation_slots_available ON consultation_slots(is_available, is_blocked);
-
--- consultation_bookings
-CREATE INDEX idx_consultation_bookings_customer_id ON consultation_bookings(customer_id);
-CREATE INDEX idx_consultation_bookings_vendor_id ON consultation_bookings(vendor_id);
-CREATE INDEX idx_consultation_bookings_status ON consultation_bookings(status);
-CREATE INDEX idx_consultation_bookings_booking_date ON consultation_bookings(booking_date);
-
--- consultation_pre_info
-CREATE INDEX idx_consultation_pre_info_booking_id ON consultation_pre_info(booking_id);
-```
+| Element | Mobile | Desktop |
+|---------|--------|---------|
+| Featured Banner | 180px height | 280px height |
+| Category Tabs | Horizontal scroll | Horizontal scroll (wider) |
+| Product Grid | 2 columns | 4 columns |
+| Product Card | Compact (image 4:3) | Slightly larger |
+| Welcome Section | Single line | Multi-line with subtitle |
 
 ---
 
-## Realtime
+## Sections Retained
 
-Enable realtime for bookings so vendors see new bookings instantly:
-
-```sql
-ALTER PUBLICATION supabase_realtime ADD TABLE consultation_bookings;
-```
+The following sections remain unchanged:
+- **Header** (logo, location, cart, profile)
+- **Search bar**
+- **Location Info Bar**
+- **Minimarts in Your Area** (if data exists)
+- **MtaaLoop Essentials** (MtaaLoop Mart card)
+- **Popular Vendors Near You** (optional, can be removed if redundant)
+- **Apartment Switcher Modal**
 
 ---
 
-## Migration File
+## Visual Theme
 
-A single migration file will be created:
-
-**File**: `supabase/migrations/[timestamp]_pharmacy_consultation_system.sql`
-
-This file will contain:
-1. Helper functions (security definer)
-2. All 5 tables with constraints
-3. RLS enabled on all tables
-4. All RLS policies
-5. All indexes
-6. Triggers for updated_at and auto-blocking
-7. Realtime publication
+Keeping the current theme:
+- Primary color accents
+- Card-based design with shadows on hover
+- Gradient overlays for featured banner
+- White/light background with muted section backgrounds
+- Mobile-first touch targets (min 44px)
 
 ---
 
 ## Summary
 
-| Table | Purpose |
-|-------|---------|
-| consultation_types | What consultations a pharmacy offers |
-| consultation_availability | Weekly recurring business hours |
-| consultation_slots | Individual bookable time slots |
-| consultation_bookings | Customer bookings with status tracking |
-| consultation_pre_info | Sensitive health info collected before consultation |
+| Before | After |
+|--------|-------|
+| Vendor Spotlight (carousel) | Featured Product Banner (random product) |
+| "What are you looking for?" category grid | Horizontal category tabs |
+| Category cards with images | Product grid with category filter |
+| Vendor-centric | Product-centric |
 
-**Security Features**:
-- Security definer functions to avoid RLS recursion
-- Vendors can only access their own pharmacy data
-- Customers can only see/modify their own bookings
-- Pre-info is only visible to the customer who created it and the pharmacy
-- Admin access via existing `has_role()` function
-
-**Automation**:
-- Slots auto-blocked when booked
-- Slots auto-released when booking cancelled
-- Timestamps auto-updated
+This redesign makes the homepage more **product-focused** and **action-oriented**, similar to Greenspoon's approach where users see actual products immediately rather than navigating through categories first.
 
