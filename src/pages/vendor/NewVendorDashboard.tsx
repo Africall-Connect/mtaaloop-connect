@@ -273,7 +273,7 @@ export default function NewVendorDashboard() {
                   <Pill className="h-4 w-4" />
                   Products
                 </Button>
-                <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/bookings')}>
+                <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/consultations')}>
                   <Stethoscope className="h-4 w-4" />
                   Consultations
                 </Button>

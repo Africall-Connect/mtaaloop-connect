@@ -2,37 +2,29 @@ import { useState, useEffect } from "react";
 import { Product, VendorWithProducts } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pill, CalendarClock, ShoppingBasket, Stethoscope } from "lucide-react";
+import { ConsultationBookingFlow } from "@/components/pharmacy/ConsultationBookingFlow";
+import { ConsultationType } from "@/types/consultation";
+import { Plus, Pill, CalendarClock, ShoppingBasket, Stethoscope, Clock, ArrowRight } from "lucide-react";
 
 interface PharmacyViewProps {
   vendor: VendorWithProducts;
   products: Product[];
 }
 
-interface BookingSlot {
-  id: string;
-  product_id: string;
-  slot_start: string;
-  slot_end: string;
-  is_available: boolean;
-}
-
 export function PharmacyView({ vendor, products }: PharmacyViewProps) {
   const [activeTab, setActiveTab] = useState<string>("products");
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [bookingSlots, setBookingSlots] = useState<BookingSlot[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [showBookingFlow, setShowBookingFlow] = useState(false);
+  const [consultationTypes, setConsultationTypes] = useState<ConsultationType[]>([]);
   const { addItem } = useCart();
   const { toast } = useToast();
 
-  // Split products by item_type
+  // Only show inventory products (not bookings - those are handled by consultation system)
   const inventoryProducts = products.filter(p => p.item_type !== 'booking');
-  const bookingProducts = products.filter(p => p.item_type === 'booking');
 
   // Group inventory products by subcategory
   const groupedProducts = inventoryProducts.reduce((acc, product) => {
@@ -44,30 +36,22 @@ export function PharmacyView({ vendor, products }: PharmacyViewProps) {
     return acc;
   }, {} as Record<string, Product[]>);
 
-  // Fetch booking slots when consultation tab is active
+  // Fetch consultation types to check if vendor offers consultations
   useEffect(() => {
-    const fetchBookingSlots = async () => {
-      if (bookingProducts.length === 0) return;
-      
-      setLoading(true);
+    const fetchConsultationTypes = async () => {
       const { data, error } = await supabase
-        .from('booking_slots')
+        .from('consultation_types')
         .select('*')
-        .in('product_id', bookingProducts.map(b => b.id))
-        .eq('is_available', true);
+        .eq('vendor_id', vendor.id)
+        .eq('is_active', true);
 
-      if (error) {
-        console.error('Error fetching booking slots:', error);
-      } else {
-        setBookingSlots(data || []);
+      if (!error && data) {
+        setConsultationTypes(data as unknown as ConsultationType[]);
       }
-      setLoading(false);
     };
 
-    if (activeTab === 'consultations') {
-      fetchBookingSlots();
-    }
-  }, [activeTab, bookingProducts]);
+    fetchConsultationTypes();
+  }, [vendor.id]);
 
   const handleAddProduct = (product: Product) => {
     addItem({
@@ -85,27 +69,7 @@ export function PharmacyView({ vendor, products }: PharmacyViewProps) {
     });
   };
 
-  const handleBookSlot = (slot: BookingSlot) => {
-    const product = bookingProducts.find(b => b.id === slot.product_id);
-    if (product) {
-      addItem({
-        id: slot.id,
-        vendorId: vendor.id,
-        vendorName: vendor.business_name,
-        name: product.name,
-        price: product.price,
-        quantity: 1,
-        bookingDetails: {
-          slot_start: slot.slot_start,
-          slot_end: slot.slot_end,
-        },
-      });
-      toast({
-        title: "Consultation booked",
-        description: `${product.name} added to cart`,
-      });
-    }
-  };
+  const hasConsultations = consultationTypes.length > 0;
 
   return (
     <div className="space-y-6">
@@ -152,7 +116,7 @@ export function PharmacyView({ vendor, products }: PharmacyViewProps) {
                         </div>
                         <div className="absolute top-2 right-2 flex flex-col gap-2">
                           {product.is_popular && (
-                            <Badge variant="default" className="bg-amber-500 text-white shadow-md">
+                            <Badge className="shadow-md">
                               Popular
                             </Badge>
                           )}
@@ -205,38 +169,49 @@ export function PharmacyView({ vendor, products }: PharmacyViewProps) {
 
         {/* Consultations Tab */}
         <TabsContent value="consultations" className="mt-0">
-          {bookingProducts.length > 0 ? (
-            <section className="mb-12">
-              <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                <Stethoscope className="h-5 w-5 text-primary" />
-                Available Consultations
-              </h3>
+          {hasConsultations ? (
+            <section className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-2xl font-bold flex items-center gap-2">
+                  <Stethoscope className="h-5 w-5 text-primary" />
+                  Available Consultations
+                </h3>
+              </div>
               
-              {/* Consultation Services */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                {bookingProducts.map((service) => (
+              {/* Consultation Types Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {consultationTypes.map((consultation) => (
                   <div 
-                    key={service.id}
-                    className="bg-card border rounded-xl p-6 hover:shadow-lg transition-shadow"
+                    key={consultation.id}
+                    className="bg-card border rounded-xl p-6 hover:shadow-lg hover:border-primary/50 transition-all"
                   >
                     <div className="flex items-start gap-4">
-                      <div className="p-3 bg-primary/10 rounded-full">
+                      <div className="p-3 bg-primary/10 rounded-full shrink-0">
                         <Stethoscope className="h-6 w-6 text-primary" />
                       </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-lg">{service.name}</h4>
-                        <p className="text-sm text-muted-foreground mb-3">
-                          {service.description}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-lg font-bold text-primary">
-                            KSh {service.price.toLocaleString()}
-                          </span>
-                          {service.duration && (
-                            <Badge variant="outline">
-                              {service.duration} min
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="font-semibold text-lg">{consultation.name}</h4>
+                          {consultation.requires_prescription && (
+                            <Badge variant="outline" className="shrink-0 gap-1">
+                              <Pill className="h-3 w-3" />
+                              Rx
                             </Badge>
                           )}
+                        </div>
+                        {consultation.description && (
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                            {consultation.description}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-4 mt-4">
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Clock className="h-4 w-4" />
+                            {consultation.duration_minutes} min
+                          </div>
+                          <div className="text-lg font-bold text-primary">
+                            KSh {consultation.price.toLocaleString()}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -244,58 +219,18 @@ export function PharmacyView({ vendor, products }: PharmacyViewProps) {
                 ))}
               </div>
 
-              {/* Calendar and Slots */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-1 bg-card border rounded-xl p-4">
-                  <h4 className="font-semibold mb-4">Select Date</h4>
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    className="rounded-md"
-                    disabled={(date) => date < new Date()}
-                  />
+              {/* Book Now CTA */}
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                  <h4 className="font-semibold text-lg">Ready to book?</h4>
+                  <p className="text-muted-foreground">
+                    Choose a consultation type, select your preferred time, and provide health details.
+                  </p>
                 </div>
-                <div className="md:col-span-2">
-                  <h4 className="font-semibold mb-4">Available Time Slots</h4>
-                  {loading ? (
-                    <div className="flex items-center justify-center py-12">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </div>
-                  ) : bookingSlots.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-4">
-                      {bookingSlots.map((slot) => {
-                        const service = bookingProducts.find(b => b.id === slot.product_id);
-                        return (
-                          <div 
-                            key={slot.id} 
-                            className="bg-card border rounded-xl p-4 flex justify-between items-center hover:border-primary transition-colors"
-                          >
-                            <div>
-                              <p className="font-semibold">
-                                {new Date(slot.slot_start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(slot.slot_end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                {service?.name}
-                              </p>
-                            </div>
-                            <Button onClick={() => handleBookSlot(slot)}>
-                              Book Now
-                            </Button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 bg-muted/50 rounded-xl">
-                      <CalendarClock className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                      <h4 className="text-lg font-semibold mb-2">No Slots Available</h4>
-                      <p className="text-muted-foreground">
-                        No consultation slots available for this date. Try another date.
-                      </p>
-                    </div>
-                  )}
-                </div>
+                <Button size="lg" onClick={() => setShowBookingFlow(true)} className="gap-2 shrink-0">
+                  Book Consultation
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
               </div>
             </section>
           ) : (
@@ -309,6 +244,22 @@ export function PharmacyView({ vendor, products }: PharmacyViewProps) {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Consultation Booking Flow Dialog */}
+      <Dialog open={showBookingFlow} onOpenChange={setShowBookingFlow}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <ConsultationBookingFlow
+            vendor={{
+              id: vendor.id,
+              business_name: vendor.business_name,
+              business_address: vendor.business_address,
+              logo_url: vendor.logo_url,
+              rating: vendor.rating,
+            }}
+            onClose={() => setShowBookingFlow(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
