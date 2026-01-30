@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ShoppingBag, User, Plus, X, Store } from "lucide-react";
+import { Search, LogIn, Plus, X, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -359,28 +359,14 @@ const Index = () => {
                 <img src="/logo.png" alt="Mtaaloop" className="h-8 w-8" />
                 <span className="font-bold text-lg text-primary">Mtaaloop</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="relative"
-                  onClick={() => navigate("/cart")}
-                >
-                  <ShoppingBag className="h-5 w-5" />
-                  {cartCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                      {cartCount}
-                    </Badge>
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate("/account")}
-                >
-                  <User className="h-5 w-5" />
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/auth/login")}
+              >
+                <LogIn className="h-4 w-4 mr-2" />
+                Log In
+              </Button>
             </div>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -408,25 +394,10 @@ const Index = () => {
                 className="pl-9 pr-4"
               />
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative"
-                onClick={() => navigate("/cart")}
-              >
-                <ShoppingBag className="h-5 w-5" />
-                {cartCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                    {cartCount}
-                  </Badge>
-                )}
-              </Button>
-              <Button variant="outline" onClick={() => navigate("/account")}>
-                <User className="h-4 w-4 mr-2" />
-                Account
-              </Button>
-            </div>
+            <Button variant="outline" onClick={() => navigate("/auth/login")}>
+              <LogIn className="h-4 w-4 mr-2" />
+              Log In
+            </Button>
           </div>
         </div>
       </header>

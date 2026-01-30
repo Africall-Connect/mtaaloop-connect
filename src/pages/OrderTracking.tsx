@@ -23,6 +23,7 @@ interface OrderData {
   estate_id: string | null;
   total_amount: number;
   status: string;
+  payment_status?: string;
   delivery_address: string;
   customer_notes: string | null;
   created_at: string;
@@ -804,11 +805,14 @@ const OrderTracking = () => {
       setCancelling(true);
 
       // Update order status to cancelled
+      // Keep payment_status valid: if paid set to refunded, otherwise keep as-is
+      const newPaymentStatus = orderData?.payment_status === 'paid' ? 'refunded' : orderData?.payment_status;
+
       const { error: orderError } = await supabase
         .from("orders")
         .update({
           status: "cancelled",
-          payment_status: "cancelled",
+          payment_status: newPaymentStatus,
           cancellation_reason: cancelReason,
           cancelled_at: new Date().toISOString(),
         })
