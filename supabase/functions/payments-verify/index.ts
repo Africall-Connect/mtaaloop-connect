@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { verifyAuth, createUnauthorizedResponse, createForbiddenResponse } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -10,7 +11,7 @@ const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
 };
 
@@ -21,6 +22,16 @@ serve(async (req) => {
   }
 
   try {
+    // 🔐 JWT Verification
+    const authResult = await verifyAuth(req);
+    if (!authResult.authenticated || !authResult.userId) {
+      return createUnauthorizedResponse(
+        authResult.error || "Authentication required",
+        corsHeaders
+      );
+    }
+    const userId = authResult.userId;
+
     const url = new URL(req.url);
     let reference: string | null = url.searchParams.get("reference");
 
@@ -73,7 +84,7 @@ serve(async (req) => {
     if (payment.order_id) {
       const { data: orderData, error: orderError } = await supabaseAdmin
         .from("orders")
-        .select("id, status, payment_status, paid_at, total_amount, vendor_id")
+        .select("id, status, payment_status, paid_at, total_amount, vendor_id, user_id")
         .eq("id", payment.order_id)
         .maybeSingle();
 
@@ -84,16 +95,22 @@ serve(async (req) => {
       }
     }
 
+    // 🔐 Ownership check: user must own the order
+    if (order && order.user_id !== userId) {
+      console.warn(`[payments-verify] User ${userId} tried to verify payment for order owned by ${order.user_id}`);
+      return createForbiddenResponse(
+        "You can only verify your own payments",
+        corsHeaders
+      );
+    }
+
     // 3️⃣ Normalize a simple status for the frontend
-    // You can tweak this mapping if needed
     let normalizedStatus: "success" | "pending" | "failed" | "error" = "pending";
 
     if (payment.status === "successful") {
-      // If order is also marked paid, we consider this a full success
       if (order?.payment_status === "paid" || order?.status === "paid") {
         normalizedStatus = "success";
       } else {
-        // Payment says success but order not yet updated – treat as pending but OK
         normalizedStatus = "pending";
       }
     } else if (payment.status === "failed" || payment.status === "cancelled") {

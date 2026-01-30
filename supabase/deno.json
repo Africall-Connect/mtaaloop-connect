@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
-    "lib": ["deno.unstable", "dom", "dom.iterable", "dom.asynciterable"]
+    "lib": ["deno.unstable", "dom", "dom.iterable", "dom.asynciterable"],
+    "noImplicitAny": false
   },
+  "nodeModulesDir": "auto",
   "lint": {
     "files": {
       "include": ["functions/"]
