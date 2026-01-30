@@ -160,6 +160,7 @@ import Inbox from "./pages/Inbox";
 import VendorStaff from "./pages/vendor/VendorStaff";
 import VendorSettings from "./pages/vendor/VendorSettings";
 import VendorPayoutsPage from "./pages/vendor/VendorPayoutsPage";
+import PharmacyConsultationManagement from "./pages/vendor/PharmacyConsultationManagement";
 import SupportLiveChat from "./pages/SupportLiveChat";
 import TrashCollection from "./pages/TrashCollection";
 import TrashTracking from "./pages/TrashTracking";
@@ -172,6 +173,7 @@ import LaundrySorting from "./pages/services/LaundrySorting";
 import QuickMealPrep from "./pages/services/QuickMealPrep";
 import PackageCollection from "./pages/services/PackageCollection";
 import ErrandsService from "./pages/services/ErrandsService";
+import MyConsultations from "./pages/MyConsultations";
 import ImageGeneratorPage from "./pages/ImageGenerator";
 
 const queryClient = new QueryClient();
@@ -673,6 +675,18 @@ const App = () => (
             <Route path="/vendor/payouts" element={
               <ProtectedRoute requiredRole="vendor" requireApproval>
                 <VendorPayoutsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/vendor/consultations" element={
+              <ProtectedRoute requiredRole="vendor" requireApproval>
+                <PharmacyConsultationManagement />
+              </ProtectedRoute>
+            } />
+
+            {/* Customer consultation history */}
+            <Route path="/my-consultations" element={
+              <ProtectedRoute>
+                <MyConsultations />
               </ProtectedRoute>
             } />
 
