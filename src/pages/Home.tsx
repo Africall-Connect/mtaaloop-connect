@@ -1,10 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { 
-  Search, ShoppingBag, UtensilsCrossed, Pill, Sparkles, 
-  Home as HomeIcon, Droplet, MapPin, Star, Clock, TrendingUp, 
-  Wine, Hotel, Package, Trash2, Users, Zap, Crown 
-} from "lucide-react";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { Search, ShoppingBag, MapPin, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,133 +8,50 @@ import { Badge } from "@/components/ui/badge";
 import { ApartmentSwitcher } from "@/components/ApartmentSwitcher";
 import { useApartment } from "@/contexts/ApartmentContext";
 import { useCart } from "@/contexts/CartContext";
-import { useSubscription } from "@/contexts/SubscriptionContext";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { VendorProfile } from "@/types/database";
-import { VendorSpotlight } from "@/components/VendorSpotlight";
-import { SubscriptionBadge } from "@/components/subscription/SubscriptionBadge";
+import { FeaturedProductBanner } from "@/components/home/FeaturedProductBanner";
+import { CategoryTabsNav } from "@/components/home/CategoryTabsNav";
+import { HomeProductGrid } from "@/components/home/HomeProductGrid";
 
-// Official 10 categories + Trash Collection + Quick Services
-const allCategories = [
-  // 🗑️ PRIORITY #1 - Trash Collection at top
-  {
-    icon: Trash2,
-    name: "Trash Collection",
-    subtitle: "Quick doorstep pickup - KSh 30",
-    link: "/trash-collection",
-    gradient: "from-emerald-600 to-teal-700",
-    image: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=500&q=80",
-    isPriority: true
-  },
-  // ⚡ NEW - Quick Services Hub
-  {
-    icon: Zap,
-    name: "Quick Services",
-    subtitle: "Cleaning, Dishes, Laundry & More",
-    link: "/quick-services",
-    gradient: "from-purple-500 to-pink-500",
-    image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=500&q=80",
-    isNew: true
-  },
-  {
-    icon: UtensilsCrossed,
-    name: "Food & Drinks",
-    subtitle: "Fast Food, Traditional, Cafes & More",
-    link: "/categories/food-drinks",
-    gradient: "from-orange-500 to-red-500",
-    image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=80"
-  },
-  {
-    icon: Package,
-    name: "Living Essentials",
-    subtitle: "Toiletries, Cleaning & Household",
-    link: "/categories/living-essentials",
-    gradient: "from-cyan-500 to-blue-500",
-    image: "https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=500&q=80"
-  },
-  {
-    icon: ShoppingBag,
-    name: "Groceries & Food",
-    subtitle: "Fresh Produce, Meat, Dairy & Snacks",
-    link: "/categories/groceries-food",
-    gradient: "from-green-500 to-emerald-500",
-    image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&q=80"
-  },
-  {
-    icon: UtensilsCrossed,
-    name: "Restaurant",
-    subtitle: "Dine-in Experience & Custom Menus",
-    link: "/categories/restaurant",
-    gradient: "from-amber-500 to-orange-500",
-    image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&q=80"
-  },
-  {
-    icon: Wine,
-    name: "Liquor Store",
-    subtitle: "Beer, Wine, Spirits & Beverages",
-    link: "/categories/liquor-store",
-    gradient: "from-red-600 to-rose-500",
-    image: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=500&q=80"
-  },
-  {
-    icon: Droplet,
-    name: "Utilities & Services",
-    subtitle: "Gas & Water Delivery",
-    link: "/categories/utilities-services",
-    gradient: "from-blue-600 to-sky-500",
-    image: "https://images.unsplash.com/photo-1585687433448-e0d7cba3c0a5?w=500&q=80"
-  },
-  {
-    icon: HomeIcon,
-    name: "Home Services",
-    subtitle: "Cleaning, Laundry & Electrical",
-    link: "/categories/home-services",
-    gradient: "from-teal-500 to-green-500",
-    image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=500&q=80"
-  },
-  {
-    icon: Sparkles,
-    name: "Beauty & Spa",
-    subtitle: "Hair, Nails, Massage & Makeup",
-    link: "/categories/beauty-spa",
-    gradient: "from-pink-500 to-purple-500",
-    image: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=500&q=80"
-  },
-  {
-    icon: Hotel,
-    name: "Accommodation",
-    subtitle: "Guest Houses, Airbnb & Rentals",
-    link: "/categories/accommodation",
-    gradient: "from-indigo-500 to-violet-500",
-    image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500&q=80"
-  },
-  {
-    icon: Pill,
-    name: "Pharmacy",
-    subtitle: "Medicines, Consultations & Care",
-    link: "/categories/pharmacy",
-    gradient: "from-sky-500 to-cyan-400",
-    image: "https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=500&q=80"
-  },
-];
+interface ProductWithVendor {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string;
+  subcategory: string | null;
+  price: number;
+  image_url: string | null;
+  is_available: boolean;
+  vendor_id: string;
+  vendor: {
+    id: string;
+    business_name: string;
+    slug: string;
+  };
+}
 
 const Home = () => {
   const navigate = useNavigate();
-  const { getItemCount } = useCart();
+  const { getItemCount, addItem } = useCart();
+  const { toast } = useToast();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [apartmentModalOpen, setApartmentModalOpen] = useState(false);
   const { currentApartment, setCurrentApartment } = useApartment();
   const [loadingPref, setLoadingPref] = useState(true);
-  const [vendors, setVendors] = useState<VendorProfile[]>([]);
   const [minimarts, setMinimarts] = useState<VendorProfile[]>([]);
-  const [loadingVendors, setLoadingVendors] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [filteredVendors, setFilteredVendors] = useState<VendorProfile[]>([]);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
-  const [categoriesWithData, setCategoriesWithData] = useState<string[]>([]);
-  const [loadingCategories, setLoadingCategories] = useState(true);
+  
+  // Products state
+  const [products, setProducts] = useState<ProductWithVendor[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  // fetch user's apartment from DB on mount
+  // Fetch user's apartment from DB on mount
   useEffect(() => {
     const loadUserApartment = async () => {
       try {
@@ -163,7 +76,7 @@ const Home = () => {
           setUserAvatar(profileData.avatar_url);
         }
 
-        // get their preference
+        // Get their preference
         const { data: pref, error } = await supabase
           .from("user_preferences")
           .select(`
@@ -219,7 +132,59 @@ const Home = () => {
     loadUserApartment();
   }, [setCurrentApartment]);
 
-  // Fetch vendors from database
+  // Fetch products with vendor info
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoadingProducts(true);
+        const { data, error } = await supabase
+          .from("products")
+          .select(`
+            id, name, description, category, subcategory, price, image_url, 
+            is_available, vendor_id,
+            vendor_profiles!inner (
+              id, business_name, slug, is_approved, is_active
+            )
+          `)
+          .eq("is_available", true)
+          .eq("vendor_profiles.is_approved", true)
+          .eq("vendor_profiles.is_active", true)
+          .order("category", { ascending: true })
+          .order("name", { ascending: true });
+
+        if (error) throw error;
+
+        const transformedProducts: ProductWithVendor[] = (data || []).map(
+          (p: any) => ({
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            category: p.category,
+            subcategory: p.subcategory,
+            price: p.price,
+            image_url: p.image_url,
+            is_available: p.is_available,
+            vendor_id: p.vendor_id,
+            vendor: {
+              id: p.vendor_profiles.id,
+              business_name: p.vendor_profiles.business_name,
+              slug: p.vendor_profiles.slug,
+            },
+          })
+        );
+
+        setProducts(transformedProducts);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      } finally {
+        setLoadingProducts(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  // Fetch minimarts
   useEffect(() => {
     const fetchMinimarts = async () => {
       try {
@@ -242,137 +207,122 @@ const Home = () => {
       }
     };
 
-    const fetchVendors = async () => {
-      try {
-        setLoadingVendors(true);
-        
-        const query = supabase
-          .from('vendor_profiles')
-          .select('*')
-          .eq('is_approved', true)
-          .eq('is_active', true)
-          .order('rating', { ascending: false });
-
-        if (currentApartment && currentApartment.id !== 'general-location') {
-          const { data, error } = await query.eq('estate_id', currentApartment.id).limit(12);
-          if (error) throw error;
-          setVendors(data || []);
-        } else {
-          const { data, error } = await query.limit(12);
-          if (error) throw error;
-          setVendors(data || []);
-        }
-      } catch (error) {
-        console.error('Failed to load vendors:', error);
-      } finally {
-        setLoadingVendors(false);
-      }
-    };
-
     if (!loadingPref) {
-      fetchVendors();
       fetchMinimarts();
     }
   }, [currentApartment, loadingPref]);
 
-  // Fetch categories that have vendors with data (DB-driven)
-  useEffect(() => {
-    const fetchCategoriesWithVendors = async () => {
-      try {
-        setLoadingCategories(true);
-        
-        // Map business_type slugs to category names
-        const businessTypeToCategory: Record<string, string> = {
-          'food-drinks': 'Food & Drinks',
-          'living-essentials': 'Living Essentials',
-          'groceries-food': 'Groceries & Food',
-          'restaurant': 'Restaurant',
-          'liquor-store': 'Liquor Store',
-          'utilities-services': 'Utilities & Services',
-          'home-services': 'Home Services',
-          'beauty-spa': 'Beauty & Spa',
-          'accommodation': 'Accommodation',
-          'pharmacy': 'Pharmacy',
-        };
+  // Extract unique categories from products
+  const categories = useMemo(() => {
+    const cats = new Set<string>();
+    products.forEach((p) => cats.add(p.category));
+    return Array.from(cats).sort();
+  }, [products]);
 
-        // Prefer vendor_categories table (real categories vendors created in DB)
-        // and fall back to vendor_profiles.business_type for vendors that have
-        // not yet set up vendor_categories.
+  // Filter products by search and category
+  const filteredProducts = useMemo(() => {
+    let filtered = products;
 
-        // 1) vendor_categories (primary)
-        const { data: vendorCategories, error: vendorCategoriesError } = await supabase
-          .from('vendor_categories')
-          .select('name, vendor_id')
-          .eq('is_active', true);
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (p) =>
+          p.name.toLowerCase().includes(query) ||
+          p.description?.toLowerCase().includes(query) ||
+          p.category.toLowerCase().includes(query) ||
+          p.vendor.business_name.toLowerCase().includes(query)
+      );
+    }
 
-        if (vendorCategoriesError) throw vendorCategoriesError;
+    // Filter by selected category
+    if (selectedCategory) {
+      filtered = filtered.filter((p) => p.category === selectedCategory);
+    }
 
-        // 2) vendor_profiles (fallback)
-        let vendorProfilesQuery = supabase
-          .from('vendor_profiles')
-          .select('id, business_type, category')
-          .eq('is_approved', true)
-          .eq('is_active', true);
+    return filtered;
+  }, [products, searchQuery, selectedCategory]);
 
-        if (currentApartment && currentApartment.id !== 'general-location') {
-          vendorProfilesQuery = vendorProfilesQuery.eq('estate_id', currentApartment.id);
-        }
+  // Handle add to cart
+  const handleAddToCart = useCallback((e: React.MouseEvent, product: ProductWithVendor) => {
+    e.stopPropagation();
 
-        const { data: vendorData, error: vendorProfilesError } = await vendorProfilesQuery;
-        if (vendorProfilesError) throw vendorProfilesError;
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to add items to your cart",
+        variant: "destructive",
+      });
+      navigate("/auth/login", { state: { returnTo: "/home" } });
+      return;
+    }
 
-        const vendorIdSet = new Set((vendorData || []).map(v => v.id));
+    addItem({
+      id: product.id,
+      vendorId: product.vendor_id,
+      vendorName: product.vendor.business_name,
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+      image: product.image_url || undefined,
+      category: product.category,
+    });
 
-        // Keep only vendor_categories belonging to approved/active vendors in this estate
-        const categoriesFromVendorCategories = (vendorCategories || [])
-          .filter(vc => vendorIdSet.has(vc.vendor_id))
-          .map(vc => vc.name)
-          .filter(Boolean);
+    toast({
+      title: "Added to cart",
+      description: `1x ${product.name}`,
+    });
+  }, [user, toast, navigate, addItem]);
 
-        const categoriesFromBusinessType = (vendorData || [])
-          .map(v => businessTypeToCategory[v.business_type] || v.category)
-          .filter(Boolean);
+  // Handle featured banner add to cart
+  const handleBannerAddToCart = useCallback((product: ProductWithVendor) => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to add items to your cart",
+        variant: "destructive",
+      });
+      navigate("/auth/login", { state: { returnTo: "/home" } });
+      return;
+    }
 
-        const uniqueCategories = [...new Set([...categoriesFromVendorCategories, ...categoriesFromBusinessType])];
-        setCategoriesWithData(uniqueCategories);
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-        // On error, show all categories as fallback
-        setCategoriesWithData(allCategories.map(c => c.name));
-      } finally {
-        setLoadingCategories(false);
-      }
-    };
+    addItem({
+      id: product.id,
+      vendorId: product.vendor_id,
+      vendorName: product.vendor.business_name,
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+      image: product.image_url || undefined,
+      category: product.category,
+    });
 
-    fetchCategoriesWithVendors();
-  }, [currentApartment]);
+    toast({
+      title: "Added to cart",
+      description: `1x ${product.name}`,
+    });
+  }, [user, toast, navigate, addItem]);
 
-  // Filter to only show categories with data (+ always show Trash Collection and Quick Services)
-  const displayedCategories = allCategories.filter(cat => 
-    categoriesWithData.includes(cat.name) || 
-    cat.name === "Trash Collection" ||
-    cat.name === "Quick Services"
-  );
+  // Handle product click
+  const handleProductClick = useCallback((product: ProductWithVendor) => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to view product details",
+        variant: "destructive",
+      });
+      navigate("/auth/login", { state: { returnTo: "/home" } });
+      return;
+    }
+
+    if (product.vendor?.slug) {
+      navigate(`/vendor/${product.vendor.slug}`);
+    }
+  }, [user, toast, navigate]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
   };
-
-  // Filter vendors based on search query
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredVendors(vendors);
-      return;
-    }
-
-    const query = searchQuery.toLowerCase();
-    const filtered = vendors.filter(vendor => 
-      vendor.business_name.toLowerCase().includes(query) ||
-      vendor.tagline?.toLowerCase().includes(query) ||
-      vendor.business_type.toLowerCase().includes(query)
-    );
-    setFilteredVendors(filtered);
-  }, [searchQuery, vendors]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background">
@@ -440,8 +390,8 @@ const Home = () => {
       </header>
 
       <div className="container px-4 py-6 md:py-8 max-w-6xl mx-auto">
-        {/* Welcome Section - More compact on mobile */}
-        <div className="mb-6">
+        {/* Welcome Section */}
+        <div className="mb-4 sm:mb-6">
           <h1 className="text-xl md:text-3xl font-bold mb-1">
             Welcome to Mtaaloop
           </h1>
@@ -451,97 +401,56 @@ const Home = () => {
         </div>
 
         {/* Search */}
-        <form onSubmit={handleSearch} className="relative mb-6 md:mb-8">
+        <form onSubmit={handleSearch} className="relative mb-4 sm:mb-6">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search vendors, products, services..."
-              className="pl-12 h-12 md:h-14 text-base bg-background shadow-sm border-2 focus:border-primary"
+              placeholder="Search products, vendors..."
+              className="pl-12 h-11 md:h-12 text-base bg-background shadow-sm border-2 focus:border-primary"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </form>
 
-        {/* Vendor Spotlight - Top Rated Vendors */}
-        {!loadingVendors && vendors.length > 0 && (
-          <VendorSpotlight vendors={vendors} />
+        {/* Featured Product Banner */}
+        {!loadingProducts && products.length > 0 && (
+          <FeaturedProductBanner 
+            products={products} 
+            onAddToCart={handleBannerAddToCart}
+          />
         )}
 
-        {/* Location Info Bar - More compact on mobile */}
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-6 md:mb-8 px-2">
-          <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="font-medium text-muted-foreground">
-              {currentApartment && currentApartment.id !== 'general-location' 
-                ? `Live in ${currentApartment.name}` 
-                : 'Live in Your Area'}
-            </span>
-            <span className="text-muted-foreground">•</span>
-            <span className="font-medium">
-              {loadingVendors ? 'Loading...' : `${vendors.length} vendors`}
-            </span>
-          </div>
-          <div className="hidden md:flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-primary" />
-            <span className="text-sm font-bold text-primary">
-              {currentApartment && currentApartment.id !== 'general-location' ? '0-500m' : '500m'} radius
-            </span>
-          </div>
-        </div>
+        {/* Category Tabs */}
+        {!loadingProducts && categories.length > 0 && (
+          <CategoryTabsNav
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+          />
+        )}
 
-        {/* Categories - Only show those with data */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg md:text-2xl font-bold">What are you looking for?</h2>
-          </div>
-          
-          {/* Mobile: 2 columns, Desktop: 3 columns */}
-          {loadingCategories ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="h-28 md:h-40 bg-muted rounded-lg animate-pulse" />
-              ))}
-            </div>
-          ) : displayedCategories.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-              {displayedCategories.map((category) => (
-                <Link key={category.name} to={category.link}>
-                  <Card className="group relative overflow-hidden h-28 md:h-40 cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-primary/50">
-                    {/* Background Image */}
-                    <div 
-                      className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-110"
-                      style={{ backgroundImage: `url(${category.image})` }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30" />
-                    
-                    {/* Content */}
-                    <div className="relative p-3 md:p-4 h-full flex flex-col justify-end">
-                      <div className="w-8 h-8 md:w-12 md:h-12 rounded-lg bg-white/20 backdrop-blur-sm p-1.5 md:p-2 mb-2">
-                        <category.icon className="w-full h-full text-white" />
-                      </div>
-                      <h3 className="text-sm md:text-base font-bold text-white line-clamp-1">
-                        {category.name}
-                      </h3>
-                      <p className="text-xs text-white/80 line-clamp-1 hidden md:block">
-                        {category.subtitle}
-                      </p>
-                    </div>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>No categories available yet. Check back soon!</p>
-            </div>
-          )}
-        </div>
+        {/* Products Count */}
+        {!loadingProducts && (
+          <p className="text-sm text-muted-foreground mb-4">
+            {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""} 
+            {selectedCategory ? ` in ${selectedCategory}` : ""}
+          </p>
+        )}
+
+        {/* Product Grid */}
+        <HomeProductGrid
+          products={filteredProducts}
+          loading={loadingProducts}
+          selectedCategory={selectedCategory}
+          onAddToCart={handleAddToCart}
+          onProductClick={handleProductClick}
+        />
 
         {/* Minimarts in Your Area */}
         {minimarts.length > 0 && (
-          <div className="mb-8">
+          <div className="mt-8 mb-8">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-lg md:text-2xl font-bold">Minimarts in Your Area</h2>
@@ -565,12 +474,12 @@ const Home = () => {
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-5xl">
-                        🏪
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ShoppingBag className="w-12 h-12 text-primary/30" />
                       </div>
                     )}
-                    <Badge className="absolute top-3 right-3 bg-green-600 hover:bg-green-700">
-                      🟢 Open
+                    <Badge variant="secondary" className="absolute top-3 right-3 bg-emerald-600 text-white hover:bg-emerald-700">
+                      Open
                     </Badge>
                   </div>
                   <div className="p-4">
@@ -598,14 +507,15 @@ const Home = () => {
             </div>
           </div>
           
-          {/* MtaaLoop Mart Only */}
           <Card 
             className="max-w-sm group overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1" 
             onClick={() => navigate('/mtaaloop-mart')}
           >
             <div className="relative h-32 md:h-40 overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5">
-              <div className="w-full h-full flex items-center justify-center text-5xl">🛒</div>
-              <Badge className="absolute top-3 right-3 bg-green-600">🟢 Open</Badge>
+              <div className="w-full h-full flex items-center justify-center">
+                <ShoppingBag className="w-16 h-16 text-primary/40" />
+              </div>
+              <Badge variant="secondary" className="absolute top-3 right-3 bg-emerald-600 text-white">Open</Badge>
             </div>
             <div className="p-4">
               <h3 className="font-bold text-base md:text-lg group-hover:text-primary transition-colors">MtaaLoop Mart</h3>
@@ -613,121 +523,6 @@ const Home = () => {
             </div>
           </Card>
         </div>
-
-        {/* Featured Vendors Section */}
-        {!loadingVendors && filteredVendors.length > 0 && (
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-lg md:text-2xl font-bold">Popular Vendors Near You</h2>
-                <p className="text-xs md:text-sm text-muted-foreground">
-                  {searchQuery ? `${filteredVendors.length} results for "${searchQuery}"` : `Top rated businesses in ${currentApartment?.name || 'your area'}`}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory md:grid md:grid-cols-3 md:overflow-visible">
-              {filteredVendors.slice(0, 6).map((vendor) => (
-                <Card
-                  key={vendor.id}
-                  className="min-w-[260px] md:min-w-0 snap-start group overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-                  onClick={() => navigate(`/vendor/${vendor.id}`)}
-                >
-                  <div className="relative h-32 md:h-40 overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5">
-                    {vendor.cover_image_url || vendor.logo_url ? (
-                      <img
-                        src={vendor.cover_image_url || vendor.logo_url}
-                        alt={vendor.business_name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-5xl">
-                        🏪
-                      </div>
-                    )}
-                    {vendor.is_active && (
-                      <Badge className="absolute top-3 right-3 bg-green-600">
-                        🟢 Open
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  <div className="p-4 space-y-2">
-                    <h3 className="font-bold text-base md:text-lg group-hover:text-primary transition-colors line-clamp-1">
-                      {vendor.business_name}
-                    </h3>
-
-                    {vendor.tagline && (
-                      <p className="text-xs md:text-sm text-muted-foreground line-clamp-1">
-                        {vendor.tagline}
-                      </p>
-                    )}
-
-                    <div className="flex items-center gap-2 text-xs md:text-sm">
-                      <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                        <span className="font-medium">
-                          {vendor.rating?.toFixed(1) || '4.5'}
-                        </span>
-                        {vendor.review_count > 0 && (
-                          <span className="text-muted-foreground">
-                            ({vendor.review_count})
-                          </span>
-                        )}
-                      </div>
-
-                      {vendor.delivery_time && (
-                        <>
-                          <span className="text-muted-foreground">•</span>
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-3 h-3 md:w-4 md:h-4" />
-                            <span>{vendor.delivery_time}</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {vendor.business_type}
-                      </Badge>
-                      {vendor.delivery_fee !== null && (
-                        <span className="text-xs text-muted-foreground">
-                          KSh {vendor.delivery_fee} delivery
-                        </span>
-                      )}
-                    </div>
-
-                    {vendor.rating >= 4.5 && vendor.total_orders > 50 && (
-                      <div className="flex items-center gap-1 text-xs text-primary font-medium">
-                        <TrendingUp className="w-3 h-3" />
-                        <span>Popular in your area</span>
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Loading State for Vendors */}
-        {loadingVendors && (
-          <div className="mb-8">
-            <h2 className="text-lg md:text-2xl font-bold mb-4">Loading vendors...</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="overflow-hidden">
-                  <div className="h-32 md:h-40 bg-muted animate-pulse" />
-                  <div className="p-4 space-y-3">
-                    <div className="h-5 bg-muted rounded animate-pulse" />
-                    <div className="h-4 bg-muted rounded animate-pulse w-2/3" />
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Apartment Switcher Modal */}
