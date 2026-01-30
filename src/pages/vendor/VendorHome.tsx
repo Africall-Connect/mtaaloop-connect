@@ -1,32 +1,41 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { VendorNavbar } from "@/components/vendor/VendorNavbar";
 import { supabase } from "@/integrations/supabase/client";
 import { InventoryView } from "./views/InventoryView";
 import { ServiceView } from "./views/ServiceView";
 import { BookingView } from "./views/BookingView";
 import { PharmacyView } from "./views/PharmacyView";
-import { ShoppingBag, Package, Leaf, ArrowLeft, Star, Clock, MapPin } from "lucide-react";
+import { ShoppingBag, Package, ArrowUpDown, SlidersHorizontal } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCart } from "@/contexts/CartContext";
-import { useToast } from "@/hooks/use-toast";
 import { FloatingCartButton } from "@/components/FloatingCartButton";
 import { VendorWithProducts, Product } from "@/types/database";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+type SortOption = 'popular' | 'price-low' | 'price-high' | 'newest' | 'name';
 
 export default function VendorHome() {
   const { vendorSlug } = useParams();
   const navigate = useNavigate();
   const [vendor, setVendor] = useState<VendorWithProducts | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
   const [subcategories, setSubcategories] = useState<Array<{ id: string; name: string; slug: string; category_id: string }>>([]);
   const [loading, setLoading] = useState(true);
 
-  const { addItem, getItemCount, getTotal } = useCart();
-  const { toast } = useToast();
+  // Client-side filtering state
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>('popular');
+
+  const { getItemCount } = useCart();
 
   const fetchVendorData = useCallback(async () => {
     if (!vendorSlug) {
@@ -37,11 +46,8 @@ export default function VendorHome() {
     setLoading(true);
 
     try {
-      // Check if vendorSlug is a UUID (vendor_id) or a slug
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(vendorSlug);
-      console.log('🔑 Is UUID?', isUUID, '| Value:', vendorSlug);
 
-      // Try to find vendor by slug or id
       let query = supabase
         .from('vendor_profiles')
         .select('*')
@@ -49,45 +55,23 @@ export default function VendorHome() {
         .eq('is_active', true);
 
       if (isUUID) {
-        console.log('🔍 Searching by ID...');
         query = query.eq('id', vendorSlug);
       } else {
-        console.log('🔍 Searching by slug...');
         query = query.eq('slug', vendorSlug);
       }
 
       const { data: vendorData, error: vendorError } = await query.single();
 
-      console.log('📊 Database query result:', {
-        found: !!vendorData,
-        error: vendorError?.message,
-        vendor: vendorData ? {
-          id: vendorData.id,
-          name: vendorData.business_name,
-          slug: vendorData.slug
-        } : null
-      });
-
-      if (vendorError) {
+      if (vendorError || !vendorData) {
         console.error('❌ Database error:', vendorError);
         setVendor(null);
         setLoading(false);
         return;
       }
 
-      if (!vendorData) {
-        console.log('❌ No vendor found in database');
-        setVendor(null);
-        setLoading(false);
-        return;
-      }
-
-      console.log('✅ Vendor found:', vendorData.business_name);
-
       // Fetch estate information if vendor has estate_id
       let estateInfo = null;
       if (vendorData.estate_id) {
-        console.log('🏢 Fetching estate information...');
         const { data: estateData, error: estateError } = await supabase
           .from('estates')
           .select('name, location')
@@ -96,12 +80,10 @@ export default function VendorHome() {
 
         if (!estateError && estateData) {
           estateInfo = estateData;
-          console.log('✅ Estate found:', estateData.name);
         }
       }
 
       // Fetch products for this vendor
-      console.log('📦 Fetching products for vendor...');
       const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select('*')
@@ -114,10 +96,7 @@ export default function VendorHome() {
         throw productsError;
       }
 
-      console.log('✅ Found', productsData?.length || 0, 'products');
-
       // Fetch subcategories for this vendor from vendor_subcategories table
-      console.log('🏷️ Fetching subcategories for vendor...');
       const { data: subcategoriesData, error: subcategoriesError } = await supabase
         .from('vendor_subcategories')
         .select('id, name, slug, category_id')
@@ -129,9 +108,6 @@ export default function VendorHome() {
         console.error('❌ Subcategories fetch error:', subcategoriesError);
       }
 
-      console.log('✅ Found', subcategoriesData?.length || 0, 'subcategories');
-
-      // Include estate info in vendor object
       const vendorWithEstate = {
         ...vendorData,
         estate_name: estateInfo?.name,
@@ -141,17 +117,6 @@ export default function VendorHome() {
       setVendor(vendorWithEstate);
       setProducts(productsData || []);
       setSubcategories(subcategoriesData || []);
-
-      // Extract unique categories and subcategories
-      const uniqueCategories = new Set<string>();
-      productsData?.forEach(product => {
-        if (product.subcategory) {
-          uniqueCategories.add(product.subcategory);
-        } else if (product.category) {
-          uniqueCategories.add(product.category);
-        }
-      });
-      setCategories(['All', 'Popular', 'New Items', ...Array.from(uniqueCategories)]);
 
     } catch (error) {
       console.error('❌ Error fetching vendor:', error);
@@ -165,20 +130,114 @@ export default function VendorHome() {
     fetchVendorData();
   }, [vendorSlug, fetchVendorData]);
 
+  // Create categories array with "All Products" and subcategories from database
+  const dbCategories = useMemo(() => [
+    { 
+      id: "all", 
+      slug: "all", 
+      name: "All Products", 
+      productCount: products.length 
+    },
+    ...subcategories.map((sub) => ({
+      id: sub.id,
+      slug: sub.slug || sub.name.toLowerCase().replace(/\s+/g, '-'),
+      name: sub.name,
+      productCount: products.filter(p => p.subcategory === sub.name || p.category === sub.name).length
+    }))
+  ], [products, subcategories]);
+
+  // Filter and sort products client-side
+  const filteredProducts = useMemo(() => {
+    let result = [...products];
+
+    // Filter by subcategory
+    if (selectedSubcategory) {
+      const subcategoryInfo = subcategories.find(s => s.slug === selectedSubcategory);
+      if (subcategoryInfo) {
+        result = result.filter(p => 
+          p.subcategory === subcategoryInfo.name || 
+          p.category === subcategoryInfo.name
+        );
+      }
+    }
+
+    // Filter by search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        p.description?.toLowerCase().includes(q) ||
+        p.category?.toLowerCase().includes(q) ||
+        p.subcategory?.toLowerCase().includes(q)
+      );
+    }
+
+    // Sort
+    switch (sortBy) {
+      case 'price-low':
+        result.sort((a, b) => a.price - b.price);
+        break;
+      case 'price-high':
+        result.sort((a, b) => b.price - a.price);
+        break;
+      case 'newest':
+        result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        break;
+      case 'name':
+        result.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'popular':
+      default:
+        result.sort((a, b) => {
+          if (a.is_popular && !b.is_popular) return -1;
+          if (!a.is_popular && b.is_popular) return 1;
+          return (b.orders_this_week || 0) - (a.orders_this_week || 0);
+        });
+        break;
+    }
+
+    return result;
+  }, [products, selectedSubcategory, searchQuery, sortBy, subcategories]);
+
+  // Get the active subcategory name for display
+  const activeSubcategoryName = useMemo(() => {
+    if (!selectedSubcategory) return null;
+    const subcategoryInfo = subcategories.find(s => s.slug === selectedSubcategory);
+    return subcategoryInfo?.name || selectedSubcategory;
+  }, [selectedSubcategory, subcategories]);
+
+  // Get fallback image URL for hero banner
+  const getHeroImageUrl = () => {
+    if (vendor?.cover_image_url) return vendor.cover_image_url;
+    if (vendor?.banner_url) return vendor.banner_url;
+    
+    switch (vendor?.business_type) {
+      case 'food-drinks':
+        return "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&auto=format&fit=crop";
+      case 'pharmacy':
+        return "https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=1200&auto=format&fit=crop";
+      case 'groceries-essentials':
+        return "https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200&auto=format&fit=crop";
+      case 'liquor-store':
+        return "https://images.unsplash.com/photo-1569529465841-dfecdab7503b?w=1200&auto=format&fit=crop";
+      default:
+        return "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&auto=format&fit=crop";
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
           <Skeleton className="h-48 w-full rounded-2xl mb-8" />
           <Skeleton className="h-8 w-48 mb-6" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             {[1, 2, 3, 4].map(i => (
-              <Skeleton key={i} className="h-64 w-full" />
+              <Skeleton key={i} className="h-64 w-full rounded-xl" />
             ))}
           </div>
         </div>
 
-        {/* Floating Cart Button */}
         {getItemCount() > 0 && (
           <FloatingCartButton />
         )}
@@ -188,62 +247,93 @@ export default function VendorHome() {
 
   if (!vendor) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background flex items-center justify-center">
+        <div className="text-center px-4">
+          <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+            <ShoppingBag className="w-10 h-10 text-muted-foreground" />
+          </div>
           <h1 className="text-2xl font-bold mb-2">Vendor not found</h1>
-          <button 
+          <p className="text-muted-foreground mb-4">The vendor you're looking for doesn't exist or is no longer available.</p>
+          <Button 
             onClick={() => navigate('/home')}
-            className="text-primary hover:underline"
+            className="gap-2"
           >
             Back to Home
-          </button>
+          </Button>
         </div>
       </div>
     );
   }
 
-  // Handle database vendor with same design as mock vendors
-  const popularProducts = products.filter(p => p.is_popular);
-  const newProducts = products.filter(p => p.is_new);
-
-  // Create categories array with "All Products" and subcategories from database
-  const dbCategories = [
-    { 
-      id: "all", 
-      slug: "all", 
-      name: "All Products", 
-      icon: Package, 
-      productCount: products.length 
-    },
-    ...subcategories.map((sub, index) => ({
-      id: sub.id,
-      slug: sub.slug || sub.name.toLowerCase().replace(/\s+/g, '-'),
-      name: sub.name,
-      icon: ShoppingBag,
-      productCount: products.filter(p => p.subcategory === sub.name || p.category === sub.name).length
-    }))
-  ];
-
   return (
-    <div className="min-h-screen bg-background">
-      <VendorNavbar vendor={{ ...vendor, slug: vendorSlug, vendor_categories: dbCategories }} />
+    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background">
+      <VendorNavbar 
+        vendor={{ ...vendor, slug: vendorSlug, vendor_categories: dbCategories }} 
+        selectedSubcategory={selectedSubcategory}
+        onSubcategoryChange={setSelectedSubcategory}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Hero Banner */}
-        <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl p-8 mb-8">
-          <h2 className="text-3xl font-bold mb-2">Welcome to {vendor.business_name}</h2>
-          {vendor.tagline && (
-            <p className="text-muted-foreground">{vendor.tagline}</p>
-          )}
+      {/* Hero Banner */}
+      <div className="relative h-40 md:h-56 overflow-hidden">
+        <img
+          src={getHeroImageUrl()}
+          alt={vendor.business_name}
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8">
+          <div className="max-w-7xl mx-auto">
+            <h2 className="text-2xl md:text-4xl font-bold text-foreground drop-shadow-sm">
+              Welcome to {vendor.business_name}
+            </h2>
+            {vendor.tagline && (
+              <p className="text-sm md:text-lg text-muted-foreground mt-1 max-w-2xl">
+                {vendor.tagline}
+              </p>
+            )}
+          </div>
         </div>
+      </div>
 
+      {/* Filters Bar */}
+      <div className="sticky top-[140px] md:top-[180px] z-30 bg-background/95 backdrop-blur-sm border-b px-4 md:px-6 py-3">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">{filteredProducts.length}</span> product{filteredProducts.length !== 1 ? 's' : ''} 
+              {activeSubcategoryName && (
+                <span className="hidden sm:inline"> in <span className="text-primary font-medium">{activeSubcategoryName}</span></span>
+              )}
+            </p>
+            <div className="flex items-center gap-2">
+              <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+                <SelectTrigger className="w-[140px] md:w-[180px] h-9 text-xs md:text-sm">
+                  <ArrowUpDown className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="popular">Most Popular</SelectItem>
+                  <SelectItem value="newest">Newest First</SelectItem>
+                  <SelectItem value="price-low">Price: Low to High</SelectItem>
+                  <SelectItem value="price-high">Price: High to Low</SelectItem>
+                  <SelectItem value="name">Name A-Z</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
         {/* Render the correct view based on operational_category */}
-        {vendor.operational_category === 'inventory' && <InventoryView vendor={vendor} products={products} />}
-        {vendor.operational_category === 'service' && <ServiceView vendor={vendor} products={products} />}
-        {vendor.operational_category === 'booking' && <BookingView vendor={vendor} products={products} />}
-        {vendor.operational_category === 'pharmacy' && <PharmacyView vendor={vendor} products={products} />}
-        {!vendor.operational_category && <InventoryView vendor={vendor} products={products} />}
-
+        {vendor.operational_category === 'inventory' && <InventoryView vendor={vendor} products={filteredProducts} />}
+        {vendor.operational_category === 'service' && <ServiceView vendor={vendor} products={filteredProducts} />}
+        {vendor.operational_category === 'booking' && <BookingView vendor={vendor} products={filteredProducts} />}
+        {vendor.operational_category === 'pharmacy' && <PharmacyView vendor={vendor} products={filteredProducts} />}
+        {!vendor.operational_category && <InventoryView vendor={vendor} products={filteredProducts} />}
       </div>
 
       {/* Floating Cart Button */}
@@ -252,6 +342,4 @@ export default function VendorHome() {
       )}
     </div>
   );
-
-
 }

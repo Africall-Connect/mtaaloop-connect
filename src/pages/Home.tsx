@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { Search, ShoppingBag, MapPin, Users } from "lucide-react";
+import { Search, ShoppingBag, MapPin, Users, Stethoscope, ArrowRight, Calendar } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,7 @@ const Home = () => {
   const { currentApartment, setCurrentApartment } = useApartment();
   const [loadingPref, setLoadingPref] = useState(true);
   const [minimarts, setMinimarts] = useState<VendorProfile[]>([]);
+  const [pharmacies, setPharmacies] = useState<VendorProfile[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   
@@ -212,6 +213,28 @@ const Home = () => {
       fetchMinimarts();
     }
   }, [currentApartment, loadingPref]);
+
+  // Fetch pharmacies for consultation section
+  useEffect(() => {
+    const fetchPharmacies = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('vendor_profiles')
+          .select('*')
+          .eq('operational_category', 'pharmacy')
+          .eq('is_approved', true)
+          .eq('is_active', true)
+          .limit(4);
+        
+        if (error) throw error;
+        setPharmacies(data || []);
+      } catch (error) {
+        console.error('Failed to load pharmacies:', error);
+      }
+    };
+
+    fetchPharmacies();
+  }, []);
 
   // Extract unique categories from products
   const categories = useMemo(() => {
@@ -473,6 +496,105 @@ const Home = () => {
           onAddToCart={handleAddToCart}
           onProductClick={handleProductClick}
         />
+
+        {/* Health & Consultations Section */}
+        {pharmacies.length > 0 && (
+          <section className="mb-8 mt-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-primary/10 rounded-full">
+                <Stethoscope className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-lg md:text-2xl font-bold">Health & Consultations</h2>
+                <p className="text-xs md:text-sm text-muted-foreground">
+                  Book pharmacy consultations with licensed professionals
+                </p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              {pharmacies.map((pharmacy) => (
+                <Card
+                  key={pharmacy.id}
+                  className="group overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20"
+                  onClick={() => {
+                    if (!user) {
+                      toast({
+                        title: "Login Required",
+                        description: "Please login to book a consultation",
+                        variant: "destructive",
+                      });
+                      navigate("/auth/login", { state: { returnTo: "/home" } });
+                      return;
+                    }
+                    navigate(`/vendor/${pharmacy.slug}`);
+                  }}
+                >
+                  <div className="relative h-24 md:h-32 overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5">
+                    {pharmacy.logo_url || pharmacy.cover_image_url ? (
+                      <img
+                        src={pharmacy.logo_url || pharmacy.cover_image_url}
+                        alt={pharmacy.business_name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Stethoscope className="w-10 h-10 text-primary/40" />
+                      </div>
+                    )}
+                    <Badge variant="secondary" className="absolute top-2 right-2 bg-emerald-600 text-white text-xs">
+                      {pharmacy.is_open ? "Open" : "Closed"}
+                    </Badge>
+                  </div>
+                  <div className="p-3">
+                    <h3 className="font-bold text-sm md:text-base mb-1 group-hover:text-primary transition-colors line-clamp-1">
+                      {pharmacy.business_name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
+                      {pharmacy.tagline || 'Professional health services'}
+                    </p>
+                    <Button size="sm" variant="outline" className="w-full text-xs h-8 gap-1 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                      <Calendar className="h-3 w-3" />
+                      Book Consultation
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+            
+            <div className="flex flex-wrap gap-3">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/categories/pharmacy')}
+                className="gap-2"
+              >
+                View All Pharmacies
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  if (!user) {
+                    toast({
+                      title: "Login Required",
+                      description: "Please login to view your consultations",
+                      variant: "destructive",
+                    });
+                    navigate("/auth/login", { state: { returnTo: "/my-consultations" } });
+                    return;
+                  }
+                  navigate('/my-consultations');
+                }}
+                className="gap-2"
+              >
+                <Calendar className="h-4 w-4" />
+                My Consultations
+              </Button>
+            </div>
+          </section>
+        )}
 
         {/* Minimarts in Your Area */}
         {minimarts.length > 0 && (
