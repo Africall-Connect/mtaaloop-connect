@@ -50,6 +50,7 @@ const Home = () => {
   const [products, setProducts] = useState<ProductWithVendor[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
 
   // Fetch user's apartment from DB on mount
   useEffect(() => {
@@ -219,7 +220,23 @@ const Home = () => {
     return Array.from(cats).sort();
   }, [products]);
 
-  // Filter products by search and category
+  // Extract unique subcategories for the selected category
+  const subcategories = useMemo(() => {
+    if (!selectedCategory) return [];
+    const subs = new Set<string>();
+    products
+      .filter((p) => p.category === selectedCategory && p.subcategory)
+      .forEach((p) => subs.add(p.subcategory as string));
+    return Array.from(subs).sort();
+  }, [products, selectedCategory]);
+
+  // Handle category selection (reset subcategory when category changes)
+  const handleSelectCategory = useCallback((category: string | null) => {
+    setSelectedCategory(category);
+    setSelectedSubcategory(null); // Reset subcategory when category changes
+  }, []);
+
+  // Filter products by search, category, and subcategory
   const filteredProducts = useMemo(() => {
     let filtered = products;
 
@@ -240,8 +257,13 @@ const Home = () => {
       filtered = filtered.filter((p) => p.category === selectedCategory);
     }
 
+    // Filter by selected subcategory
+    if (selectedSubcategory) {
+      filtered = filtered.filter((p) => p.subcategory === selectedSubcategory);
+    }
+
     return filtered;
-  }, [products, searchQuery, selectedCategory]);
+  }, [products, searchQuery, selectedCategory, selectedSubcategory]);
 
   // Handle add to cart
   const handleAddToCart = useCallback((e: React.MouseEvent, product: ProductWithVendor) => {
@@ -426,8 +448,11 @@ const Home = () => {
         {!loadingProducts && categories.length > 0 && (
           <CategoryTabsNav
             categories={categories}
+            subcategories={subcategories}
             selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
+            selectedSubcategory={selectedSubcategory}
+            onSelectCategory={handleSelectCategory}
+            onSelectSubcategory={setSelectedSubcategory}
           />
         )}
 
@@ -436,6 +461,7 @@ const Home = () => {
           <p className="text-sm text-muted-foreground mb-4">
             {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""} 
             {selectedCategory ? ` in ${selectedCategory}` : ""}
+            {selectedSubcategory ? ` › ${selectedSubcategory}` : ""}
           </p>
         )}
 
