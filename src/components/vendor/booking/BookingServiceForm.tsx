@@ -17,8 +17,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 import { BookingServiceType, DURATION_OPTIONS } from '@/types/booking';
-import { Loader2 } from 'lucide-react';
+import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface BookingServiceFormProps {
   open: boolean;
@@ -48,6 +58,15 @@ export function BookingServiceForm({
   const [requiresAddress, setRequiresAddress] = useState(false);
   const [isActive, setIsActive] = useState(true);
 
+  // Radix Select works best when values are stable/unique.
+  // Using IDs prevents issues where multiple options share the same name,
+  // and fixes "stuck" selects caused by value mismatches.
+  const [categoryId, setCategoryId] = useState<string>('');
+  const [subcategoryId, setSubcategoryId] = useState<string>('');
+
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const [subcategoryOpen, setSubcategoryOpen] = useState(false);
+
   // Reset form when dialog opens/closes or service changes
   useEffect(() => {
     if (open && service) {
@@ -57,6 +76,13 @@ export function BookingServiceForm({
       setPrice(service.price.toString());
       setCategory(service.category || '');
       setSubcategory(service.subcategory || '');
+
+      // Try to derive IDs from the provided lists (best-effort)
+      const matchedCat = categories.find(c => c.name === (service.category || ''));
+      setCategoryId(matchedCat?.id || '');
+      const matchedSub = subcategories.find(s => s.name === (service.subcategory || ''));
+      setSubcategoryId(matchedSub?.id || '');
+
       setRequiresAddress(service.requires_address);
       setIsActive(service.is_active);
     } else if (open) {
@@ -67,14 +93,19 @@ export function BookingServiceForm({
       setPrice('');
       setCategory('');
       setSubcategory('');
+      setCategoryId('');
+      setSubcategoryId('');
       setRequiresAddress(false);
       setIsActive(true);
     }
-  }, [open, service]);
+  }, [open, service, categories, subcategories]);
 
   const filteredSubcategories = subcategories.filter(
-    sub => categories.find(cat => cat.name === category)?.id === sub.category_id
+    sub => sub.category_id === categoryId
   );
+
+  const selectedCategoryName = categories.find(c => c.id === categoryId)?.name || '';
+  const selectedSubcategoryName = filteredSubcategories.find(s => s.id === subcategoryId)?.name || '';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,6 +115,7 @@ export function BookingServiceForm({
       description: description || null,
       duration_minutes: durationMinutes,
       price: parseFloat(price),
+      // Keep storing names (schema expectation), but drive UI by IDs.
       category: category || null,
       subcategory: subcategory || null,
       requires_address: requiresAddress,
@@ -119,33 +151,89 @@ export function BookingServiceForm({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Category</Label>
-              <Select value={category} onValueChange={(val) => { setCategory(val); setSubcategory(''); }}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map(cat => (
-                    <SelectItem key={cat.id} value={cat.name}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={categoryOpen}
+                    className="w-full justify-between"
+                  >
+                    {selectedCategoryName || 'Select category...'}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[260px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search category..." />
+                    <CommandList>
+                      <CommandEmpty>No category found.</CommandEmpty>
+                      <CommandGroup>
+                        {categories.map((cat) => (
+                          <CommandItem
+                            key={cat.id}
+                            value={cat.name}
+                            onSelect={() => {
+                              setCategoryId(cat.id);
+                              setCategory(cat.name);
+                              // Reset subcategory when category changes
+                              setSubcategoryId('');
+                              setSubcategory('');
+                              setCategoryOpen(false);
+                            }}
+                          >
+                            <Check className={cn('mr-2 h-4 w-4', categoryId === cat.id ? 'opacity-100' : 'opacity-0')} />
+                            {cat.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-2">
               <Label>Subcategory</Label>
-              <Select value={subcategory} onValueChange={setSubcategory} disabled={!category}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredSubcategories.map(sub => (
-                    <SelectItem key={sub.id} value={sub.name}>
-                      {sub.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={subcategoryOpen} onOpenChange={setSubcategoryOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={subcategoryOpen}
+                    className="w-full justify-between"
+                    disabled={!categoryId}
+                  >
+                    {selectedSubcategoryName || (categoryId ? 'Select subcategory...' : 'Select category first')}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[260px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search subcategory..." />
+                    <CommandList>
+                      <CommandEmpty>No subcategory found.</CommandEmpty>
+                      <CommandGroup>
+                        {filteredSubcategories.map((sub) => (
+                          <CommandItem
+                            key={sub.id}
+                            value={sub.name}
+                            onSelect={() => {
+                              setSubcategoryId(sub.id);
+                              setSubcategory(sub.name);
+                              setSubcategoryOpen(false);
+                            }}
+                          >
+                            <Check className={cn('mr-2 h-4 w-4', subcategoryId === sub.id ? 'opacity-100' : 'opacity-0')} />
+                            {sub.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
