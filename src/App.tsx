@@ -174,6 +174,7 @@ import QuickMealPrep from "./pages/services/QuickMealPrep";
 import PackageCollection from "./pages/services/PackageCollection";
 import ErrandsService from "./pages/services/ErrandsService";
 import MyConsultations from "./pages/MyConsultations";
+import MyBookings from "./pages/MyBookings";
 import ImageGeneratorPage from "./pages/ImageGenerator";
 
 const queryClient = new QueryClient();
@@ -513,6 +514,11 @@ const App = () => (
             <Route path="/subcategory/photography" element={<Photography />} />
             <Route path="/subcategory/entertainment" element={<Entertainment />} />
             <Route path="/support-live-chat" element={<SupportLiveChat />} />
+            <Route path="/my-bookings" element={
+              <ProtectedRoute>
+                <MyBookings />
+              </ProtectedRoute>
+            } />
             
             {/* Admin routes */}
             <Route path="/admin/dashboard" element={

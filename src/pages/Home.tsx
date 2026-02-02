@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { Search, ShoppingBag, MapPin, Users, Stethoscope, ArrowRight, Calendar } from "lucide-react";
+import { Search, ShoppingBag, MapPin, Users, Stethoscope, ArrowRight, Calendar, CalendarCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { VendorProfile } from "@/types/database";
 import { FeaturedProductBanner } from "@/components/home/FeaturedProductBanner";
 import { CategoryTabsNav } from "@/components/home/CategoryTabsNav";
 import { HomeProductGrid } from "@/components/home/HomeProductGrid";
+import { BookingServicesSection } from "@/components/home/BookingServicesSection";
 
 interface ProductWithVendor {
   id: string;
@@ -44,6 +45,7 @@ const Home = () => {
   const [loadingPref, setLoadingPref] = useState(true);
   const [minimarts, setMinimarts] = useState<VendorProfile[]>([]);
   const [pharmacies, setPharmacies] = useState<VendorProfile[]>([]);
+  const [bookingVendors, setBookingVendors] = useState<any[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   
@@ -234,6 +236,47 @@ const Home = () => {
     };
 
     fetchPharmacies();
+  }, []);
+
+  // Fetch booking vendors (Beauty, Spa, Accommodation, etc.)
+  useEffect(() => {
+    const fetchBookingVendors = async () => {
+      try {
+        // First fetch vendors with booking operational category
+        const { data: vendors, error: vendorsError } = await supabase
+          .from('vendor_profiles')
+          .select('*')
+          .eq('operational_category', 'booking')
+          .eq('is_approved', true)
+          .eq('is_active', true)
+          .limit(4);
+        
+        if (vendorsError) throw vendorsError;
+        
+        if (vendors && vendors.length > 0) {
+          // Fetch services for each vendor
+          const vendorIds = vendors.map(v => v.id);
+          const { data: services } = await supabase
+            .from('booking_service_types')
+            .select('id, name, price, duration_minutes, category, vendor_id')
+            .in('vendor_id', vendorIds)
+            .eq('is_active', true)
+            .order('price', { ascending: true });
+          
+          // Attach services to vendors
+          const vendorsWithServices = vendors.map(vendor => ({
+            ...vendor,
+            services: services?.filter(s => s.vendor_id === vendor.id) || []
+          }));
+          
+          setBookingVendors(vendorsWithServices);
+        }
+      } catch (error) {
+        console.error('Failed to load booking vendors:', error);
+      }
+    };
+
+    fetchBookingVendors();
   }, []);
 
   // Extract unique categories from products
@@ -595,6 +638,9 @@ const Home = () => {
             </div>
           </section>
         )}
+
+        {/* Booking Services Section */}
+        <BookingServicesSection vendors={bookingVendors} />
 
         {/* Minimarts in Your Area */}
         {minimarts.length > 0 && (

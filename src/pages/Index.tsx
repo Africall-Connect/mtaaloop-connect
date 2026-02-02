@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, LogIn, Plus, X, Store } from "lucide-react";
+import { Search, LogIn, Plus, X, Store, CalendarCheck, Clock, Banknote, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { getOperationalType } from "@/lib/categories";
+import { DURATION_OPTIONS } from "@/types/booking";
 
 interface ProductWithVendor {
   id: string;
@@ -22,6 +23,21 @@ interface ProductWithVendor {
   price: number;
   image_url: string | null;
   is_available: boolean;
+  vendor_id: string;
+  vendor: {
+    id: string;
+    business_name: string;
+    slug: string;
+  };
+}
+
+interface BookingServiceWithVendor {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  duration_minutes: number;
+  category: string | null;
   vendor_id: string;
   vendor: {
     id: string;
@@ -172,9 +188,102 @@ const CompactProductCard = ({
   </Card>
 );
 
+// Booking Service Card Component for landing page
+const BookingServiceCard = ({
+  service,
+  onServiceClick,
+}: {
+  service: BookingServiceWithVendor;
+  onServiceClick: (service: BookingServiceWithVendor) => void;
+}) => {
+  const getDurationLabel = (minutes: number) => {
+    return DURATION_OPTIONS.find(d => d.value === minutes)?.label || `${minutes} min`;
+  };
+
+  return (
+    <Card
+      className="overflow-hidden cursor-pointer hover:border-primary transition-all group"
+      onClick={() => onServiceClick(service)}
+    >
+      <div className="aspect-[4/3] relative overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5">
+        <div className="w-full h-full flex items-center justify-center">
+          <Sparkles className="w-10 h-10 text-primary/40 group-hover:text-primary/60 transition-colors" />
+        </div>
+        {service.category && (
+          <Badge variant="secondary" className="absolute top-2 left-2 text-xs">
+            {service.category}
+          </Badge>
+        )}
+      </div>
+      <div className="p-2">
+        <h3 className="font-medium text-xs line-clamp-1 group-hover:text-primary transition-colors">
+          {service.name}
+        </h3>
+        <div className="flex items-center gap-2 mt-1 text-[10px] text-muted-foreground">
+          <div className="flex items-center gap-0.5">
+            <Clock className="w-2.5 h-2.5" />
+            <span>{getDurationLabel(service.duration_minutes)}</span>
+          </div>
+        </div>
+        <div className="flex items-center justify-between mt-1">
+          <span className="text-sm font-bold text-primary">
+            KES {service.price.toLocaleString()}
+          </span>
+          <Button
+            size="sm"
+            variant="default"
+            className="h-6 px-2 text-xs rounded"
+          >
+            <CalendarCheck className="h-3 w-3 mr-1" />
+            Book
+          </Button>
+        </div>
+        <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-1">
+          <Store className="w-2.5 h-2.5" />
+          <span className="truncate">{service.vendor.business_name}</span>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+// Booking Services Section Component
+const BookingServicesSection = ({
+  title,
+  emoji,
+  services,
+  onServiceClick,
+}: {
+  title: string;
+  emoji: string;
+  services: BookingServiceWithVendor[];
+  onServiceClick: (service: BookingServiceWithVendor) => void;
+}) => {
+  if (services.length === 0) return null;
+
+  return (
+    <section className="mb-8">
+      <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
+        <span>{emoji}</span> {title}
+      </h2>
+      
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        {services.map((service) => (
+          <BookingServiceCard
+            key={service.id}
+            service={service}
+            onServiceClick={onServiceClick}
+          />
+        ))}
+      </div>
+    </section>
+  );
+};
+
 
 const Index = () => {
   const [products, setProducts] = useState<ProductWithVendor[]>([]);
+  const [bookingServices, setBookingServices] = useState<BookingServiceWithVendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -237,6 +346,47 @@ const Index = () => {
     };
 
     fetchProducts();
+  }, []);
+
+  // Fetch booking services
+  useEffect(() => {
+    const fetchBookingServices = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('booking_service_types')
+          .select(`
+            id, name, description, price, duration_minutes, category, vendor_id,
+            vendor_profiles!inner (id, business_name, slug, is_approved, is_active)
+          `)
+          .eq('is_active', true)
+          .eq('vendor_profiles.is_approved', true)
+          .eq('vendor_profiles.is_active', true)
+          .order('price', { ascending: true })
+          .limit(12);
+        
+        if (!error && data) {
+          const transformed: BookingServiceWithVendor[] = data.map((s: any) => ({
+            id: s.id,
+            name: s.name,
+            description: s.description,
+            price: s.price,
+            duration_minutes: s.duration_minutes,
+            category: s.category,
+            vendor_id: s.vendor_id,
+            vendor: {
+              id: s.vendor_profiles.id,
+              business_name: s.vendor_profiles.business_name,
+              slug: s.vendor_profiles.slug,
+            },
+          }));
+          setBookingServices(transformed);
+        }
+      } catch (error) {
+        console.error('Error fetching booking services:', error);
+      }
+    };
+
+    fetchBookingServices();
   }, []);
 
   // Filter products by search
@@ -336,15 +486,49 @@ const Index = () => {
     }
   };
 
+  const handleBookingServiceClick = (service: BookingServiceWithVendor) => {
+    // Check if user is logged in
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to book a service",
+        variant: "destructive",
+      });
+      navigate("/auth/login", { state: { returnTo: "/" } });
+      return;
+    }
+
+    if (service.vendor?.slug) {
+      navigate(`/vendor/${service.vendor.slug}`);
+    }
+  };
+
   const clearFilters = () => {
     setSelectedSection(null);
     setSearchQuery("");
   };
 
   const cartCount = getItemCount();
+  
+  // Visible booking services based on selection and search
+  const visibleBookingServices = useMemo(() => {
+    if (selectedSection && selectedSection !== 'services') return [];
+    
+    if (!searchQuery.trim()) return bookingServices;
+    
+    const query = searchQuery.toLowerCase();
+    return bookingServices.filter(
+      (s) =>
+        s.name.toLowerCase().includes(query) ||
+        s.description?.toLowerCase().includes(query) ||
+        s.category?.toLowerCase().includes(query) ||
+        s.vendor.business_name.toLowerCase().includes(query)
+    );
+  }, [bookingServices, selectedSection, searchQuery]);
+  
   const totalProducts =
     visibleSections.shop.length +
-    visibleSections.services.length +
+    visibleBookingServices.length +
     visibleSections.health.length;
 
   return (
@@ -476,12 +660,12 @@ const Index = () => {
               onAddToCart={handleAddToCart}
               onProductClick={handleProductClick}
             />
-            <ProductSection
+            {/* Booking Services Section - using actual booking_service_types data */}
+            <BookingServicesSection
               title="Book a Service"
               emoji="📅"
-              products={visibleSections.services}
-              onAddToCart={handleAddToCart}
-              onProductClick={handleProductClick}
+              services={visibleBookingServices}
+              onServiceClick={handleBookingServiceClick}
             />
             <ProductSection
               title="Health & Pharmacy"
