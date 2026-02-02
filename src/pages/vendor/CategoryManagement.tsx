@@ -394,58 +394,62 @@ export default function CategoryManagement({ vendorId, operationalCategory }: Ca
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6 overflow-x-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Layers className="h-6 w-6" />
+          <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+            <Layers className="h-5 w-5 sm:h-6 sm:w-6" />
             Category Management
           </h2>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Set up your product categories before adding products
           </p>
         </div>
       </div>
 
       {categories.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {categories.map((category) => {
             const categorySubs = subcategories.filter(s => s.category_id === category.id);
             return (
-              <Card key={category.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <GripVertical className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          {category.name}
-                          <Badge variant={category.is_active ? 'default' : 'secondary'}>
+              <Card key={category.id} className="overflow-hidden">
+                <CardHeader className="p-3 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                      <GripVertical className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
+                      <div className="min-w-0">
+                        <CardTitle className="text-base sm:text-lg flex flex-wrap items-center gap-2">
+                          <span className="truncate">{category.name}</span>
+                          <Badge variant={category.is_active ? 'default' : 'secondary'} className="shrink-0">
                             {category.is_active ? 'Active' : 'Inactive'}
                           </Badge>
                         </CardTitle>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    {/* Mobile: 2-column grid, Desktop: flex row */}
+                    <div className="grid grid-cols-2 sm:flex gap-2">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => openAddSubcategoryDialog(category.id)}
+                        className="text-xs sm:text-sm"
                       >
-                        <FolderTree className="h-4 w-4 mr-1" />
-                        Add Subcategory
+                        <FolderTree className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                        <span className="hidden sm:inline">Add </span>Subcategory
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => openEditCategoryDialog(category)}
                       >
-                        <Edit className="h-4 w-4" />
+                        <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <span className="ml-1 sm:hidden">Edit</span>
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => toggleCategoryStatus(category)}
+                        className="text-xs sm:text-sm"
                       >
                         {category.is_active ? 'Disable' : 'Enable'}
                       </Button>
@@ -454,31 +458,32 @@ export default function CategoryManagement({ vendorId, operationalCategory }: Ca
                         size="sm"
                         onClick={() => deleteCategory(category.id)}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <span className="ml-1 sm:hidden">Delete</span>
                       </Button>
                     </div>
                   </div>
                 </CardHeader>
                 {categorySubs.length > 0 && (
-                  <CardContent>
-                    <p className="text-sm font-medium mb-2">Subcategories:</p>
-                    <div className="flex flex-wrap gap-2">
+                  <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+                    <p className="text-xs sm:text-sm font-medium mb-2">Subcategories:</p>
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {categorySubs.map((sub) => (
                         <Badge
                           key={sub.id}
                           variant="outline"
-                          className="flex items-center gap-2 py-1 px-3"
+                          className="flex items-center gap-1.5 sm:gap-2 py-1 px-2 sm:px-3 text-xs sm:text-sm"
                         >
-                          {sub.name}
+                          <span className="truncate max-w-[100px] sm:max-w-none">{sub.name}</span>
                           <button
                             onClick={() => openEditSubcategoryDialog(sub)}
-                            className="hover:text-primary"
+                            className="hover:text-primary shrink-0"
                           >
                             <Edit className="h-3 w-3" />
                           </button>
                           <button
                             onClick={() => deleteSubcategory(sub.id)}
-                            className="hover:text-destructive"
+                            className="hover:text-destructive shrink-0"
                           >
                             <Trash2 className="h-3 w-3" />
                           </button>
