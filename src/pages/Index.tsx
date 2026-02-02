@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, LogIn, Plus, X, Store, CalendarCheck, Clock, Banknote, Sparkles } from "lucide-react";
+import { Search, LogIn, Plus, X, Store, CalendarCheck, Clock, Sparkles, ShoppingCart, Home, Pill } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -46,12 +46,12 @@ interface BookingServiceWithVendor {
   };
 }
 
-// Section filter options
+// Section filter options with Lucide icons
 const sectionFilters = [
-  { id: null, label: "All", emoji: "🏠" },
-  { id: "shop", label: "Shop", emoji: "🛒" },
-  { id: "services", label: "Services", emoji: "📅" },
-  { id: "health", label: "Health", emoji: "💊" },
+  { id: null, label: "All", icon: Home },
+  { id: "shop", label: "Shop", icon: ShoppingCart },
+  { id: "services", label: "Services", icon: CalendarCheck },
+  { id: "health", label: "Health", icon: Pill },
 ];
 
 // Product Section Component with category tabs
@@ -85,11 +85,20 @@ const ProductSection = ({
 
   if (products.length === 0) return null;
 
+  // Get icon based on title
+  const SectionIcon = title === "Shop Now" ? ShoppingCart : title === "Health & Pharmacy" ? Pill : CalendarCheck;
+  
   return (
     <section className="mb-8">
-      <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
-        <span>{emoji}</span> {title}
-      </h2>
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-2 bg-primary/10 rounded-full">
+          <SectionIcon className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold">{title}</h2>
+          <p className="text-xs text-muted-foreground">Browse our selection</p>
+        </div>
+      </div>
       
       {/* Category tabs within section */}
       {categories.length > 1 && (
@@ -141,7 +150,7 @@ const CompactProductCard = ({
   onProductClick: (product: ProductWithVendor) => void;
 }) => (
   <Card
-    className="overflow-hidden cursor-pointer hover:border-primary transition-all group"
+    className="overflow-hidden cursor-pointer border-primary/10 hover:border-primary/30 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group"
     onClick={() => onProductClick(product)}
   >
     <div className="aspect-[4/3] relative overflow-hidden bg-muted">
@@ -152,10 +161,11 @@ const CompactProductCard = ({
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center text-3xl">
-          🛍️
+        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+          <ShoppingCart className="w-8 h-8 text-primary/40" />
         </div>
       )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       {!product.is_available && (
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
           <Badge variant="destructive" className="text-xs">Out of Stock</Badge>
@@ -202,7 +212,7 @@ const BookingServiceCard = ({
 
   return (
     <Card
-      className="overflow-hidden cursor-pointer hover:border-primary transition-all group"
+      className="overflow-hidden cursor-pointer border-primary/10 hover:border-primary/30 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group"
       onClick={() => onServiceClick(service)}
     >
       <div className="aspect-[4/3] relative overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5">
@@ -263,9 +273,15 @@ const BookingServicesSection = ({
 
   return (
     <section className="mb-8">
-      <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
-        <span>{emoji}</span> {title}
-      </h2>
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-2 bg-primary/10 rounded-full">
+          <CalendarCheck className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold">{title}</h2>
+          <p className="text-xs text-muted-foreground">Book appointments and services</p>
+        </div>
+      </div>
       
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
         {services.map((service) => (
@@ -532,21 +548,24 @@ const Index = () => {
     visibleSections.health.length;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/60 border-b border-primary/10 shadow-sm">
         <div className="container max-w-7xl mx-auto px-4 py-3">
           {/* Mobile Layout */}
           <div className="flex flex-col gap-3 md:hidden">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <img src="/logo.png" alt="Mtaaloop" className="h-8 w-8" />
+                <div className="p-1.5 bg-primary/10 rounded-full">
+                  <img src="/logo.png" alt="Mtaaloop" className="h-7 w-7" />
+                </div>
                 <span className="font-bold text-lg text-primary">Mtaaloop</span>
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => navigate("/auth/login")}
+                className="border-primary/20 hover:border-primary/40"
               >
                 <LogIn className="h-4 w-4 mr-2" />
                 Log In
@@ -558,7 +577,7 @@ const Index = () => {
                 placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-4"
+                className="pl-9 pr-4 border-primary/20 focus:border-primary/40"
               />
             </div>
           </div>
@@ -566,7 +585,9 @@ const Index = () => {
           {/* Desktop Layout */}
           <div className="hidden md:flex items-center gap-6">
             <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="Mtaaloop" className="h-10 w-10" />
+              <div className="p-1.5 bg-primary/10 rounded-full">
+                <img src="/logo.png" alt="Mtaaloop" className="h-9 w-9" />
+              </div>
               <span className="font-bold text-xl text-primary">Mtaaloop</span>
             </div>
             <div className="flex-1 max-w-xl relative">
@@ -575,10 +596,10 @@ const Index = () => {
                 placeholder="Search products, vendors..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-4"
+                className="pl-9 pr-4 border-primary/20 focus:border-primary/40"
               />
             </div>
-            <Button variant="outline" onClick={() => navigate("/auth/login")}>
+            <Button variant="outline" onClick={() => navigate("/auth/login")} className="border-primary/20 hover:border-primary/40">
               <LogIn className="h-4 w-4 mr-2" />
               Log In
             </Button>
@@ -589,18 +610,25 @@ const Index = () => {
       <main className="container px-4 py-6 max-w-7xl mx-auto">
         {/* Section Filter Chips */}
         <div className="flex gap-2 overflow-x-auto pb-4 mb-4 scrollbar-hide">
-          {sectionFilters.map((filter) => (
-            <Button
-              key={filter.id ?? "all"}
-              variant={selectedSection === filter.id ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedSection(filter.id)}
-              className="whitespace-nowrap flex-shrink-0 gap-1"
-            >
-              <span>{filter.emoji}</span>
-              {filter.label}
-            </Button>
-          ))}
+          {sectionFilters.map((filter) => {
+            const FilterIcon = filter.icon;
+            return (
+              <Button
+                key={filter.id ?? "all"}
+                variant={selectedSection === filter.id ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedSection(filter.id)}
+                className={`whitespace-nowrap flex-shrink-0 gap-1.5 ${
+                  selectedSection === filter.id 
+                    ? "bg-primary text-primary-foreground" 
+                    : "bg-background border-primary/20 hover:border-primary/40"
+                }`}
+              >
+                <FilterIcon className="h-3.5 w-3.5" />
+                {filter.label}
+              </Button>
+            );
+          })}
         </div>
 
         {/* Active Filters Summary */}
@@ -677,7 +705,9 @@ const Index = () => {
           </>
         ) : (
           <div className="text-center py-16">
-            <div className="text-6xl mb-4">🔍</div>
+            <div className="p-4 bg-primary/10 rounded-full w-fit mx-auto mb-4">
+              <Search className="w-12 h-12 text-primary" />
+            </div>
             <h3 className="text-2xl font-bold mb-2">No Products Found</h3>
             <p className="text-muted-foreground mb-4">
               No products match your current filters. Try adjusting your search.
