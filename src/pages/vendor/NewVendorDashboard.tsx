@@ -49,6 +49,7 @@ export default function NewVendorDashboard() {
   const [isOpen, setIsOpen] = useState(true);
   const [showNotifications, setShowNotifications] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [showMoreActions, setShowMoreActions] = useState(false);
 
   // fetch profile first, then fetch stats using the vendor_profile.id
   const fetchProfile = useCallback(async () => {
@@ -236,110 +237,273 @@ export default function NewVendorDashboard() {
           </div>
 
           {/* quick actions */}
-          <div className="flex items-center gap-2 mt-4 overflow-x-auto pb-2">
-            <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/categories')}>
-              <Store className="h-4 w-4" />
-              Categories
-            </Button>
+          {/* quick actions (mobile-first redesign) */}
+          <div className="mt-4">
+            {/* Mobile: grid + More */}
+            <div className="md:hidden">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold text-gray-900">Quick actions</p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 px-2 text-sm"
+                  onClick={() => setShowMoreActions(v => !v)}
+                >
+                  {showMoreActions ? 'Less' : 'More'}
+                </Button>
+              </div>
 
-            {/* show only the relevant manager */}
-            {opCat === 'inventory' && (
-              <Button size="sm" className="gap-2" onClick={() => navigate('/vendor/products')}>
-                <Package className="h-4 w-4" />
-                Products
-              </Button>
-            )}
-            {opCat === 'minimart' && (
-              <Button size="sm" className="gap-2" onClick={() => navigate('/vendor/minimart')}>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  className="h-11 justify-start gap-2"
+                  variant="outline"
+                  onClick={() => navigate('/vendor/categories')}
+                >
+                  <Store className="h-4 w-4" />
+                  Categories
+                </Button>
+
+                {opCat === 'inventory' && (
+                  <Button className="h-11 justify-start gap-2" onClick={() => navigate('/vendor/products')}>
+                    <Package className="h-4 w-4" />
+                    Products
+                  </Button>
+                )}
+                {opCat === 'minimart' && (
+                  <Button className="h-11 justify-start gap-2" onClick={() => navigate('/vendor/minimart')}>
+                    <Store className="h-4 w-4" />
+                    Minimart
+                  </Button>
+                )}
+                {opCat === 'service' && (
+                  <Button className="h-11 justify-start gap-2" onClick={() => navigate('/vendor/services')}>
+                    <Wrench className="h-4 w-4" />
+                    Services
+                  </Button>
+                )}
+                {opCat === 'booking' && (
+                  <Button className="h-11 justify-start gap-2" onClick={() => navigate('/vendor/bookings')}>
+                    <Calendar className="h-4 w-4" />
+                    Bookings
+                  </Button>
+                )}
+                {opCat === 'pharmacy' && (
+                  <>
+                    <Button className="h-11 justify-start gap-2" onClick={() => navigate('/vendor/products')}>
+                      <Pill className="h-4 w-4" />
+                      Products
+                    </Button>
+                    <Button
+                      className="h-11 justify-start gap-2"
+                      variant="outline"
+                      onClick={() => navigate('/vendor/consultations')}
+                    >
+                      <Stethoscope className="h-4 w-4" />
+                      Consults
+                    </Button>
+                  </>
+                )}
+
+                {opCat !== 'minimart' && (
+                  <Button
+                    className="h-11 justify-start gap-2"
+                    variant="outline"
+                    onClick={() => navigate('/vendor/orders')}
+                  >
+                    <ShoppingBag className="h-4 w-4" />
+                    Orders ({stats?.activeOrders || 0})
+                  </Button>
+                )}
+
+                <Button
+                  className="h-11 justify-start gap-2"
+                  variant="outline"
+                  onClick={() => navigate('/vendor/communications')}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Messages
+                </Button>
+              </div>
+
+              {showMoreActions && (
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <Button
+                    className="h-11 justify-start gap-2"
+                    variant="outline"
+                    onClick={() => navigate('/vendor/marketing')}
+                  >
+                    <Megaphone className="h-4 w-4" />
+                    Campaigns
+                  </Button>
+
+                  {opCat === 'minimart' ? (
+                    <Button
+                      className="h-11 justify-start gap-2"
+                      variant="outline"
+                      onClick={() => navigate('/vendor/minimart-analytics')}
+                    >
+                      <BarChart3 className="h-4 w-4" />
+                      Analytics
+                    </Button>
+                  ) : (
+                    <Button
+                      className="h-11 justify-start gap-2"
+                      variant="outline"
+                      onClick={() => navigate('/vendor/analytics')}
+                    >
+                      <BarChart3 className="h-4 w-4" />
+                      Analytics
+                    </Button>
+                  )}
+
+                  {opCat === 'minimart' ? (
+                    <Button
+                      className="h-11 justify-start gap-2"
+                      variant="outline"
+                      onClick={() => navigate('/vendor/minimart-customers')}
+                    >
+                      <Users className="h-4 w-4" />
+                      Customers
+                    </Button>
+                  ) : (
+                    <Button
+                      className="h-11 justify-start gap-2"
+                      variant="outline"
+                      onClick={() => navigate('/vendor/customers')}
+                    >
+                      <Users className="h-4 w-4" />
+                      Customers
+                    </Button>
+                  )}
+
+                  <Button
+                    className="h-11 justify-start gap-2"
+                    variant="outline"
+                    onClick={() => navigate('/vendor/staff')}
+                  >
+                    <Users className="h-4 w-4" />
+                    Staff
+                  </Button>
+
+                  <Button
+                    className="h-11 justify-start gap-2"
+                    variant="outline"
+                    onClick={() => navigate('/vendor/payouts')}
+                  >
+                    <span className="text-base">💰</span>
+                    Payouts
+                  </Button>
+
+                  <Button className="h-11 justify-start" onClick={() => navigate('/support')}>
+                    Live Support
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Desktop/tablet: keep the original horizontal scroller */}
+            <div className="hidden md:flex items-center gap-2 overflow-x-auto pb-2">
+              <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/categories')}>
                 <Store className="h-4 w-4" />
-                Minimart
+                Categories
               </Button>
-            )}
-            {opCat === 'service' && (
-              <Button size="sm" className="gap-2" onClick={() => navigate('/vendor/services')}>
-                <Wrench className="h-4 w-4" />
-                Services
-              </Button>
-            )}
-            {opCat === 'booking' && (
-              <Button size="sm" className="gap-2" onClick={() => navigate('/vendor/bookings')}>
-                <Calendar className="h-4 w-4" />
-                Bookings
-              </Button>
-            )}
-            {opCat === 'pharmacy' && (
-              <>
+
+              {/* show only the relevant manager */}
+              {opCat === 'inventory' && (
                 <Button size="sm" className="gap-2" onClick={() => navigate('/vendor/products')}>
-                  <Pill className="h-4 w-4" />
+                  <Package className="h-4 w-4" />
                   Products
                 </Button>
-                <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/consultations')}>
-                  <Stethoscope className="h-4 w-4" />
-                  Consultations
+              )}
+              {opCat === 'minimart' && (
+                <Button size="sm" className="gap-2" onClick={() => navigate('/vendor/minimart')}>
+                  <Store className="h-4 w-4" />
+                  Minimart
                 </Button>
-              </>
-            )}
+              )}
+              {opCat === 'service' && (
+                <Button size="sm" className="gap-2" onClick={() => navigate('/vendor/services')}>
+                  <Wrench className="h-4 w-4" />
+                  Services
+                </Button>
+              )}
+              {opCat === 'booking' && (
+                <Button size="sm" className="gap-2" onClick={() => navigate('/vendor/bookings')}>
+                  <Calendar className="h-4 w-4" />
+                  Bookings
+                </Button>
+              )}
+              {opCat === 'pharmacy' && (
+                <>
+                  <Button size="sm" className="gap-2" onClick={() => navigate('/vendor/products')}>
+                    <Pill className="h-4 w-4" />
+                    Products
+                  </Button>
+                  <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/consultations')}>
+                    <Stethoscope className="h-4 w-4" />
+                    Consultations
+                  </Button>
+                </>
+              )}
 
-            {opCat !== 'minimart' && (
-              <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/orders')}>
-                <ShoppingBag className="h-4 w-4" />
-                Active Orders: {stats?.activeOrders || 0}
+              {opCat !== 'minimart' && (
+                <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/orders')}>
+                  <ShoppingBag className="h-4 w-4" />
+                  Active Orders: {stats?.activeOrders || 0}
+                </Button>
+              )}
+              <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/communications')}>
+                <MessageSquare className="h-4 w-4" />
+                Messages
               </Button>
-            )}
-            <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/communications')}>
-              <MessageSquare className="h-4 w-4" />
-              Messages
-            </Button>
-            <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/marketing')}>
-              <Megaphone className="h-4 w-4" />
-              Send Campaign
-            </Button>
-            {opCat === 'minimart' ? (
-              <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/minimart-analytics')}>
-                <BarChart3 className="h-4 w-4" />
-                View Analytics
+              <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/marketing')}>
+                <Megaphone className="h-4 w-4" />
+                Send Campaign
               </Button>
-            ) : (
-              <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/analytics')}>
-                <BarChart3 className="h-4 w-4" />
-                View Analytics
-              </Button>
-            )}
-            {opCat === 'minimart' ? (
-              <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/minimart-customers')}>
+              {opCat === 'minimart' ? (
+                <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/minimart-analytics')}>
+                  <BarChart3 className="h-4 w-4" />
+                  View Analytics
+                </Button>
+              ) : (
+                <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/analytics')}>
+                  <BarChart3 className="h-4 w-4" />
+                  View Analytics
+                </Button>
+              )}
+              {opCat === 'minimart' ? (
+                <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/minimart-customers')}>
+                  <Users className="h-4 w-4" />
+                  Customers
+                </Button>
+              ) : (
+                <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/customers')}>
+                  <Users className="h-4 w-4" />
+                  Customers
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                onClick={() => navigate('/vendor/staff')}
+              >
                 <Users className="h-4 w-4" />
-                Customers
+                Staff
               </Button>
-            ) : (
-              <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/customers')}>
-                <Users className="h-4 w-4" />
-                Customers
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                onClick={() => navigate('/vendor/payouts')}
+              >
+                💰 Payouts
               </Button>
-            )}
-            {/* <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/dashboard')}>
-              <Store className="h-4 w-4" />
-              Dashboard
-            </Button> */}
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-2"
-              onClick={() => navigate('/vendor/staff')}
-            >
-              <Users className="h-4 w-4" />
-              Staff
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-2"
-              onClick={() => navigate('/vendor/payouts')}
-            >
-              💰 Payouts
-            </Button>
-            <Button onClick={() => navigate('/support')}>
-              Live Support
-            </Button>
+              <Button onClick={() => navigate('/support')}>
+                Live Support
+              </Button>
+            </div>
           </div>
         </div>
       </header>
