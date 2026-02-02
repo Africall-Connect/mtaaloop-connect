@@ -15,22 +15,16 @@ export const BottomNavigation = () => {
   const { items } = useCart();
   const cartItemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Hide on certain pages like checkout, order tracking, auth pages
-  const hiddenPaths = [
-    "/checkout",
-    "/auth",
-    "/orders/",
-    "/trash-tracking/",
-    "/vendor/",
-    "/admin/",
-    "/rider/",
-    "/estate/",
-    "/",
-  ];
+  // Hide on certain pages like checkout, order tracking, auth pages, and all portal pages
+  const hiddenPrefixes = ["/vendor", "/admin", "/rider", "/estate"];
+  const hiddenExactOrPrefix = ["/checkout", "/auth", "/orders/", "/trash-tracking/"];
 
-  const shouldHide = hiddenPaths.some(
-    (path) => location.pathname === path || location.pathname.startsWith(path + "/") || (path === "/" && location.pathname === "/")
-  );
+  const shouldHide =
+    location.pathname === "/" ||
+    hiddenPrefixes.some((prefix) => location.pathname.startsWith(prefix)) ||
+    hiddenExactOrPrefix.some(
+      (path) => location.pathname === path || location.pathname.startsWith(path)
+    );
 
   // Special case: show on exact paths, hide on landing page
   if (location.pathname === "/" || shouldHide) {

@@ -202,23 +202,24 @@ export default function AnalyticsDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       <header className="bg-white border-b sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate('/vendor/portal')}
+                className="shrink-0"
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <h1 className="text-2xl font-bold text-gray-900">ANALYTICS & REPORTS</h1>
+              <h1 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">ANALYTICS</h1>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 ml-auto">
               <Select value={timeRange} onValueChange={setTimeRange}>
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-28 sm:w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -228,101 +229,103 @@ export default function AnalyticsDashboard() {
                   <SelectItem value="year">Last Year</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="outline">
+              <Button variant="outline" size="sm" className="hidden sm:flex">
                 <Download className="h-4 w-4 mr-2" />
-                Export Report
+                Export
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 space-y-6">
-        <div className="grid grid-cols-4 gap-4">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 overflow-x-hidden">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="h-10 w-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-green-600" />
+            <CardContent className="p-3 sm:p-6">
+              <div className="flex items-center justify-between mb-2 sm:mb-4">
+                <div className="h-8 w-8 sm:h-10 sm:w-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                 </div>
-                <div className={`flex items-center gap-1 text-sm font-medium ${getGrowthColor(analytics.revenue.growth)}`}>
+                <div className={`flex items-center gap-1 text-xs sm:text-sm font-medium ${getGrowthColor(analytics.revenue.growth)}`}>
                   {getGrowthIcon(analytics.revenue.growth)}
                   {Math.abs(analytics.revenue.growth).toFixed(1)}%
                 </div>
               </div>
               <div className="space-y-1">
-                <p className="text-sm text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold">{formatCurrency(analytics.revenue.current)}</p>
-                <p className="text-xs text-gray-500">vs {formatCurrency(analytics.revenue.previous)}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Revenue</p>
+                <p className="text-lg sm:text-2xl font-bold">{formatCurrency(analytics.revenue.current)}</p>
+                <p className="text-xs text-gray-500 hidden sm:block">vs {formatCurrency(analytics.revenue.previous)}</p>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <ShoppingBag className="h-5 w-5 text-blue-600" />
+            <CardContent className="p-3 sm:p-6">
+              <div className="flex items-center justify-between mb-2 sm:mb-4">
+                <div className="h-8 w-8 sm:h-10 sm:w-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                 </div>
-                <div className={`flex items-center gap-1 text-sm font-medium ${getGrowthColor(analytics.orders.growth)}`}>
+                <div className={`flex items-center gap-1 text-xs sm:text-sm font-medium ${getGrowthColor(analytics.orders.growth)}`}>
                   {getGrowthIcon(analytics.orders.growth)}
                   {Math.abs(analytics.orders.growth).toFixed(1)}%
                 </div>
               </div>
               <div className="space-y-1">
-                <p className="text-sm text-gray-600">Total Orders</p>
-                <p className="text-2xl font-bold">{analytics.orders.current}</p>
-                <p className="text-xs text-gray-500">vs {analytics.orders.previous}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Orders</p>
+                <p className="text-lg sm:text-2xl font-bold">{analytics.orders.current}</p>
+                <p className="text-xs text-gray-500 hidden sm:block">vs {analytics.orders.previous}</p>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="h-10 w-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Users className="h-5 w-5 text-purple-600" />
+            <CardContent className="p-3 sm:p-6">
+              <div className="flex items-center justify-between mb-2 sm:mb-4">
+                <div className="h-8 w-8 sm:h-10 sm:w-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <Users className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
                 </div>
-                <div className={`flex items-center gap-1 text-sm font-medium ${getGrowthColor(analytics.customers.growth)}`}>
+                <div className={`flex items-center gap-1 text-xs sm:text-sm font-medium ${getGrowthColor(analytics.customers.growth)}`}>
                   {getGrowthIcon(analytics.customers.growth)}
                   {Math.abs(analytics.customers.growth).toFixed(1)}%
                 </div>
               </div>
               <div className="space-y-1">
-                <p className="text-sm text-gray-600">Active Customers</p>
-                <p className="text-2xl font-bold">{analytics.customers.current}</p>
-                <p className="text-xs text-gray-500">vs {analytics.customers.previous}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Customers</p>
+                <p className="text-lg sm:text-2xl font-bold">{analytics.customers.current}</p>
+                <p className="text-xs text-gray-500 hidden sm:block">vs {analytics.customers.previous}</p>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="h-10 w-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                  <BarChart3 className="h-5 w-5 text-amber-600" />
+            <CardContent className="p-3 sm:p-6">
+              <div className="flex items-center justify-between mb-2 sm:mb-4">
+                <div className="h-8 w-8 sm:h-10 sm:w-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                  <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
                 </div>
-                <div className={`flex items-center gap-1 text-sm font-medium ${getGrowthColor(analytics.avgOrderValue.growth)}`}>
+                <div className={`flex items-center gap-1 text-xs sm:text-sm font-medium ${getGrowthColor(analytics.avgOrderValue.growth)}`}>
                   {getGrowthIcon(analytics.avgOrderValue.growth)}
                   {Math.abs(analytics.avgOrderValue.growth).toFixed(1)}%
                 </div>
               </div>
               <div className="space-y-1">
-                <p className="text-sm text-gray-600">Avg Order Value</p>
-                <p className="text-2xl font-bold">{formatCurrency(analytics.avgOrderValue.current)}</p>
-                <p className="text-xs text-gray-500">vs {formatCurrency(analytics.avgOrderValue.previous)}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Avg Order</p>
+                <p className="text-lg sm:text-2xl font-bold">{formatCurrency(analytics.avgOrderValue.current)}</p>
+                <p className="text-xs text-gray-500 hidden sm:block">vs {formatCurrency(analytics.avgOrderValue.previous)}</p>
               </div>
             </CardContent>
           </Card>
         </div>
 
         <Tabs defaultValue="revenue">
-          <TabsList className="w-full justify-start bg-white border">
-            <TabsTrigger value="revenue">Revenue Trends</TabsTrigger>
-            <TabsTrigger value="orders">Order Analytics</TabsTrigger>
-            <TabsTrigger value="products">Product Performance</TabsTrigger>
-            <TabsTrigger value="customers">Customer Insights</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+            <TabsList className="w-max sm:w-full justify-start bg-white border whitespace-nowrap">
+              <TabsTrigger value="revenue" className="text-xs sm:text-sm">Revenue</TabsTrigger>
+              <TabsTrigger value="orders" className="text-xs sm:text-sm">Orders</TabsTrigger>
+              <TabsTrigger value="products" className="text-xs sm:text-sm">Products</TabsTrigger>
+              <TabsTrigger value="customers" className="text-xs sm:text-sm">Customers</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="revenue" className="space-y-4 mt-4">
             <Card>

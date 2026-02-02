@@ -390,31 +390,32 @@ export default function CustomerManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       {/* HEADER */}
       <header className="bg-white border-b sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate('/vendor/portal')}
+                className="shrink-0"
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <h1 className="text-2xl font-bold text-gray-900">
-                CUSTOMER MANAGEMENT
+              <h1 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">
+                CUSTOMERS
               </h1>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowSegments(true)}>
-                <Users className="h-4 w-4 mr-2" />
-                Customer Segments
+            <div className="flex gap-2 ml-auto">
+              <Button variant="outline" size="sm" onClick={() => setShowSegments(true)}>
+                <Users className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Segments</span>
               </Button>
-              <Button>
-                <Mail className="h-4 w-4 mr-2" />
-                Send Campaign
+              <Button size="sm">
+                <Mail className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Campaign</span>
               </Button>
             </div>
           </div>
@@ -422,39 +423,39 @@ export default function CustomerManagement() {
       </header>
 
       {/* MAIN */}
-      <main className="container mx-auto px-4 py-6 space-y-6">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 overflow-x-hidden">
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
           <StatCard
-            title="Total Customers"
+            title="Total"
             value={stats.total}
             icon={<Users />}
             colorClass="bg-gradient-to-br from-blue-500 to-blue-600"
           />
           <StatCard
-            title="VIP Customers"
+            title="VIP"
             value={stats.vip}
             icon={<Award />}
             colorClass="bg-gradient-to-br from-purple-500 to-purple-600"
           />
           <StatCard
-            title="Regular Customers"
+            title="Regular"
             value={stats.regular}
             icon={<TrendingUp />}
             colorClass="bg-gradient-to-br from-green-500 to-green-600"
           />
           <StatCard
-            title="Total Revenue"
+            title="Revenue"
             value={stats.totalRevenue}
             icon={<DollarSign />}
             colorClass="bg-gradient-to-br from-amber-500 to-amber-600"
             isCurrency
           />
           <StatCard
-            title="Avg. Customer Value"
+            title="Avg Value"
             value={Math.round(stats.avgLTV)}
             icon={<DollarSign />}
-            colorClass="bg-gradient-to-br from-indigo-500 to-indigo-600"
+            colorClass="bg-gradient-to-br from-indigo-500 to-indigo-600 col-span-2 sm:col-span-1"
             isCurrency
           />
         </div>
@@ -489,23 +490,25 @@ export default function CustomerManagement() {
 
         {/* Tabs */}
         <Tabs defaultValue="all">
-          <TabsList className="w-full justify-start bg-white border">
-            <TabsTrigger value="all">
-              All <Badge variant="secondary" className="ml-2">{stats.total}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="vip">
-              VIP <Badge variant="secondary" className="ml-2">{stats.vip}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="regular">
-              Regular <Badge variant="secondary" className="ml-2">{stats.regular}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="returning">
-              Returning <Badge variant="secondary" className="ml-2">{stats.returning}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="new">
-              New <Badge variant="secondary" className="ml-2">{stats.newC}</Badge>
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+            <TabsList className="w-max sm:w-full justify-start bg-white border whitespace-nowrap">
+              <TabsTrigger value="all" className="text-xs sm:text-sm" onClick={() => setSegmentFilter('all')}>
+                All <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs">{stats.total}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="vip" className="text-xs sm:text-sm" onClick={() => setSegmentFilter('vip')}>
+                VIP <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs">{stats.vip}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="regular" className="text-xs sm:text-sm" onClick={() => setSegmentFilter('regular')}>
+                Regular <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs">{stats.regular}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="returning" className="text-xs sm:text-sm" onClick={() => setSegmentFilter('returning')}>
+                Returning <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs">{stats.returning}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="new" className="text-xs sm:text-sm" onClick={() => setSegmentFilter('new')}>
+                New <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs">{stats.newC}</Badge>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Render each tab with the same card component */}
           {(['all', 'vip', 'regular', 'returning', 'new'] as const).map(tab => {

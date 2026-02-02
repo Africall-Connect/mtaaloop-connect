@@ -296,73 +296,73 @@ export default function AdvancedProductManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       <header className="bg-white border-b sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate('/vendor/portal')}
+                className="shrink-0"
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <h1 className="text-2xl font-bold text-gray-900">PRODUCT MANAGEMENT</h1>
+              <h1 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">
+                PRODUCT MANAGEMENT
+              </h1>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowAnalytics(true)}>
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Analytics
+            <div className="flex gap-1.5 sm:gap-2 shrink-0">
+              <Button variant="outline" size="sm" onClick={() => setShowAnalytics(true)} className="px-2 sm:px-3">
+                <BarChart3 className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Analytics</span>
               </Button>
-              <Button onClick={() => setShowFormDialog(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Product
+              <Button size="sm" onClick={() => setShowFormDialog(true)} className="px-2 sm:px-3">
+                <Plus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Add Product</span>
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 space-y-6">
-        <div className="grid grid-cols-5 gap-4">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 overflow-x-hidden">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
           <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="p-4 text-center">
-              <div className="text-3xl font-bold text-blue-700">{stats.totalProducts}</div>
-              <div className="text-sm text-blue-600 mt-1">Total Products</div>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <div className="text-xl sm:text-3xl font-bold text-blue-700">{stats.totalProducts}</div>
+              <div className="text-xs sm:text-sm text-blue-600 mt-1">Total</div>
             </CardContent>
           </Card>
 
           <Card className="bg-green-50 border-green-200">
-            <CardContent className="p-4 text-center">
-              <div className="text-3xl font-bold text-green-700">{stats.activeProducts}</div>
-              <div className="text-sm text-green-600 mt-1">Active</div>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <div className="text-xl sm:text-3xl font-bold text-green-700">{stats.activeProducts}</div>
+              <div className="text-xs sm:text-sm text-green-600 mt-1">Active</div>
             </CardContent>
           </Card>
 
           <Card className="bg-amber-50 border-amber-200">
-            <CardContent className="p-4 text-center">
-              <div className="text-3xl font-bold text-amber-700">{stats.lowStockProducts}</div>
-              <div className="text-sm text-amber-600 mt-1">Low Stock</div>
-              {stats.lowStockProducts > 0 && (
-                <div className="text-xs text-amber-500 mt-1">Needs attention</div>
-              )}
+            <CardContent className="p-3 sm:p-4 text-center">
+              <div className="text-xl sm:text-3xl font-bold text-amber-700">{stats.lowStockProducts}</div>
+              <div className="text-xs sm:text-sm text-amber-600 mt-1">Low Stock</div>
             </CardContent>
           </Card>
 
           <Card className="bg-red-50 border-red-200">
-            <CardContent className="p-4 text-center">
-              <div className="text-3xl font-bold text-red-700">{stats.outOfStock}</div>
-              <div className="text-sm text-red-600 mt-1">Out of Stock</div>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <div className="text-xl sm:text-3xl font-bold text-red-700">{stats.outOfStock}</div>
+              <div className="text-xs sm:text-sm text-red-600 mt-1">Out of Stock</div>
             </CardContent>
           </Card>
 
-          <Card className="bg-purple-50 border-purple-200">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-purple-700">
+          <Card className="bg-purple-50 border-purple-200 col-span-2 sm:col-span-1">
+            <CardContent className="p-3 sm:p-4 text-center">
+              <div className="text-lg sm:text-2xl font-bold text-purple-700">
                 KES {stats.totalValue.toLocaleString()}
               </div>
-              <div className="text-sm text-purple-600 mt-1">Inventory Value</div>
+              <div className="text-xs sm:text-sm text-purple-600 mt-1">Inventory Value</div>
             </CardContent>
           </Card>
         </div>
@@ -420,23 +420,25 @@ export default function AdvancedProductManagement() {
         )}
 
         <Tabs defaultValue="all" onValueChange={setStatusFilter}>
-          <TabsList className="w-full justify-start bg-white border">
-            <TabsTrigger value="all">
-              All <Badge variant="secondary" className="ml-2">{products.length}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="active">
-              Active <Badge variant="secondary" className="ml-2">{stats.activeProducts}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="inactive">
-              Inactive <Badge variant="secondary" className="ml-2">{stats.totalProducts - stats.activeProducts}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="low_stock">
-              Low Stock <Badge variant="secondary" className="ml-2">{stats.lowStockProducts}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="out_of_stock">
-              Out of Stock <Badge variant="secondary" className="ml-2">{stats.outOfStock}</Badge>
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+            <TabsList className="w-max sm:w-full justify-start bg-white border whitespace-nowrap">
+              <TabsTrigger value="all" className="text-xs sm:text-sm">
+                All <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs">{products.length}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="active" className="text-xs sm:text-sm">
+                Active <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs">{stats.activeProducts}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="inactive" className="text-xs sm:text-sm">
+                Inactive <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs">{stats.totalProducts - stats.activeProducts}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="low_stock" className="text-xs sm:text-sm">
+                Low <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs">{stats.lowStockProducts}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="out_of_stock" className="text-xs sm:text-sm">
+                Out <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs">{stats.outOfStock}</Badge>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value={statusFilter} className="mt-4">
             {filteredProducts.length === 0 ? (

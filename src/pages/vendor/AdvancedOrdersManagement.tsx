@@ -228,26 +228,26 @@ export default function AdvancedOrdersManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       <header className="bg-white border-b sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/vendor/portal')}>
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/vendor/portal')} className="shrink-0">
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-2xl font-bold text-gray-900">ORDERS MANAGEMENT</h1>
+            <h1 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">ORDERS MANAGEMENT</h1>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 space-y-6">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 overflow-x-hidden">
         {/* Stats */}
         <Card>
-          <CardContent className="p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">📊 REAL-TIME STATISTICS</h2>
+          <CardContent className="p-3 sm:p-6 space-y-3 sm:space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h2 className="text-base sm:text-lg font-semibold">REAL-TIME STATISTICS</h2>
               <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as 'all' | 'today' | 'week' | 'month')}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-full sm:w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -259,52 +259,46 @@ export default function AdvancedOrdersManagement() {
               </Select>
             </div>
 
-            <div className="grid grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4">
               <Card className="bg-blue-50 border-blue-200">
-                <CardContent className="p-4 text-center">
-                  <div className="text-3xl font-bold text-blue-700">{counts.new}</div>
-                  <div className="text-sm text-blue-600 mt-1">NEW</div>
-                  {counts.new > 0 && <div className="text-xs text-blue-500 mt-1">+2 new</div>}
+                <CardContent className="p-2 sm:p-4 text-center">
+                  <div className="text-xl sm:text-3xl font-bold text-blue-700">{counts.new}</div>
+                  <div className="text-xs sm:text-sm text-blue-600 mt-1">NEW</div>
                 </CardContent>
               </Card>
 
               <Card className="bg-yellow-50 border-yellow-200">
-                <CardContent className="p-4 text-center">
-                  <div className="text-3xl font-bold text-yellow-700">{counts.accepted}</div>
-                  <div className="text-sm text-yellow-600 mt-1">ACCEPTED</div>
-                  <div className="text-xs text-yellow-500 mt-1">✅ confirmed</div>
+                <CardContent className="p-2 sm:p-4 text-center">
+                  <div className="text-xl sm:text-3xl font-bold text-yellow-700">{counts.accepted}</div>
+                  <div className="text-xs sm:text-sm text-yellow-600 mt-1">ACCEPTED</div>
                 </CardContent>
               </Card>
 
               <Card className="bg-orange-50 border-orange-200">
-                <CardContent className="p-4 text-center">
-                  <div className="text-3xl font-bold text-orange-700">{counts.preparing}</div>
-                  <div className="text-sm text-orange-600 mt-1">PREPARING</div>
-                  <div className="text-xs text-orange-500 mt-1">🔄 live</div>
+                <CardContent className="p-2 sm:p-4 text-center">
+                  <div className="text-xl sm:text-3xl font-bold text-orange-700">{counts.preparing}</div>
+                  <div className="text-xs sm:text-sm text-orange-600 mt-1">PREPARING</div>
                 </CardContent>
               </Card>
 
               <Card className="bg-green-50 border-green-200">
-                <CardContent className="p-4 text-center">
-                  <div className="text-3xl font-bold text-green-700">{counts.ready}</div>
-                  <div className="text-sm text-green-600 mt-1">READY</div>
-                  <div className="text-xs text-green-500 mt-1">⚡ fast</div>
+                <CardContent className="p-2 sm:p-4 text-center">
+                  <div className="text-xl sm:text-3xl font-bold text-green-700">{counts.ready}</div>
+                  <div className="text-xs sm:text-sm text-green-600 mt-1">READY</div>
                 </CardContent>
               </Card>
 
               <Card className="bg-purple-50 border-purple-200">
-                <CardContent className="p-4 text-center">
-                  <div className="text-3xl font-bold text-purple-700">{counts.delivering}</div>
-                  <div className="text-sm text-purple-600 mt-1">DELIVERING</div>
-                  <div className="text-xs text-purple-500 mt-1">🚴 live</div>
+                <CardContent className="p-2 sm:p-4 text-center">
+                  <div className="text-xl sm:text-3xl font-bold text-purple-700">{counts.delivering}</div>
+                  <div className="text-xs sm:text-sm text-purple-600 mt-1">DELIVERING</div>
                 </CardContent>
               </Card>
 
               <Card className="bg-gray-50 border-gray-200">
-                <CardContent className="p-4 text-center">
-                  <div className="text-3xl font-bold text-gray-700">{counts.completed}</div>
-                  <div className="text-sm text-gray-600 mt-1">COMPLETED</div>
-                  <div className="text-xs text-gray-500 mt-1">{dateFilter}</div>
+                <CardContent className="p-2 sm:p-4 text-center">
+                  <div className="text-xl sm:text-3xl font-bold text-gray-700">{counts.completed}</div>
+                  <div className="text-xs sm:text-sm text-gray-600 mt-1">COMPLETED</div>
                 </CardContent>
               </Card>
             </div>
@@ -344,32 +338,34 @@ export default function AdvancedOrdersManagement() {
 
         {/* Tabs + list */}
         <Tabs defaultValue="all" onValueChange={setStatusFilter}>
-          <TabsList className="w-full justify-start bg-white border">
-            <TabsTrigger value="all" className="gap-2">
-              📅 All Orders <Badge variant="secondary">{orders.length}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="pending" className="gap-2">
-              🆕 New <Badge variant="secondary">{counts.new}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="accepted" className="gap-2">
-              ✅ Accepted <Badge variant="secondary">{counts.accepted}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="preparing" className="gap-2">
-              👨‍🍳 Preparing <Badge variant="secondary">{counts.preparing}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="ready" className="gap-2">
-              ✅ Ready <Badge variant="secondary">{counts.ready}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="out_for_delivery" className="gap-2">
-              🚴 Delivering <Badge variant="secondary">{counts.delivering}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="delivered" className="gap-2">
-              ✓ Completed <Badge variant="secondary">{counts.completed}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="rejected" className="gap-2">
-              ❌ Rejected <Badge variant="secondary">{counts.rejected}</Badge>
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 pb-1">
+            <TabsList className="w-max sm:w-full justify-start bg-white border whitespace-nowrap">
+              <TabsTrigger value="all" className="gap-1 text-xs sm:text-sm px-2 sm:px-3">
+                All <Badge variant="secondary" className="text-xs">{orders.length}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="pending" className="gap-1 text-xs sm:text-sm px-2 sm:px-3">
+                New <Badge variant="secondary" className="text-xs">{counts.new}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="accepted" className="gap-1 text-xs sm:text-sm px-2 sm:px-3">
+                Accepted <Badge variant="secondary" className="text-xs">{counts.accepted}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="preparing" className="gap-1 text-xs sm:text-sm px-2 sm:px-3">
+                Preparing <Badge variant="secondary" className="text-xs">{counts.preparing}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="ready" className="gap-1 text-xs sm:text-sm px-2 sm:px-3">
+                Ready <Badge variant="secondary" className="text-xs">{counts.ready}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="out_for_delivery" className="gap-1 text-xs sm:text-sm px-2 sm:px-3">
+                Delivering <Badge variant="secondary" className="text-xs">{counts.delivering}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="delivered" className="gap-1 text-xs sm:text-sm px-2 sm:px-3">
+                Done <Badge variant="secondary" className="text-xs">{counts.completed}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="rejected" className="gap-1 text-xs sm:text-sm px-2 sm:px-3">
+                Rejected <Badge variant="secondary" className="text-xs">{counts.rejected}</Badge>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value={statusFilter} className="space-y-4 mt-4">
             {filteredOrders.length === 0 ? (

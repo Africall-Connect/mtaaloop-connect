@@ -221,67 +221,68 @@ export default function MarketingCampaigns() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       <header className="bg-white border-b sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate('/vendor/portal')}
+                className="shrink-0"
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <h1 className="text-2xl font-bold text-gray-900">MARKETING CAMPAIGNS</h1>
+              <h1 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">MARKETING</h1>
             </div>
-            <Button onClick={() => setShowFormDialog(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Campaign
+            <Button size="sm" onClick={() => setShowFormDialog(true)} className="shrink-0">
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Create Campaign</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 space-y-6">
-        <div className="grid grid-cols-5 gap-4">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 overflow-x-hidden">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
           <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="p-4 text-center">
-              <Send className="h-6 w-6 mx-auto mb-2 text-blue-600" />
-              <div className="text-3xl font-bold text-blue-700">{stats.total}</div>
-              <div className="text-sm text-blue-600 mt-1">Total Campaigns</div>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <Send className="h-5 w-5 sm:h-6 sm:w-6 mx-auto mb-1 sm:mb-2 text-blue-600" />
+              <div className="text-xl sm:text-3xl font-bold text-blue-700">{stats.total}</div>
+              <div className="text-xs sm:text-sm text-blue-600 mt-1">Total</div>
             </CardContent>
           </Card>
 
           <Card className="bg-gray-50 border-gray-200">
-            <CardContent className="p-4 text-center">
-              <Edit className="h-6 w-6 mx-auto mb-2 text-gray-600" />
-              <div className="text-3xl font-bold text-gray-700">{stats.draft}</div>
-              <div className="text-sm text-gray-600 mt-1">Drafts</div>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <Edit className="h-5 w-5 sm:h-6 sm:w-6 mx-auto mb-1 sm:mb-2 text-gray-600" />
+              <div className="text-xl sm:text-3xl font-bold text-gray-700">{stats.draft}</div>
+              <div className="text-xs sm:text-sm text-gray-600 mt-1">Drafts</div>
             </CardContent>
           </Card>
 
           <Card className="bg-amber-50 border-amber-200">
-            <CardContent className="p-4 text-center">
-              <Calendar className="h-6 w-6 mx-auto mb-2 text-amber-600" />
-              <div className="text-3xl font-bold text-amber-700">{stats.scheduled}</div>
-              <div className="text-sm text-amber-600 mt-1">Scheduled</div>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <Calendar className="h-5 w-5 sm:h-6 sm:w-6 mx-auto mb-1 sm:mb-2 text-amber-600" />
+              <div className="text-xl sm:text-3xl font-bold text-amber-700">{stats.scheduled}</div>
+              <div className="text-xs sm:text-sm text-amber-600 mt-1">Scheduled</div>
             </CardContent>
           </Card>
 
           <Card className="bg-green-50 border-green-200">
-            <CardContent className="p-4 text-center">
-              <Users className="h-6 w-6 mx-auto mb-2 text-green-600" />
-              <div className="text-3xl font-bold text-green-700">{stats.totalRecipients}</div>
-              <div className="text-sm text-green-600 mt-1">Recipients Reached</div>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <Users className="h-5 w-5 sm:h-6 sm:w-6 mx-auto mb-1 sm:mb-2 text-green-600" />
+              <div className="text-xl sm:text-3xl font-bold text-green-700">{stats.totalRecipients}</div>
+              <div className="text-xs sm:text-sm text-green-600 mt-1">Reached</div>
             </CardContent>
           </Card>
 
-          <Card className="bg-purple-50 border-purple-200">
-            <CardContent className="p-4 text-center">
-              <TrendingUp className="h-6 w-6 mx-auto mb-2 text-purple-600" />
-              <div className="text-3xl font-bold text-purple-700">{stats.avgOpenRate.toFixed(1)}%</div>
-              <div className="text-sm text-purple-600 mt-1">Avg Open Rate</div>
+          <Card className="bg-purple-50 border-purple-200 col-span-2 sm:col-span-1">
+            <CardContent className="p-3 sm:p-4 text-center">
+              <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 mx-auto mb-1 sm:mb-2 text-purple-600" />
+              <div className="text-xl sm:text-3xl font-bold text-purple-700">{stats.avgOpenRate.toFixed(1)}%</div>
+              <div className="text-xs sm:text-sm text-purple-600 mt-1">Open Rate</div>
             </CardContent>
           </Card>
         </div>
@@ -303,20 +304,22 @@ export default function MarketingCampaigns() {
         </Card>
 
         <Tabs defaultValue="all" onValueChange={setStatusFilter}>
-          <TabsList className="w-full justify-start bg-white border">
-            <TabsTrigger value="all">
-              All <Badge variant="secondary" className="ml-2">{campaigns.length}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="draft">
-              Drafts <Badge variant="secondary" className="ml-2">{stats.draft}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="scheduled">
-              Scheduled <Badge variant="secondary" className="ml-2">{stats.scheduled}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="sent">
-              Sent <Badge variant="secondary" className="ml-2">{stats.sent}</Badge>
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+            <TabsList className="w-max sm:w-full justify-start bg-white border whitespace-nowrap">
+              <TabsTrigger value="all" className="text-xs sm:text-sm">
+                All <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs">{campaigns.length}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="draft" className="text-xs sm:text-sm">
+                Drafts <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs">{stats.draft}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="scheduled" className="text-xs sm:text-sm">
+                Scheduled <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs">{stats.scheduled}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="sent" className="text-xs sm:text-sm">
+                Sent <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs">{stats.sent}</Badge>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value={statusFilter} className="mt-4">
             {filteredCampaigns.length === 0 ? (

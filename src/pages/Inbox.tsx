@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, ArrowLeft, Loader2, Trash2 } from 'lucide-react';
+import { Send, ArrowLeft, Loader2, Trash2, ChevronLeft } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { User } from '@supabase/supabase-js';
 
@@ -342,22 +343,26 @@ export default function Inbox() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className="h-screen flex flex-col bg-gray-50 overflow-x-hidden">
       {/* Header */}
-      <div className="bg-white border-b px-6 py-4 flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+      <div className="bg-white border-b px-3 sm:px-6 py-3 sm:py-4 flex items-center gap-2 sm:gap-4">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="shrink-0">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div>
-          <h1 className="text-2xl font-bold">Inbox</h1>
-          <p className="text-sm text-gray-500">{userChats.length} conversations</p>
+        <div className="min-w-0">
+          <h1 className="text-lg sm:text-2xl font-bold truncate">Inbox</h1>
+          <p className="text-xs sm:text-sm text-gray-500">{userChats.length} conversations</p>
         </div>
       </div>
 
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Chat List - Left Panel */}
-        <div className="w-80 bg-white border-r overflow-y-auto">
+        {/* Chat List - Left Panel (hidden on mobile when chat selected) */}
+        <div className={cn(
+          "bg-white border-r overflow-y-auto",
+          "w-full md:w-80",
+          selectedChat && "hidden md:block"
+        )}>
           {loading ? (
             <div className="flex items-center justify-center p-8">
               <Loader2 className="animate-spin h-6 w-6" />
@@ -372,15 +377,16 @@ export default function Inbox() {
                 <div
                   key={chat.chat_id}
                   onClick={() => setSelectedChat(chat)}
-                  className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition ${
-                    selectedChat?.chat_id === chat.chat_id ? 'bg-indigo-50 border-l-4 border-indigo-600' : ''
-                  }`}
+                  className={cn(
+                    "p-3 sm:p-4 border-b cursor-pointer hover:bg-gray-50 transition",
+                    selectedChat?.chat_id === chat.chat_id && "bg-indigo-50 border-l-4 border-indigo-600"
+                  )}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-semibold text-gray-900">
+                    <span className="font-semibold text-gray-900 text-sm sm:text-base truncate">
                       {getOtherPersonName(chat)}
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                       <span className="text-xs text-gray-400">
                         {new Date(chat.created_at).toLocaleDateString()}
                       </span>
@@ -392,13 +398,14 @@ export default function Inbox() {
                             e.stopPropagation();
                             handleDeleteChat(chat.chat_id);
                           }}
+                          className="p-1 h-auto"
                         >
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
                       )}
                     </div>
                   </div>
-                  <div className="text-sm text-gray-500 truncate">
+                  <div className="text-xs sm:text-sm text-gray-500 truncate">
                     {lastMessages.get(chat.chat_id) || '...'}
                   </div>
                 </div>
@@ -407,8 +414,11 @@ export default function Inbox() {
           )}
         </div>
 
-        {/* Messages - Right Panel */}
-        <div className="flex-1 flex flex-col bg-gray-50">
+        {/* Messages - Right Panel (full width on mobile when chat selected) */}
+        <div className={cn(
+          "flex-1 flex flex-col bg-gray-50",
+          !selectedChat && "hidden md:flex"
+        )}>
           {!selectedChat ? (
             <div className="flex-1 flex items-center justify-center text-gray-400">
               <div className="text-center">
@@ -418,14 +428,24 @@ export default function Inbox() {
             </div>
           ) : (
             <>
-              {/* Chat Header */}
-              <div className="bg-white border-b px-6 py-4">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {getOtherPersonName(selectedChat)}
-                </h2>
-                <p className="text-xs text-gray-500">
-                  {selectedChat.recipient_id ? 'Active' : 'Unassigned'}
-                </p>
+              {/* Chat Header with back button on mobile */}
+              <div className="bg-white border-b px-3 sm:px-6 py-3 sm:py-4 flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedChat(null)}
+                  className="md:hidden shrink-0 p-1"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+                <div className="min-w-0">
+                  <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
+                    {getOtherPersonName(selectedChat)}
+                  </h2>
+                  <p className="text-xs text-gray-500">
+                    {selectedChat.recipient_id ? 'Active' : 'Unassigned'}
+                  </p>
+                </div>
               </div>
 
               {/* Messages Area */}
