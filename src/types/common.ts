@@ -52,6 +52,7 @@ export interface ProductData {
   is_available?: boolean;
   stock_quantity?: number;
   image_url?: string;
+  image_storage_path?: string | null;
   [key: string]: unknown;
 }
 

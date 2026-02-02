@@ -18,6 +18,8 @@ export interface Product {
   item_type: 'inventory' | 'service' | 'booking' | null;
   created_at: string;
   updated_at: string;
+  // Storage path for uploaded images
+  image_storage_path?: string | null;
   // Pharmacy-specific fields
   requires_prescription?: boolean;
   // Booking-specific fields

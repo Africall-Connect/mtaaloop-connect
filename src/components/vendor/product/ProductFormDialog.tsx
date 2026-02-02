@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { useVendorCategories } from '@/hooks/useVendorCategories';
 import { ProductData, ErrorResponse } from '@/types/common';
+import { Upload, X, Link, ImageIcon } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -21,15 +23,18 @@ interface Product {
   low_stock_threshold: number;
   is_available: boolean;
   image_url: string | null;
+  image_storage_path?: string | null;
 }
 
 interface ProductFormDialogProps {
   product: Product | null;
   onClose: () => void;
   onSuccess: () => void;
-  // might be passed from parent, but we prefer to look up vendor_profile
   vendorId?: string;
 }
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
 
 export default function ProductFormDialog({
   product,
@@ -52,17 +57,19 @@ export default function ProductFormDialog({
   const [realVendorId, setRealVendorId] = useState<string | null>(null);
   const [vendorLoading, setVendorLoading] = useState(true);
   
-  // Load dynamic vendor categories
+  // Image upload state
+  const [uploadMethod, setUploadMethod] = useState<'url' | 'upload'>('url');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const { categories, subcategories, loading: categoriesLoading } = useVendorCategories(realVendorId);
 
-  // 1. load vendor_profile for logged-in user
   useEffect(() => {
     const loadVendor = async () => {
       try {
-        const {
-          data: { user },
-          error: userErr,
-        } = await supabase.auth.getUser();
+        const { data: { user }, error: userErr } = await supabase.auth.getUser();
 
         if (userErr) throw userErr;
         if (!user) {
@@ -82,7 +89,6 @@ export default function ProductFormDialog({
         if (vp?.id) {
           setRealVendorId(vp.id);
         } else if (vendorId) {
-          // fallback
           setRealVendorId(vendorId);
         } else {
           toast.error('No approved vendor profile found for this account.');
@@ -98,7 +104,6 @@ export default function ProductFormDialog({
     loadVendor();
   }, [vendorId]);
 
-  // 2. load product into form if editing
   useEffect(() => {
     if (product) {
       setFormData({
@@ -112,10 +117,26 @@ export default function ProductFormDialog({
         is_available: product.is_available,
         image_url: product.image_url || '',
       });
+      // If product has an existing image, show it
+      if (product.image_url) {
+        setImagePreview(product.image_url);
+        // Determine if it was an upload or URL
+        if (product.image_storage_path) {
+          setUploadMethod('upload');
+        }
+      }
     }
   }, [product]);
 
-  // derive subcategories for current category from database
+  // Cleanup blob URL on unmount
+  useEffect(() => {
+    return () => {
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
   const selectedCategory = categories.find(cat => cat.name === formData.category);
   const currentSubcategories = selectedCategory
     ? subcategories.filter(sub => sub.category_id === selectedCategory.id)
@@ -125,9 +146,87 @@ export default function ProductFormDialog({
     setFormData((prev) => ({
       ...prev,
       category: value,
-      // reset subcategory if category changes
       subcategory: '',
     }));
+  };
+
+  const validateFile = (file: File): boolean => {
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error('File too large', { description: 'Maximum file size is 5MB' });
+      return false;
+    }
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast.error('Invalid file type', { description: 'Allowed: JPG, PNG, GIF, WebP' });
+      return false;
+    }
+    return true;
+  };
+
+  const handleFileSelect = (file: File) => {
+    if (!validateFile(file)) return;
+    
+    // Clean up previous blob URL
+    if (imagePreview && imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFileSelect(file);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFileSelect(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
+  const removeImage = () => {
+    if (imagePreview && imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const uploadImageToStorage = async (file: File, vendorId: string): Promise<{ url: string; path: string }> => {
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const fileName = `${crypto.randomUUID()}.${fileExt}`;
+    const filePath = `products/${vendorId}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('product-images')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('product-images')
+      .getPublicUrl(filePath);
+
+    return { url: publicUrl, path: filePath };
+  };
+
+  const deleteOldImage = async (storagePath: string) => {
+    try {
+      await supabase.storage.from('product-images').remove([storagePath]);
+    } catch (err) {
+      console.warn('Failed to delete old image:', err);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -140,6 +239,36 @@ export default function ProductFormDialog({
         return;
       }
 
+      let finalImageUrl = formData.image_url || null;
+      let finalStoragePath: string | null = null;
+
+      // Handle image upload
+      if (uploadMethod === 'upload' && imageFile) {
+        setUploading(true);
+        
+        // Delete old image if editing and had a previous upload
+        if (product?.image_storage_path) {
+          await deleteOldImage(product.image_storage_path);
+        }
+
+        const { url, path } = await uploadImageToStorage(imageFile, realVendorId);
+        finalImageUrl = url;
+        finalStoragePath = path;
+        setUploading(false);
+      } else if (uploadMethod === 'url') {
+        // Using URL method - clear any previous storage path
+        finalImageUrl = formData.image_url || null;
+        
+        // If switching from upload to URL, delete old uploaded image
+        if (product?.image_storage_path) {
+          await deleteOldImage(product.image_storage_path);
+        }
+      } else if (uploadMethod === 'upload' && !imageFile && product?.image_storage_path) {
+        // Keeping existing uploaded image
+        finalImageUrl = product.image_url;
+        finalStoragePath = product.image_storage_path;
+      }
+
       const productData: ProductData = {
         vendor_id: realVendorId,
         name: formData.name,
@@ -149,10 +278,10 @@ export default function ProductFormDialog({
         stock_quantity: parseInt(formData.stock_quantity, 10),
         low_stock_threshold: parseInt(formData.low_stock_threshold, 10),
         is_available: formData.is_available,
-        image_url: formData.image_url || null,
+        image_url: finalImageUrl,
+        image_storage_path: finalStoragePath,
       };
 
-      // only add subcategory if present
       if (formData.subcategory) {
         productData.subcategory = formData.subcategory;
       }
@@ -175,11 +304,10 @@ export default function ProductFormDialog({
     } catch (error) {
       const err = error as ErrorResponse;
       console.error(err);
-      toast.error('Failed to save product', {
-        description: err.message,
-      });
+      toast.error('Failed to save product', { description: err.message });
     } finally {
       setLoading(false);
+      setUploading(false);
     }
   };
 
@@ -200,7 +328,7 @@ export default function ProductFormDialog({
             </p>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Product Name *</Label>
               <Input
@@ -239,7 +367,6 @@ export default function ProductFormDialog({
             </div>
           </div>
 
-          {/* Subcategory (only show when category has children) */}
           {formData.category && currentSubcategories.length > 0 && (
             <div className="space-y-2">
               <Label htmlFor="subcategory">Subcategory</Label>
@@ -313,33 +440,94 @@ export default function ProductFormDialog({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="image_url">Image URL</Label>
-            <Input
-              id="image_url"
-              type="url"
-              value={formData.image_url}
-              onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-              placeholder="https://example.com/image.jpg"
-            />
-            {formData.image_url && (
-              <img
-                src={formData.image_url}
-                alt="Preview"
-                className="mt-2 h-32 w-32 object-cover rounded border"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            )}
+          {/* Image Section with Tabs */}
+          <div className="space-y-3">
+            <Label>Product Image</Label>
+            <Tabs value={uploadMethod} onValueChange={(v) => setUploadMethod(v as 'url' | 'upload')}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="url" className="flex items-center gap-2">
+                  <Link className="h-4 w-4" />
+                  Image URL
+                </TabsTrigger>
+                <TabsTrigger value="upload" className="flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  Upload Photo
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="url" className="space-y-3">
+                <Input
+                  type="url"
+                  value={formData.image_url}
+                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                  placeholder="https://example.com/image.jpg"
+                />
+                {formData.image_url && uploadMethod === 'url' && (
+                  <img
+                    src={formData.image_url}
+                    alt="Preview"
+                    className="h-32 w-32 object-cover rounded-lg border"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                )}
+              </TabsContent>
+
+              <TabsContent value="upload" className="space-y-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  onChange={handleFileInputChange}
+                  className="hidden"
+                />
+
+                {!imagePreview || imagePreview.startsWith('http') && !imageFile ? (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-colors"
+                  >
+                    <ImageIcon className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
+                    <p className="text-sm font-medium text-foreground">
+                      Click to upload or drag & drop
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      PNG, JPG, GIF, WebP up to 5MB
+                    </p>
+                  </div>
+                ) : (
+                  <div className="relative inline-block">
+                    <img
+                      src={imagePreview}
+                      alt="Upload preview"
+                      className="h-32 w-32 object-cover rounded-lg border"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute -top-2 -right-2 p-1 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+
+                {uploading && (
+                  <p className="text-sm text-muted-foreground">Uploading image...</p>
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
             <div>
               <Label htmlFor="is_available" className="font-medium">
                 Product Available
               </Label>
-              <p className="text-sm text-gray-600">Allow customers to order this product</p>
+              <p className="text-sm text-muted-foreground">Allow customers to order this product</p>
             </div>
             <Switch
               id="is_available"
@@ -349,8 +537,8 @@ export default function ProductFormDialog({
           </div>
 
           <div className="flex gap-2 pt-4 border-t">
-            <Button type="submit" disabled={loading || vendorLoading} className="flex-1">
-              {loading ? 'Saving...' : product ? 'Update Product' : 'Create Product'}
+            <Button type="submit" disabled={loading || vendorLoading || uploading} className="flex-1">
+              {uploading ? 'Uploading...' : loading ? 'Saving...' : product ? 'Update Product' : 'Create Product'}
             </Button>
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
