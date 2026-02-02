@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { useVendorCategories } from '@/hooks/useVendorCategories';
 import { ProductData, ErrorResponse } from '@/types/common';
-import { Upload, X, Link, ImageIcon } from 'lucide-react';
+import { Upload, X, Link, ImageIcon, Camera } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -63,6 +63,7 @@ export default function ProductFormDialog({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   
   const { categories, subcategories, loading: categoriesLoading } = useVendorCategories(realVendorId);
 
@@ -189,6 +190,11 @@ export default function ProductFormDialog({
     e.preventDefault();
   };
 
+  const handleCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFileSelect(file);
+  };
+
   const removeImage = () => {
     if (imagePreview && imagePreview.startsWith('blob:')) {
       URL.revokeObjectURL(imagePreview);
@@ -197,6 +203,9 @@ export default function ProductFormDialog({
     setImagePreview(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = '';
     }
   };
 
@@ -475,6 +484,7 @@ export default function ProductFormDialog({
               </TabsContent>
 
               <TabsContent value="upload" className="space-y-3">
+                {/* Hidden file inputs */}
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -482,21 +492,43 @@ export default function ProductFormDialog({
                   onChange={handleFileInputChange}
                   className="hidden"
                 />
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleCameraCapture}
+                  className="hidden"
+                />
 
-                {!imagePreview || imagePreview.startsWith('http') && !imageFile ? (
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    onDrop={handleDrop}
-                    onDragOver={handleDragOver}
-                    className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-colors"
-                  >
-                    <ImageIcon className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
-                    <p className="text-sm font-medium text-foreground">
-                      Click to upload or drag & drop
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      PNG, JPG, GIF, WebP up to 5MB
-                    </p>
+                {!imagePreview || (imagePreview.startsWith('http') && !imageFile) ? (
+                  <div className="space-y-3">
+                    {/* Upload zone */}
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      onDrop={handleDrop}
+                      onDragOver={handleDragOver}
+                      className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-colors"
+                    >
+                      <ImageIcon className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                      <p className="text-sm font-medium text-foreground">
+                        Click to upload or drag & drop
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        PNG, JPG, GIF, WebP up to 5MB
+                      </p>
+                    </div>
+                    
+                    {/* Camera button - primarily for mobile */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="w-full flex items-center justify-center gap-2"
+                    >
+                      <Camera className="h-4 w-4" />
+                      Take a Photo
+                    </Button>
                   </div>
                 ) : (
                   <div className="relative inline-block">
