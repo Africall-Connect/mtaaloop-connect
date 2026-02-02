@@ -48,13 +48,15 @@ const Cart = () => {
 
   if (vendorGroups.length === 0) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background flex items-center justify-center px-4">
         <div className="text-center space-y-4">
-          <ShoppingBag className="w-16 h-16 mx-auto text-muted-foreground" />
+          <div className="p-4 bg-primary/10 rounded-full w-fit mx-auto">
+            <ShoppingBag className="w-12 h-12 text-primary" />
+          </div>
           <h1 className="text-xl sm:text-2xl font-bold">Your cart is empty</h1>
           <p className="text-muted-foreground text-sm sm:text-base">Add some delicious items to get started!</p>
           <Link to="/">
-            <Button>Browse Vendors</Button>
+            <Button className="gap-2">Browse Vendors</Button>
           </Link>
         </div>
       </div>
@@ -62,7 +64,7 @@ const Cart = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background">
       <div className="container px-4 py-4 sm:py-6 max-w-4xl mx-auto">
         {/* Header - Mobile Optimized */}
         <div className="flex items-center justify-between mb-4 sm:mb-6">
@@ -72,7 +74,12 @@ const Cart = () => {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
-            <h1 className="text-xl sm:text-3xl font-bold flex items-center gap-2"><ShoppingBag className="w-6 h-6" /> Your Cart</h1>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-full">
+                <ShoppingBag className="h-5 w-5 text-primary" />
+              </div>
+              <h1 className="text-xl sm:text-3xl font-bold">Your Cart</h1>
+            </div>
           </div>
 
           {/* Share Cart - Icon only on mobile */}
@@ -145,12 +152,16 @@ const Cart = () => {
         <div className="space-y-4 sm:space-y-6">
           {/* Saved Items Section */}
           {savedItems.length > 0 && (
-            <Card className="p-4 sm:p-6">
+            <Card className="p-4 sm:p-6 border-dashed border-2 border-orange-200">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2">
-                  <Heart className="w-5 h-5 text-orange-600" />
-                  Saved for Later ({savedItems.length})
-                </h2>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-500/10 rounded-full">
+                    <Heart className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <h2 className="text-lg sm:text-xl font-bold">
+                    Saved for Later ({savedItems.length})
+                  </h2>
+                </div>
               </div>
 
               <div className="space-y-3">
@@ -203,10 +214,12 @@ const Cart = () => {
             return (
               <div key={group.vendorId} className="space-y-3 sm:space-y-4">
                 {/* Vendor Header */}
-                <Card className="p-3 sm:p-4 bg-muted/30">
+                <Card className="p-3 sm:p-4 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
                   <div className="flex items-start sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                      <Store className="w-5 h-5 text-primary shrink-0" />
+                      <div className="p-2 bg-primary/10 rounded-full">
+                        <Store className="w-5 h-5 text-primary shrink-0" />
+                      </div>
                       <div className="min-w-0">
                         <h3 className="font-bold text-base sm:text-lg truncate">{group.vendorName}</h3>
                         <p className="text-xs sm:text-sm text-muted-foreground">
@@ -229,7 +242,7 @@ const Cart = () => {
 
                 {/* Items for this vendor - Mobile Optimized */}
                 {group.items.map((item) => (
-                  <Card key={item.id} className="p-3 sm:p-4">
+                  <Card key={item.id} className="p-3 sm:p-4 border-l-4 border-l-primary/20 hover:shadow-md transition-shadow">
                     <div className="flex gap-3 sm:gap-4">
                       {/* Selection Checkbox */}
                       <Checkbox
@@ -239,7 +252,7 @@ const Cart = () => {
                       />
 
                       {item.image && (
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0 shadow-sm">
                           <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                         </div>
                       )}
@@ -253,11 +266,11 @@ const Cart = () => {
                           {/* Price - Visible on top right for mobile */}
                           <div className="text-right shrink-0">
                             <div className="text-base sm:text-xl font-bold text-primary">
-                              KSh {item.price * item.quantity}
+                              KSh {(item.price * item.quantity).toLocaleString()}
                             </div>
                             {item.quantity > 1 && (
                               <div className="text-xs text-muted-foreground">
-                                KSh {item.price} each
+                                KSh {item.price.toLocaleString()} each
                               </div>
                             )}
                           </div>
@@ -323,27 +336,27 @@ const Cart = () => {
                 ))}
 
                 {/* Summary for this vendor */}
-                <Card className="p-4 sm:p-6">
+                <Card className="p-4 sm:p-6 border-t-4 border-t-primary">
                   <h2 className="text-lg sm:text-xl font-bold mb-4">Order Summary - {group.vendorName}</h2>
 
                   <div className="space-y-2 mb-4 text-sm sm:text-base">
                     <div className="flex justify-between">
                       <span>Subtotal ({group.items.length} items)</span>
-                      <span>KSh {group.subtotal}</span>
+                      <span>KSh {group.subtotal.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Delivery Fee</span>
-                      <span>KSh {group.deliveryFee}</span>
+                      <span>KSh {group.deliveryFee.toLocaleString()}</span>
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t flex justify-between items-center mb-4">
+                  <div className="bg-primary/5 -mx-4 sm:-mx-6 px-4 sm:px-6 py-4 flex justify-between items-center mb-4">
                     <span className="text-lg sm:text-xl font-bold">TOTAL</span>
-                    <span className="text-xl sm:text-2xl font-bold text-primary">KSh {groupTotal}</span>
+                    <span className="text-xl sm:text-2xl font-bold text-primary">KSh {groupTotal.toLocaleString()}</span>
                   </div>
 
                   <Link to="/checkout">
-                    <Button className="w-full touch-target" size="lg">
+                    <Button className="w-full touch-target hover:shadow-lg transition-shadow" size="lg">
                       <ShoppingBag className="w-4 h-4 mr-2" />
                       Checkout {isMobile ? '' : group.vendorName}
                     </Button>

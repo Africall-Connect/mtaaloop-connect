@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Plus, Edit2, Check, X, AlertCircle } from "lucide-react";
+import { ArrowLeft, Plus, Edit2, Check, X, AlertCircle, MapPin, CreditCard, ClipboardCheck, Clock, Wallet, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -774,46 +774,63 @@ const Checkout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24 sm:pb-0">
+    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background pb-24 sm:pb-0">
       <div className="container px-4 py-4 sm:py-6 max-w-3xl mx-auto">
         {/* Mobile-optimized header */}
         <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-6">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="touch-target shrink-0">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl sm:text-3xl font-bold">Checkout</h1>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-full">
+              <ClipboardCheck className="h-5 w-5 text-primary" />
+            </div>
+            <h1 className="text-xl sm:text-3xl font-bold">Checkout</h1>
+          </div>
         </div>
 
-        {/* Compact step indicators for mobile */}
+        {/* Enhanced step indicators */}
         <div className="flex items-center justify-between mb-4 sm:mb-8 px-2 sm:px-0">
           {[
-            { num: 1, label: "Delivery" },
-            { num: 2, label: "Payment" },
-            { num: 3, label: "Review" },
-          ].map((s, idx) => (
-            <div key={s.num} className="flex items-center flex-1">
-              <div className="flex flex-col items-center gap-1">
-                <div
-                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-sm sm:text-base transition-colors ${
-                    s.num <= step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {s.num}
+            { num: 1, label: "Delivery", icon: MapPin },
+            { num: 2, label: "Payment", icon: CreditCard },
+            { num: 3, label: "Review", icon: ClipboardCheck },
+          ].map((s, idx) => {
+            const StepIcon = s.icon;
+            return (
+              <div key={s.num} className="flex items-center flex-1">
+                <div className="flex flex-col items-center gap-1">
+                  <div
+                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-sm sm:text-base transition-all ${
+                      s.num === step 
+                        ? "bg-primary text-primary-foreground shadow-md ring-4 ring-primary/20" 
+                        : s.num < step 
+                          ? "bg-primary text-primary-foreground" 
+                          : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    <StepIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </div>
+                  <span className={`text-[10px] sm:text-xs font-medium ${s.num <= step ? "text-primary" : "text-muted-foreground"}`}>
+                    {s.label}
+                  </span>
                 </div>
-                <span className={`text-[10px] sm:text-xs font-medium ${s.num <= step ? "text-primary" : "text-muted-foreground"}`}>
-                  {s.label}
-                </span>
+                {idx < 2 && (
+                  <div className={`flex-1 h-1 mx-1 sm:mx-2 rounded-full transition-colors ${s.num < step ? "bg-primary" : "bg-muted"}`} />
+                )}
               </div>
-              {idx < 2 && (
-                <div className={`flex-1 h-0.5 sm:h-1 mx-1 sm:mx-2 ${s.num < step ? "bg-primary" : "bg-muted"}`} />
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {step === 1 && (
-          <Card className="p-6 space-y-6">
-            <h2 className="text-2xl font-bold">📍 Delivery Details</h2>
+          <Card className="p-6 space-y-6 border-primary/10">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-primary/10 rounded-full">
+                <MapPin className="h-5 w-5 text-primary" />
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold">Delivery Details</h2>
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="estate_name">Estate Name</Label>
@@ -856,7 +873,10 @@ const Checkout = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>📝 Delivery Instructions</Label>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary" />
+                <Label>Delivery Instructions</Label>
+              </div>
               <Textarea
                 placeholder='Example: "Ring doorbell twice" or "Leave at door if no answer"'
                 value={instructions}
@@ -879,7 +899,10 @@ const Checkout = () => {
             </div>
 
             <div className="space-y-3">
-              <Label>⏰ Delivery Time</Label>
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-primary" />
+                <Label className="font-medium">Delivery Time</Label>
+              </div>
               <RadioGroup
                 value={deliveryType}
                 onValueChange={(value) => {
@@ -953,8 +976,13 @@ const Checkout = () => {
         )}
 
         {step === 2 && (
-          <Card className="p-6 space-y-6">
-            <h2 className="text-2xl font-bold">💳 Payment Method</h2>
+          <Card className="p-6 space-y-6 border-primary/10">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-primary/10 rounded-full">
+                <CreditCard className="h-5 w-5 text-primary" />
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold">Payment Method</h2>
+            </div>
 
             <PromoCodeInput
               subtotal={subtotal}
@@ -965,17 +993,22 @@ const Checkout = () => {
             <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
               <div className="space-y-4">
                 <div
-                  className={`p-4 border-2 rounded-lg cursor-pointer ${
-                    paymentMethod === "mpesa" ? "border-primary bg-primary/5" : "border-border"
+                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                    paymentMethod === "mpesa" 
+                      ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 border-l-4" 
+                      : "border-border hover:border-primary/30"
                   }`}
                   onClick={() => setPaymentMethod("mpesa")}
                 >
                   <div className="flex items-start space-x-2">
                     <RadioGroupItem value="mpesa" id="mpesa" />
                     <div className="flex-1">
-                      <Label htmlFor="mpesa" className="font-semibold cursor-pointer text-base">
-                        M-PESA
-                      </Label>
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="h-4 w-4 text-emerald-600" />
+                        <Label htmlFor="mpesa" className="font-semibold cursor-pointer text-base">
+                          M-PESA
+                        </Label>
+                      </div>
                       <div className="mt-2 space-y-2">
                         <div className="text-sm flex flex-col gap-1">
                           <div className="flex items-center gap-2">
