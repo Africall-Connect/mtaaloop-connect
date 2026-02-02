@@ -1,220 +1,184 @@
 
-# Vendor Dashboard Mobile Redesign Plan
+# Product Image Upload Feature Plan
 
-## Problem Summary
+## Overview
 
-The vendor dashboard pages have several mobile usability issues:
-
-1. **Bottom Navigation Leaking**: The customer-facing BottomNavigation component appears on vendor pages because the current hide logic in `BottomNavigation.tsx` only checks for `/vendor/` prefix but the routing logic has edge cases.
-
-2. **Content Horizontal Overflow (Spill)**: Multiple vendor pages have desktop-oriented layouts with fixed-width grids (e.g., `grid-cols-5`, `grid-cols-6`, `grid-cols-3`) that cause horizontal scrolling on mobile devices.
-
-3. **Non-Mobile-Friendly Components**: Tables, stat cards, and multi-column layouts are designed for desktop screens and don't adapt well to mobile viewports.
+Enable vendors to upload product images directly from their device (in addition to the existing URL-based approach). The vendor can choose between entering an image URL or uploading a photo file.
 
 ---
 
-## Technical Analysis
+## Database Changes
 
-### Root Cause 1: Bottom Navigation Visibility
+### 1. Add Storage Path Column to Products Table
 
-The `BottomNavigation.tsx` component has logic to hide on vendor paths:
-```typescript
-const hiddenPaths = ["/vendor/", ...];
-const shouldHide = hiddenPaths.some(
-  (path) => location.pathname === path || location.pathname.startsWith(path + "/")
+A new column `image_storage_path` will track the Supabase storage path for uploaded images. This is essential for managing (updating/deleting) uploaded files.
+
+### 2. Create Storage Bucket for Product Images
+
+A public bucket `product-images` will store all product photos with:
+- 5MB file size limit
+- Allowed MIME types: jpeg, png, gif, webp
+- RLS policies for secure vendor access
+
+---
+
+## SQL Migration Script
+
+Run this in Supabase SQL Editor (Cloud View > Run SQL):
+
+```sql
+-- 1. Add image_storage_path column to products table
+ALTER TABLE public.products 
+ADD COLUMN IF NOT EXISTS image_storage_path TEXT;
+
+-- 2. Create storage bucket for product images
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'product-images', 
+  'product-images', 
+  true, 
+  5242880, -- 5MB limit
+  ARRAY['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+)
+ON CONFLICT (id) DO NOTHING;
+
+-- 3. Storage policies for product images
+
+-- Allow anyone to view product images (public bucket)
+CREATE POLICY "Public can view product images" 
+ON storage.objects FOR SELECT 
+USING (bucket_id = 'product-images');
+
+-- Allow authenticated vendors to upload to their folder
+CREATE POLICY "Vendors can upload product images" 
+ON storage.objects FOR INSERT 
+TO authenticated 
+WITH CHECK (
+  bucket_id = 'product-images' AND 
+  (storage.foldername(name))[1] = 'products'
 );
+
+-- Allow vendors to update their own product images
+CREATE POLICY "Vendors can update product images" 
+ON storage.objects FOR UPDATE 
+TO authenticated 
+USING (bucket_id = 'product-images');
+
+-- Allow vendors to delete their own product images
+CREATE POLICY "Vendors can delete product images" 
+ON storage.objects FOR DELETE 
+TO authenticated 
+USING (bucket_id = 'product-images');
 ```
-
-However, this doesn't properly catch paths like `/vendor/categories` because the check is for `/vendor/` + `/`. The fix is to ensure `/vendor/` paths are always hidden without requiring trailing characters.
-
-### Root Cause 2: Desktop-First Grid Layouts
-
-Each vendor page uses desktop-first grid classes:
-
-| Page | Current Grid Classes |
-|------|---------------------|
-| Categories | Button row `flex gap-2` without wrapping |
-| Products | `grid-cols-5` for stats |
-| Orders | `grid-cols-6` for stats, tabs overflow |
-| Communications | `grid-cols-3` fixed layout |
-| Marketing | `grid-cols-5` for stats |
-| Analytics | `grid-cols-4` for stats |
-| Customers | `grid-cols-5` for stats |
-| Payouts | `grid-cols-3` for summary cards |
 
 ---
 
-## Solution: Mobile-First Responsive Redesign
+## Frontend Changes
 
-### File 1: BottomNavigation.tsx
+### File 1: `src/types/database.ts`
 
-Fix the path matching to properly hide on all vendor routes:
+Add the new field to the Product interface:
 
-```typescript
-// Updated logic - check startsWith directly
-const hiddenPaths = ["/checkout", "/auth", "/vendor", "/admin", "/rider", "/estate"];
+| Field | Type | Description |
+|-------|------|-------------|
+| `image_storage_path` | `string \| null` | Storage path for uploaded images |
 
-const shouldHide = hiddenPaths.some((path) => 
-  location.pathname === path || 
-  location.pathname.startsWith(path + "/") ||
-  location.pathname.startsWith(path)
-);
-```
+### File 2: `src/types/common.ts`
 
-### File 2: VendorCategoryManagement.tsx
+Add `image_storage_path` to the ProductData interface.
 
-- Add responsive header with smaller text on mobile
-- Add `overflow-x-hidden` to prevent spill
+### File 3: `src/components/vendor/product/ProductFormDialog.tsx`
 
-### File 3: CategoryManagement.tsx (Component)
+Major UI and logic updates:
 
-Current issues:
-- Category card buttons are in a horizontal row that overflows
-- No responsive breakpoints
+**New State Variables:**
+- `imageFile`: The selected file object
+- `imagePreview`: Local blob URL for preview
+- `uploadMethod`: Toggle between `'url'` or `'upload'`
+- `uploading`: Loading state during upload
 
-Changes:
-- Wrap action buttons in a responsive container
-- Stack buttons vertically on mobile with `flex-wrap` or grid
-- Add `overflow-hidden` to container
+**New UI Components:**
+- Tabs component to switch between URL input and file upload
+- Drag-and-drop zone with upload icon
+- Image preview with remove button
+- Upload progress indicator
 
-**Mobile Layout:**
-```
-[Category Name] [Status Badge]
-[Actions: vertical stack or 2-column grid]
-  - Add Subcategory
-  - Edit | Toggle | Delete
-```
-
-### File 4: AdvancedProductManagement.tsx
-
-Current issues:
-- Stats grid: `grid-cols-5` causes horizontal scroll
-- Tabs overflow horizontally
-- Filter row doesn't wrap
-
-Changes:
-- Stats: `grid-cols-2 md:grid-cols-3 lg:grid-cols-5`
-- Filters: Stack on mobile with `flex-col sm:flex-row`
-- Tabs: Make scrollable with `overflow-x-auto` and hide scrollbar
-- Product cards: Simplify action buttons on mobile
-
-### File 5: AdvancedOrdersManagement.tsx
-
-Current issues:
-- Stats grid: `grid-cols-6` causes severe overflow
-- Tabs: Too many tabs cause horizontal scroll
-- Order cards: Grid layout overflows
-
-Changes:
-- Stats: `grid-cols-2 sm:grid-cols-3 lg:grid-cols-6`
-- Tabs: Wrap in scrollable container with `overflow-x-auto whitespace-nowrap`
-- Filter bar: Stack vertically on mobile
-- Order cards: Single column layout on mobile
-
-### File 6: Inbox.tsx (Communications)
-
-Current issues:
-- Fixed `w-80` sidebar doesn't collapse
-- Two-column layout on mobile is unusable
-
-Changes:
-- Make chat list full-width on mobile, hide when chat selected
-- Add back button to return to chat list on mobile
-- Use `hidden md:block` for desktop sidebar
-- Mobile: Show either list OR chat, not both
-
-### File 7: MarketingCampaigns.tsx
-
-Current issues:
-- Stats grid: `grid-cols-5` overflows
-- Campaign cards have too much horizontal content
-
-Changes:
-- Stats: `grid-cols-2 sm:grid-cols-3 lg:grid-cols-5`
-- Campaign cards: Stack content vertically on mobile
-- Tabs: Add horizontal scroll
-
-### File 8: AnalyticsDashboard.tsx
-
-Current issues:
-- Stats grid: `grid-cols-4` overflows
-- Header controls don't wrap
-
-Changes:
-- Stats: `grid-cols-2 lg:grid-cols-4`
-- Header: Stack controls on mobile
-- Chart containers: Add horizontal scroll for data-dense views
-
-### File 9: CustomerManagement.tsx
-
-Current issues:
-- Stats grid: `grid-cols-5` overflows
-- Customer cards have wide grid layouts
-
-Changes:
-- Stats: `grid-cols-2 sm:grid-cols-3 lg:grid-cols-5`
-- Customer stats grid: `grid-cols-2` on mobile
-- Action buttons: Use icon-only buttons on mobile
-
-### File 10: VendorPayoutsPage.tsx
-
-Current issues:
-- Summary cards: `grid-cols-3` can overflow on small screens
-- Table with horizontal scroll
-
-Changes:
-- Summary: `grid-cols-1 sm:grid-cols-3`
-- Table: Already has `overflow-x-auto` which is correct
-- Enhance table for mobile with sticky first column
+**Upload Logic in handleSubmit:**
+1. If `uploadMethod === 'upload'` and a file is selected:
+   - Generate unique filename: `products/{vendorId}/{uuid}.{ext}`
+   - Upload to `product-images` bucket
+   - Get public URL
+   - Set `image_storage_path` for tracking
+2. If editing a product with a new image:
+   - Delete old image from storage (if exists)
+   - Upload new image
+3. Save product with final `image_url` and `image_storage_path`
 
 ---
 
-## Design Patterns Applied
+## UI Design
 
-### 1. Responsive Grid Pattern
-```
-grid-cols-2 sm:grid-cols-3 lg:grid-cols-5
-```
+The image section will use a tabbed interface:
 
-### 2. Horizontal Scroll Tabs
-```typescript
-<TabsList className="w-full overflow-x-auto flex whitespace-nowrap scrollbar-hide">
-  <TabsTrigger>...</TabsTrigger>
-</TabsList>
-```
-
-### 3. Stacking Filter Controls
-```typescript
-<div className="flex flex-col sm:flex-row gap-3">
-  <Input className="w-full sm:flex-1" />
-  <div className="flex gap-2">...</div>
-</div>
-```
-
-### 4. Mobile-First Chat Layout
-```typescript
-// Mobile: Show list OR chat
-<div className="flex-1 flex overflow-hidden">
-  <div className={cn(
-    "bg-white border-r overflow-y-auto",
-    "w-full md:w-80",
-    selectedChat && "hidden md:block"
-  )}>
-    {/* Chat list */}
-  </div>
-  <div className={cn(
-    "flex-1 flex flex-col",
-    !selectedChat && "hidden md:flex"
-  )}>
-    {/* Message panel with back button on mobile */}
-  </div>
-</div>
+```text
++------------------------------------------+
+| Product Image                            |
++------------------------------------------+
+| [  Image URL  ] [  Upload Photo  ]       |  <-- Tabs
++------------------------------------------+
+|                                          |
+| URL Tab:                                 |
+|   [Enter image URL...                  ] |
+|                                          |
+| Upload Tab:                              |
+|   +----------------------------------+   |
+|   |     📷                           |   |
+|   |  Click to upload or drag & drop  |   |
+|   |  PNG, JPG, GIF up to 5MB         |   |
+|   +----------------------------------+   |
+|                                          |
+|   [Image Preview]  [❌ Remove]           |
++------------------------------------------+
 ```
 
-### 5. Container Overflow Prevention
-```typescript
-<div className="min-h-screen bg-gray-50 overflow-x-hidden">
+---
+
+## Technical Implementation Details
+
+### File Upload Flow
+
+```text
+1. Vendor selects "Upload Photo" tab
+2. Vendor clicks upload zone or drags file
+3. File is validated (size < 5MB, correct type)
+4. Local preview is generated using URL.createObjectURL()
+5. On form submit:
+   a. Upload file to Supabase storage
+   b. Get public URL
+   c. Save product with image_url = publicUrl
+   d. Save image_storage_path for future management
 ```
+
+### Storage Path Structure
+
+```
+product-images/
+└── products/
+    └── {vendor_id}/
+        └── {uuid}.{extension}
+```
+
+This structure:
+- Organizes images by vendor
+- Uses UUIDs to prevent naming conflicts
+- Enables vendor-specific access control
+
+### Error Handling
+
+- File too large: Show toast with 5MB limit message
+- Invalid file type: Show toast with allowed types
+- Upload failure: Show error, keep form open
+- Network error: Retry option with exponential backoff
 
 ---
 
@@ -222,40 +186,37 @@ grid-cols-2 sm:grid-cols-3 lg:grid-cols-5
 
 | File | Changes |
 |------|---------|
-| `src/components/BottomNavigation.tsx` | Fix path matching for vendor routes |
-| `src/pages/vendor/VendorCategoryManagement.tsx` | Add responsive header, overflow hidden |
-| `src/pages/vendor/CategoryManagement.tsx` | Responsive button layout |
-| `src/pages/vendor/AdvancedProductManagement.tsx` | Responsive stats, tabs, filters |
-| `src/pages/vendor/AdvancedOrdersManagement.tsx` | Responsive stats, tabs, order cards |
-| `src/pages/Inbox.tsx` | Mobile chat list/message toggle |
-| `src/pages/vendor/MarketingCampaigns.tsx` | Responsive stats and cards |
-| `src/pages/vendor/AnalyticsDashboard.tsx` | Responsive stats and header |
-| `src/pages/vendor/CustomerManagement.tsx` | Responsive stats and customer cards |
-| `src/pages/vendor/VendorPayoutsPage.tsx` | Responsive summary cards |
+| `src/types/database.ts` | Add `image_storage_path?: string \| null` to Product interface |
+| `src/types/common.ts` | Add `image_storage_path?: string` to ProductData interface |
+| `src/components/vendor/product/ProductFormDialog.tsx` | Add upload UI, file handling, storage integration |
 
 ---
 
-## Mobile UX Enhancements
+## Mobile Responsiveness
 
-1. **Touch-Friendly Buttons**: Minimum 44px touch targets maintained
-2. **Readable Text**: Larger font sizes on mobile headers
-3. **Sticky Headers**: Keep navigation accessible while scrolling
-4. **Visual Feedback**: Maintain hover states for desktop, tap states for mobile
-5. **Progressive Disclosure**: Show less data on mobile, allow drill-down
+The upload zone will be fully responsive:
+- Full-width on mobile
+- Touch-friendly tap target (minimum 44px)
+- Clear visual feedback on file selection
+- Compact preview with remove button
 
 ---
 
-## CSS Utilities to Add (if needed)
+## Security Considerations
 
-```css
-/* Hide scrollbar but allow scrolling */
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-```
+1. **File Validation**: Client-side type and size checks before upload
+2. **Storage RLS**: Only authenticated users can upload to `products/` folder
+3. **Public Read**: Images are publicly viewable (required for product display)
+4. **Path Structure**: Vendor ID in path prevents cross-vendor access for delete/update
 
-This may already exist in the project's `index.css`.
+---
+
+## Summary
+
+| Component | Action |
+|-----------|--------|
+| Database | Run SQL to add column and create bucket |
+| Types | Update Product and ProductData interfaces |
+| UI | Add tabbed image input (URL vs Upload) |
+| Logic | Handle file upload to Supabase storage |
+| Storage | Create `product-images` bucket with RLS policies |
