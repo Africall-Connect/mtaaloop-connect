@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -42,11 +42,15 @@ export function BookingReservationPanel({
   const [vendorNotes, setVendorNotes] = useState(reservation?.vendor_notes || '');
   const [saving, setSaving] = useState(false);
 
-  // Update local state when reservation changes
-  if (reservation && reservation.status !== status && !saving) {
+  // Sync local editable state when switching reservations / opening the panel.
+  // IMPORTANT: do not call setState during render; it will overwrite user edits.
+  useEffect(() => {
+    if (!reservation) return;
+    // Don’t clobber in-progress edits while saving.
+    if (saving) return;
     setStatus(reservation.status);
     setVendorNotes(reservation.vendor_notes || '');
-  }
+  }, [reservation?.id, open]);
 
   const handleSave = async () => {
     if (!reservation) return;
