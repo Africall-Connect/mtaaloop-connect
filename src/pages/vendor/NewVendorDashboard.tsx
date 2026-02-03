@@ -316,14 +316,14 @@ export default function NewVendorDashboard() {
                   </Button>
                 )}
 
-                <Button
+                {/* <Button
                   className="h-11 justify-start gap-2"
                   variant="outline"
                   onClick={() => navigate('/vendor/communications')}
                 >
                   <MessageSquare className="h-4 w-4" />
                   Messages
-                </Button>
+                </Button> */}
               </div>
 
               {showMoreActions && (
@@ -395,9 +395,9 @@ export default function NewVendorDashboard() {
                     Payouts
                   </Button>
 
-                  <Button className="h-11 justify-start" onClick={() => navigate('/support')}>
+                  {/* <Button className="h-11 justify-start" onClick={() => navigate('/support')}>
                     Live Support
-                  </Button>
+                  </Button> */}
                 </div>
               )}
             </div>
@@ -453,10 +453,10 @@ export default function NewVendorDashboard() {
                   Active Orders: {stats?.activeOrders || 0}
                 </Button>
               )}
-              <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/communications')}>
+              {/* <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/communications')}>
                 <MessageSquare className="h-4 w-4" />
                 Messages
-              </Button>
+              </Button> */}
               <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/marketing')}>
                 <Megaphone className="h-4 w-4" />
                 Send Campaign
@@ -500,9 +500,9 @@ export default function NewVendorDashboard() {
               >
                 💰 Payouts
               </Button>
-              <Button onClick={() => navigate('/support')}>
+              {/* <Button onClick={() => navigate('/support')}>
                 Live Support
-              </Button>
+              </Button> */}
             </div>
           </div>
         </div>
