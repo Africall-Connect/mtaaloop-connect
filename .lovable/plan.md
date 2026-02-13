@@ -1,222 +1,236 @@
 
-# Product Image Upload Feature Plan
 
-## Overview
+# POS (Point of Sale) System for Inventory Vendors
 
-Enable vendors to upload product images directly from their device (in addition to the existing URL-based approach). The vendor can choose between entering an image URL or uploading a photo file.
+## What This Does
+
+Adds a "Quick Sale" POS mode to the vendor dashboard for inventory-type vendors. When a customer buys in-person (off-app), the vendor can quickly record the sale, automatically decrement stock, and keep a history of all walk-in transactions -- all without needing to create a full app order.
 
 ---
 
 ## Database Changes
 
-### 1. Add Storage Path Column to Products Table
+### New Table: `pos_sales`
 
-A new column `image_storage_path` will track the Supabase storage path for uploaded images. This is essential for managing (updating/deleting) uploaded files.
-
-### 2. Create Storage Bucket for Product Images
-
-A public bucket `product-images` will store all product photos with:
-- 5MB file size limit
-- Allowed MIME types: jpeg, png, gif, webp
-- RLS policies for secure vendor access
-
----
-
-## SQL Migration Script
-
-Run this in Supabase SQL Editor (Cloud View > Run SQL):
+A lightweight table to track walk-in/off-app sales separately from regular app orders.
 
 ```sql
--- 1. Add image_storage_path column to products table
-ALTER TABLE public.products 
-ADD COLUMN IF NOT EXISTS image_storage_path TEXT;
-
--- 2. Create storage bucket for product images
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES (
-  'product-images', 
-  'product-images', 
-  true, 
-  5242880, -- 5MB limit
-  ARRAY['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
-)
-ON CONFLICT (id) DO NOTHING;
-
--- 3. Storage policies for product images
-
--- Allow anyone to view product images (public bucket)
-CREATE POLICY "Public can view product images" 
-ON storage.objects FOR SELECT 
-USING (bucket_id = 'product-images');
-
--- Allow authenticated vendors to upload to their folder
-CREATE POLICY "Vendors can upload product images" 
-ON storage.objects FOR INSERT 
-TO authenticated 
-WITH CHECK (
-  bucket_id = 'product-images' AND 
-  (storage.foldername(name))[1] = 'products'
+CREATE TABLE public.pos_sales (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  vendor_id uuid REFERENCES public.vendor_profiles(id) ON DELETE CASCADE NOT NULL,
+  sale_number text NOT NULL,
+  items jsonb NOT NULL DEFAULT '[]',
+  subtotal decimal(10,2) NOT NULL DEFAULT 0,
+  discount decimal(10,2) NOT NULL DEFAULT 0,
+  total decimal(10,2) NOT NULL DEFAULT 0,
+  payment_method text NOT NULL DEFAULT 'cash',
+  customer_name text,
+  customer_phone text,
+  notes text,
+  created_at timestamptz DEFAULT now()
 );
 
--- Allow vendors to update their own product images
-CREATE POLICY "Vendors can update product images" 
-ON storage.objects FOR UPDATE 
-TO authenticated 
-USING (bucket_id = 'product-images');
+CREATE INDEX idx_pos_sales_vendor_id ON public.pos_sales(vendor_id);
+CREATE INDEX idx_pos_sales_created_at ON public.pos_sales(created_at DESC);
 
--- Allow vendors to delete their own product images
-CREATE POLICY "Vendors can delete product images" 
-ON storage.objects FOR DELETE 
-TO authenticated 
-USING (bucket_id = 'product-images');
+ALTER TABLE public.pos_sales ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Vendors can manage their own POS sales"
+  ON public.pos_sales FOR ALL
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.vendor_profiles
+      WHERE id = pos_sales.vendor_id
+      AND user_id = auth.uid()
+    )
+  );
+```
+
+The `items` JSONB column stores an array like:
+```json
+[
+  { "product_id": "uuid", "name": "Bread", "quantity": 2, "price": 50, "total": 100 }
+]
 ```
 
 ---
 
-## Frontend Changes
+## New Page: `/vendor/pos`
 
-### File 1: `src/types/database.ts`
+### File: `src/pages/vendor/VendorPOS.tsx`
 
-Add the new field to the Product interface:
+A full-screen POS interface optimized for quick sales with the following sections:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `image_storage_path` | `string \| null` | Storage path for uploaded images |
+**Left Panel (Product Grid)**
+- Search bar to quickly find products
+- Grid of product cards (image, name, price) pulled from existing `products` table
+- Tap a product to add it to the current sale
+- Filter by category
 
-### File 2: `src/types/common.ts`
+**Right Panel (Current Sale Cart)**
+- List of items being sold with quantity +/- controls
+- Running subtotal
+- Optional discount field (flat amount)
+- Total calculation
+- Payment method selector: Cash, M-Pesa, Card
+- Optional customer name/phone fields
+- "Complete Sale" button
 
-Add `image_storage_path` to the ProductData interface.
+**On Complete Sale:**
+1. Insert a row into `pos_sales` with all items
+2. Decrement `stock_quantity` for each product in the `products` table
+3. Show a simple receipt summary (can be printed)
+4. Clear the cart for the next sale
 
-### File 3: `src/components/vendor/product/ProductFormDialog.tsx`
-
-Major UI and logic updates:
-
-**New State Variables:**
-- `imageFile`: The selected file object
-- `imagePreview`: Local blob URL for preview
-- `uploadMethod`: Toggle between `'url'` or `'upload'`
-- `uploading`: Loading state during upload
-
-**New UI Components:**
-- Tabs component to switch between URL input and file upload
-- Drag-and-drop zone with upload icon
-- Image preview with remove button
-- Upload progress indicator
-
-**Upload Logic in handleSubmit:**
-1. If `uploadMethod === 'upload'` and a file is selected:
-   - Generate unique filename: `products/{vendorId}/{uuid}.{ext}`
-   - Upload to `product-images` bucket
-   - Get public URL
-   - Set `image_storage_path` for tracking
-2. If editing a product with a new image:
-   - Delete old image from storage (if exists)
-   - Upload new image
-3. Save product with final `image_url` and `image_storage_path`
+**Bottom Section: Recent Sales**
+- Scrollable list of today's POS sales
+- Shows sale number, time, total, payment method
+- Tap to view receipt details
 
 ---
 
-## UI Design
+## UI Design (Mobile-First)
 
-The image section will use a tabbed interface:
+On mobile, the layout stacks vertically:
 
 ```text
-+------------------------------------------+
-| Product Image                            |
-+------------------------------------------+
-| [  Image URL  ] [  Upload Photo  ]       |  <-- Tabs
-+------------------------------------------+
-|                                          |
-| URL Tab:                                 |
-|   [Enter image URL...                  ] |
-|                                          |
-| Upload Tab:                              |
-|   +----------------------------------+   |
-|   |     📷                           |   |
-|   |  Click to upload or drag & drop  |   |
-|   |  PNG, JPG, GIF up to 5MB         |   |
-|   +----------------------------------+   |
-|                                          |
-|   [Image Preview]  [❌ Remove]           |
-+------------------------------------------+
++----------------------------------+
+| [Back]  POINT OF SALE   [Sales] |
++----------------------------------+
+| [Search products...]             |
+| [Category filter chips]          |
++----------------------------------+
+| Product Grid (2 cols)            |
+| [Bread  50] [Milk  60]          |
+| [Eggs  15]  [Sugar 180]         |
++----------------------------------+
+| CURRENT SALE (sticky bottom)     |
+| Bread x2          KES 100       |
+| Milk x1           KES  60       |
+|                   --------       |
+| Subtotal:         KES 160       |
+| Discount:        -KES   0       |
+| TOTAL:            KES 160       |
+| [Cash] [M-Pesa] [Card]          |
+| [ Complete Sale ]                |
++----------------------------------+
 ```
+
+On desktop, it's a side-by-side layout:
+- Left 60%: Product search + grid
+- Right 40%: Cart + payment + complete
 
 ---
 
-## Technical Implementation Details
+## Receipt Modal
 
-### File Upload Flow
+After completing a sale, a modal shows:
+- Sale number (auto-generated: `POS-001`, `POS-002`, etc.)
+- Date/time
+- Items with quantities and prices
+- Total
+- Payment method
+- "Print Receipt" button (uses `window.print()`)
+- "New Sale" button to reset
+
+---
+
+## Sales History Sheet
+
+A slide-out panel showing:
+- Today's sales summary (count, total revenue)
+- List of all POS sales with filters (today, this week, this month)
+- Each sale expandable to show items
+
+---
+
+## Dashboard Integration
+
+### File: `src/pages/vendor/NewVendorDashboard.tsx`
+
+Add a "POS / Quick Sale" button in the quick actions section, visible only when `operational_category === 'inventory'`:
 
 ```text
-1. Vendor selects "Upload Photo" tab
-2. Vendor clicks upload zone or drags file
-3. File is validated (size < 5MB, correct type)
-4. Local preview is generated using URL.createObjectURL()
-5. On form submit:
-   a. Upload file to Supabase storage
-   b. Get public URL
-   c. Save product with image_url = publicUrl
-   d. Save image_storage_path for future management
+[POS Quick Sale] -- navigates to /vendor/pos
 ```
-
-### Storage Path Structure
-
-```
-product-images/
-└── products/
-    └── {vendor_id}/
-        └── {uuid}.{extension}
-```
-
-This structure:
-- Organizes images by vendor
-- Uses UUIDs to prevent naming conflicts
-- Enables vendor-specific access control
-
-### Error Handling
-
-- File too large: Show toast with 5MB limit message
-- Invalid file type: Show toast with allowed types
-- Upload failure: Show error, keep form open
-- Network error: Retry option with exponential backoff
 
 ---
+
+## Route Registration
+
+### File: `src/App.tsx`
+
+Add the new route:
+```tsx
+<Route path="/vendor/pos" element={
+  <ProtectedRoute requiredRole="vendor" requireApproval>
+    <VendorPOS />
+  </ProtectedRoute>
+} />
+```
+
+---
+
+## Stock Decrement Logic
+
+When a POS sale is completed, for each item in the cart:
+
+```typescript
+await supabase.rpc('decrement_stock', { 
+  p_product_id: item.product_id, 
+  p_quantity: item.quantity 
+});
+```
+
+We'll create a simple Postgres function for atomic stock decrement:
+
+```sql
+CREATE OR REPLACE FUNCTION decrement_stock(p_product_id uuid, p_quantity integer)
+RETURNS void AS $$
+BEGIN
+  UPDATE public.products
+  SET stock_quantity = GREATEST(stock_quantity - p_quantity, 0),
+      updated_at = now()
+  WHERE id = p_product_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+---
+
+## Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/pages/vendor/VendorPOS.tsx` | Main POS page with product grid, cart, payment |
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/types/database.ts` | Add `image_storage_path?: string \| null` to Product interface |
-| `src/types/common.ts` | Add `image_storage_path?: string` to ProductData interface |
-| `src/components/vendor/product/ProductFormDialog.tsx` | Add upload UI, file handling, storage integration |
+| `src/App.tsx` | Add `/vendor/pos` route |
+| `src/pages/vendor/NewVendorDashboard.tsx` | Add POS quick action button for inventory vendors |
+
+## SQL to Run
+
+| Script | Purpose |
+|--------|---------|
+| Create `pos_sales` table | Store walk-in sale records |
+| Create `decrement_stock` function | Atomic stock updates |
+| RLS policies | Vendor-only access to their POS sales |
 
 ---
 
-## Mobile Responsiveness
+## Key POS Features Summary
 
-The upload zone will be fully responsive:
-- Full-width on mobile
-- Touch-friendly tap target (minimum 44px)
-- Clear visual feedback on file selection
-- Compact preview with remove button
+1. **Quick Product Search** -- find items instantly by name
+2. **Tap-to-Add** -- single tap adds product to cart
+3. **Quantity Controls** -- adjust quantities inline
+4. **Discount Support** -- apply flat discount per sale
+5. **Payment Method Tracking** -- Cash, M-Pesa, Card
+6. **Auto Stock Decrement** -- stock updates on sale completion
+7. **Receipt View** -- printable receipt after each sale
+8. **Sales History** -- view today's and past POS transactions
+9. **Mobile Optimized** -- works on phone as a handheld POS
 
----
-
-## Security Considerations
-
-1. **File Validation**: Client-side type and size checks before upload
-2. **Storage RLS**: Only authenticated users can upload to `products/` folder
-3. **Public Read**: Images are publicly viewable (required for product display)
-4. **Path Structure**: Vendor ID in path prevents cross-vendor access for delete/update
-
----
-
-## Summary
-
-| Component | Action |
-|-----------|--------|
-| Database | Run SQL to add column and create bucket |
-| Types | Update Product and ProductData interfaces |
-| UI | Add tabbed image input (URL vs Upload) |
-| Logic | Handle file upload to Supabase storage |
-| Storage | Create `product-images` bucket with RLS policies |
