@@ -176,6 +176,7 @@ import ErrandsService from "./pages/services/ErrandsService";
 import MyConsultations from "./pages/MyConsultations";
 import MyBookings from "./pages/MyBookings";
 import ImageGeneratorPage from "./pages/ImageGenerator";
+import VendorPOS from "./pages/vendor/VendorPOS";
 
 const queryClient = new QueryClient();
 
@@ -610,6 +611,11 @@ const App = () => (
             <Route path="/vendor/products" element={
               <ProtectedRoute requiredRole="vendor" requireApproval>
                 <AdvancedProductManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/vendor/pos" element={
+              <ProtectedRoute requiredRole="vendor" requireApproval>
+                <VendorPOS />
               </ProtectedRoute>
             } />
             <Route path="/vendor/minimart" element={
