@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Store, Package, MessageSquare, Bell, Settings,
-  Megaphone, BarChart3, Users, ShoppingBag, Wrench, Calendar, Pill, Stethoscope
+  Megaphone, BarChart3, Users, ShoppingBag, Wrench, Calendar, Pill, Stethoscope, Receipt
 } from 'lucide-react';
 import DashboardMetrics from '@/components/vendor/dashboard/DashboardMetrics';
 import ActiveOrdersPanel from '@/components/vendor/dashboard/ActiveOrdersPanel';
@@ -265,10 +265,16 @@ export default function NewVendorDashboard() {
                 </Button>
 
                 {opCat === 'inventory' && (
-                  <Button className="h-11 justify-start gap-2" onClick={() => navigate('/vendor/products')}>
-                    <Package className="h-4 w-4" />
-                    Products
-                  </Button>
+                  <>
+                    <Button className="h-11 justify-start gap-2" onClick={() => navigate('/vendor/products')}>
+                      <Package className="h-4 w-4" />
+                      Products
+                    </Button>
+                    <Button className="h-11 justify-start gap-2" variant="outline" onClick={() => navigate('/vendor/pos')}>
+                      <Receipt className="h-4 w-4" />
+                      POS Sale
+                    </Button>
+                  </>
                 )}
                 {opCat === 'minimart' && (
                   <Button className="h-11 justify-start gap-2" onClick={() => navigate('/vendor/minimart')}>
@@ -411,10 +417,16 @@ export default function NewVendorDashboard() {
 
               {/* show only the relevant manager */}
               {opCat === 'inventory' && (
-                <Button size="sm" className="gap-2" onClick={() => navigate('/vendor/products')}>
-                  <Package className="h-4 w-4" />
-                  Products
-                </Button>
+                <>
+                  <Button size="sm" className="gap-2" onClick={() => navigate('/vendor/products')}>
+                    <Package className="h-4 w-4" />
+                    Products
+                  </Button>
+                  <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate('/vendor/pos')}>
+                    <Receipt className="h-4 w-4" />
+                    POS Quick Sale
+                  </Button>
+                </>
               )}
               {opCat === 'minimart' && (
                 <Button size="sm" className="gap-2" onClick={() => navigate('/vendor/minimart')}>
