@@ -298,11 +298,7 @@ const App = () => (
             <Route path="/payment/callback" element={<PaymentCallbackPage />} />
             <Route path="/paystack/callback" element={<PaystackCallback />} />
             <Route path="/payment-failed" element={<PaymentFailed />} />
-            <Route path="/orders/:orderId" element={
-              <ProtectedRoute>
-                <OrderTracking />
-              </ProtectedRoute>
-            } />
+<Route path="/orders/:orderId" element={<OrderTracking />} />
             <Route path="/trash-tracking/:orderId" element={
               <ProtectedRoute>
                 <TrashTracking />
