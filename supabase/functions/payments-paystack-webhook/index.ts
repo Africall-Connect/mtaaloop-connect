@@ -193,7 +193,6 @@ serve(async (req) => {
     const { error: orderUpdateError } = await supabaseAdmin
       .from("orders")
       .update({
-        status: "paid",
         payment_status: "paid",
         paid_at: new Date().toISOString(),
       })
