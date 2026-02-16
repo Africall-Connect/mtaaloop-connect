@@ -208,7 +208,7 @@ const Cart = () => {
 
           {/* Vendor Groups */}
           {vendorGroups.map((group, groupIndex) => {
-            const actualDeliveryFee = group.deliveryFee;
+const actualDeliveryFee = 1;
             const groupTotal = group.subtotal + actualDeliveryFee;
 
             return (
