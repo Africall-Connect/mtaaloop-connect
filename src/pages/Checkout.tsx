@@ -217,7 +217,7 @@ const Checkout = () => {
     loadRetryOrder();
   }, [retryOrderId, user, navigate, setItems]);
 
-  const deliveryFee = 50;
+  const deliveryFee = 1;
   const subtotal = getTotal();
   const discount = appliedPromo
     ? appliedPromo.type === "percentage"
