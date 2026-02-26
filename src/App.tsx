@@ -12,6 +12,7 @@ import { GamificationProvider } from "./contexts/GamificationContext";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { CustomCursor } from "./components/CustomCursor";
 
 // Eagerly loaded (critical path)
 import LandingPage from "./pages/LandingPage";
@@ -213,6 +214,7 @@ const App = () => (
             <AddressProvider>
               <SubscriptionProvider>
                 <TooltipProvider>
+                <CustomCursor />
                 <Toaster />
                 <Sonner />
                 <BrowserRouter>
