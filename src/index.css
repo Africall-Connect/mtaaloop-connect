@@ -236,6 +236,36 @@ All colors MUST be HSL.
     }
   }
 
+  @keyframes sway {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(8px); }
+    75% { transform: translateX(-8px); }
+  }
+
+  @keyframes wave-settle {
+    0% { transform: translateX(-80px); opacity: 0; }
+    60% { transform: translateX(6px); opacity: 1; }
+    80% { transform: translateX(-3px); }
+    100% { transform: translateX(0); }
+  }
+
+  @keyframes drift {
+    0%, 100% { transform: translateX(0) translateY(0); }
+    50% { transform: translateX(30px) translateY(-5px); }
+  }
+
+  .animate-sway {
+    animation: sway 5s ease-in-out infinite;
+  }
+
+  .animate-wave-settle {
+    animation: wave-settle 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  .animate-drift {
+    animation: drift 8s ease-in-out infinite;
+  }
+
   /* Gradient text */
   .text-gradient {
     background: var(--gradient-hero);

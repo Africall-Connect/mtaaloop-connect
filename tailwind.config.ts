@@ -122,6 +122,23 @@ export default {
           "0%": { backgroundPosition: "-1000px 0" },
           "100%": { backgroundPosition: "1000px 0" },
         },
+        "slide-in-left": {
+          "0%": { transform: "translateX(-100px)", opacity: "0" },
+          "60%": { transform: "translateX(8px)", opacity: "1" },
+          "80%": { transform: "translateX(-4px)" },
+          "100%": { transform: "translateX(0)" },
+        },
+        "slide-in-right": {
+          "0%": { transform: "translateX(100px)", opacity: "0" },
+          "60%": { transform: "translateX(-8px)", opacity: "1" },
+          "80%": { transform: "translateX(4px)" },
+          "100%": { transform: "translateX(0)" },
+        },
+        "sway": {
+          "0%, 100%": { transform: "translateX(0)" },
+          "25%": { transform: "translateX(6px)" },
+          "75%": { transform: "translateX(-6px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -131,6 +148,9 @@ export default {
         "slide-up": "slide-up 0.5s ease-out",
         "fade-in": "fade-in 0.3s ease-out",
         "shimmer": "shimmer 2s linear infinite",
+        "slide-in-left": "slide-in-left 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both",
+        "slide-in-right": "slide-in-right 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both",
+        "sway": "sway 5s ease-in-out infinite",
       },
       boxShadow: {
         'glow': '0 0 40px hsla(15 85% 55% / 0.2)',
