@@ -14,6 +14,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 // Eagerly loaded (critical path)
+import LandingPage from "./pages/LandingPage";
 import Index from "./pages/Index";
 import Signup from "./pages/auth/Signup";
 import Login from "./pages/auth/Login";
@@ -218,7 +219,8 @@ const App = () => (
           <GlobalLayout>
             <Suspense fallback={<LoadingFallback />}>
             <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/marketplace" element={<Index />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/auth/signup" element={<Signup />} />
               <Route path="/auth/login" element={<Login />} />

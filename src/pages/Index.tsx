@@ -464,7 +464,7 @@ const Index = () => {
         description: "Please login to add items to your cart",
         variant: "destructive",
       });
-      navigate("/auth/login", { state: { returnTo: "/" } });
+      navigate("/auth/login", { state: { returnTo: "/marketplace" } });
       return;
     }
 
@@ -493,7 +493,7 @@ const Index = () => {
         description: "Please login to view product details",
         variant: "destructive",
       });
-      navigate("/auth/login", { state: { returnTo: "/" } });
+      navigate("/auth/login", { state: { returnTo: "/marketplace" } });
       return;
     }
 
@@ -510,7 +510,7 @@ const Index = () => {
         description: "Please login to book a service",
         variant: "destructive",
       });
-      navigate("/auth/login", { state: { returnTo: "/" } });
+      navigate("/auth/login", { state: { returnTo: "/marketplace" } });
       return;
     }
 
