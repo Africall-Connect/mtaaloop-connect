@@ -579,7 +579,7 @@ const Home = () => {
 
 
         {/* ===== Services at Your Fingertips ===== */}
-        <ScrollAnimatedSection direction="left" className="mb-8 mt-8">
+        <ScrollAnimatedSection direction="left" className="mb-8 mt-8 relative">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-primary/10 rounded-full">
               <Sparkles className="h-5 w-5 text-primary" />
