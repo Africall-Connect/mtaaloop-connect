@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Plus, Edit2, Check, X, AlertCircle, MapPin, CreditCard, ClipboardCheck, Clock, Wallet, Smartphone } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, AlertCircle, MapPin, CreditCard, ClipboardCheck, Clock, Wallet, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -15,28 +15,12 @@ import { supabase } from "@/integrations/supabase/client";
 import TimeSlotPicker from "@/components/TimeSlotPicker";
 import PromoCodeInput from "@/components/PromoCodeInput";
 import { toast } from "sonner";
-import { initiateMpesaPayment, checkPaymentStatus } from "@/services/paymentService";
 import OrderAnimation from "@/components/order/OrderAnimation";
 import {
   validateDeliveryStep,
-  validateMpesaPhone,
   validatePaymentStep,
   sanitizeCheckoutData,
 } from "@/lib/schemas/checkoutSchema";
-
-interface OrderItem {
-  product_id: string;
-  product_name: string;
-  price: number;
-  quantity: number;
-  products?: {
-    vendor_id: string;
-    vendor_name: string;
-    image_url?: string;
-  };
-}
-
-// Use CartItem from CartContext instead of local definition
 
 interface TimeSlot {
   date: string;
@@ -51,11 +35,6 @@ interface PromoCode {
   description: string;
 }
 
-interface PaymentSplit {
-  method: string;
-  amount: number;
-}
-
 const Checkout = () => {
   const navigate = useNavigate();
   const { items, getTotal, clearCart, removeItem, setItems } = useCart();
@@ -66,32 +45,19 @@ const Checkout = () => {
   });
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [deliveryType, setDeliveryType] = useState("asap");
-  const [paymentMethod, setPaymentMethod] = useState("mpesa");
+  const [paymentMethod, setPaymentMethod] = useState("wallet");
   const [instructions, setInstructions] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null);
   const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
-  const [paymentSplits, setPaymentSplits] = useState<PaymentSplit[]>([]);
   const [showTimeSlotPicker, setShowTimeSlotPicker] = useState(false);
-  const [showSplitPayment, setShowSplitPayment] = useState(false);
-  const [mpesaPhone, setMpesaPhone] = useState("");
-  const [paybillNumber, setPaybillNumber] = useState("");
-  const [accountNumber, setAccountNumber] = useState("");
-  const [tillNumber, setTillNumber] = useState("");
-  const [isEditingPhone, setIsEditingPhone] = useState(false);
-  const [tempPhone, setTempPhone] = useState("");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState<"idle" | "processing" | "success" | "failed">("idle");
   const [estateId, setEstateId] = useState<string | null>(null);
   const [showAnimation, setShowAnimation] = useState(false);
   const [lastOrderId, setLastOrderId] = useState<string | null>(null);
   const [lastOrderDetails, setLastOrderDetails] = useState<unknown>(null);
   const [fullName, setFullName] = useState<string>("");
-  const [searchParams] = useSearchParams();
-  const [retryOrderId, setRetryOrderId] = useState<string | null>(searchParams.get("retry_order"));
-  const [paystackError, setPaystackError] = useState<string | null>(null);
-  const [isRetrying, setIsRetrying] = useState(false);
-  
+
   // Form validation errors
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -109,10 +75,10 @@ const Checkout = () => {
             user.email?.split("@")[0] ||
             "MtaaLoop User";
           setFullName(fetchedFullName);
-          // Fetch user preferences
+
           const { data: preferences, error: preferencesError } = await supabase
             .from("user_preferences")
-            .select("mpesa_number, estate_id, apartment_name")
+            .select("estate_id, apartment_name")
             .eq("user_id", user.id)
             .single();
 
@@ -121,9 +87,6 @@ const Checkout = () => {
           }
 
           if (preferences) {
-            if (preferences.mpesa_number) {
-              setMpesaPhone("0" + preferences.mpesa_number.toString());
-            }
             if (preferences.estate_id) {
               setEstateId(preferences.estate_id);
             }
@@ -135,7 +98,6 @@ const Checkout = () => {
             }
           }
 
-          // Fetch user address
           const { data: address, error: addressError } = await supabase
             .from("customer_addresses")
             .select("house_number")
@@ -161,62 +123,6 @@ const Checkout = () => {
     fetchPreferencesAndAddress();
   }, []);
 
-  useEffect(() => {
-    const loadRetryOrder = async () => {
-      if (!retryOrderId || !user) return;
-
-      toast.info("Loading your previous order to retry payment...");
-
-      try {
-        // Fetch the order details
-        const { data: order, error: orderError } = await supabase
-          .from("orders")
-          .select("*, order_items(*, products(vendor_id, vendor_name))")
-          .eq("id", retryOrderId)
-          .eq("customer_id", user.id)
-          .single();
-
-        if (orderError || !order) {
-          throw new Error("Order not found or you do not have permission to view it.");
-        }
-
-        if (order.payment_status === 'paid') {
-          toast.success("This order has already been paid for.");
-          navigate(`/orders/${retryOrderId}`);
-          return;
-        }
-
-        // Repopulate cart
-        const cartItems = order.order_items.map((item: OrderItem) => ({
-          id: item.product_id,
-          name: item.product_name,
-          price: item.price,
-          quantity: item.quantity,
-          image: item.products?.image_url || '', // Assuming you can get image
-          vendorId: item.products?.vendor_id,
-          vendorName: item.products?.vendor_name,
-        }));
-        setItems(cartItems);
-
-        // Repopulate form
-        setDeliveryAddress(prev => ({ ...prev, house_number: order.house || '' }));
-        setInstructions(order.customer_notes || "");
-        setPaymentMethod("paystack"); // Default to paystack for retry
-
-        // Move user to the review step
-        setStep(3);
-        toast.success("Order details loaded. Please review and try payment again.");
-
-      } catch (error: unknown) {
-        toast.error(`Failed to load order for retry: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        setRetryOrderId(null); // Clear retry state on error
-        navigate("/cart");
-      }
-    };
-
-    loadRetryOrder();
-  }, [retryOrderId, user, navigate, setItems]);
-
   const deliveryFee = 1;
   const subtotal = getTotal();
   const discount = appliedPromo
@@ -227,12 +133,6 @@ const Checkout = () => {
   const discountedSubtotal = subtotal - discount;
   const total = discountedSubtotal + deliveryFee;
 
-  const validatePhoneNumber = (phone: string) => {
-    const result = validateMpesaPhone(phone);
-    return result.valid;
-  };
-  
-  // Clear specific field error when user starts typing
   const clearFieldError = (field: string) => {
     if (formErrors[field]) {
       setFormErrors((prev) => {
@@ -243,31 +143,7 @@ const Checkout = () => {
     }
   };
 
-  const handleEditPhone = () => {
-    setTempPhone(mpesaPhone);
-    setIsEditingPhone(true);
-  };
-
-  const handleSavePhone = () => {
-    const phoneValidation = validateMpesaPhone(tempPhone);
-    if (phoneValidation.valid) {
-      setMpesaPhone(tempPhone);
-      setIsEditingPhone(false);
-      clearFieldError("mpesaPhone");
-      toast.success("Phone number updated successfully");
-    } else {
-      setFormErrors((prev) => ({ ...prev, mpesaPhone: phoneValidation.error || "Invalid phone number" }));
-      toast.error(phoneValidation.error || "Invalid phone number");
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setTempPhone("");
-    setIsEditingPhone(false);
-  };
-
   const handlePlaceOrder = async () => {
-    // Validate all form data before submission
     const deliveryValidation = validateDeliveryStep({
       estate_name: deliveryAddress.estate_name,
       house_number: deliveryAddress.house_number,
@@ -282,13 +158,7 @@ const Checkout = () => {
       return;
     }
 
-    // Validate payment method specific fields
-    const paymentValidation = validatePaymentStep(paymentMethod, {
-      mpesaPhone,
-      tillNumber,
-      paybillNumber,
-      accountNumber,
-    });
+    const paymentValidation = validatePaymentStep(paymentMethod);
 
     if (!paymentValidation.success) {
       setFormErrors(paymentValidation.errors);
@@ -303,14 +173,11 @@ const Checkout = () => {
       return;
     }
 
-    // Sanitize data before sending to API
     const sanitized = sanitizeCheckoutData({
       instructions,
       houseNumber: deliveryAddress.house_number,
-      phone: mpesaPhone,
     });
 
-    // Clear all errors on successful validation
     setFormErrors({});
 
     const mtaaLoopMartItems = items.filter((item) => item.vendorId === "MtaaLoopMart");
@@ -343,7 +210,6 @@ const Checkout = () => {
       return;
     }
 
-    const orderId = crypto.randomUUID();
     const totalAmount = premiumItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const baseAmount = premiumItems.reduce(
       (sum, item) => sum + (item.base_price || item.price) * item.quantity,
@@ -382,7 +248,6 @@ const Checkout = () => {
       }));
 
       const { error: itemError } = await supabase.from("premium_order_items").insert(orderItems);
-
       if (itemError) throw itemError;
 
       const { error: deliveryError } = await supabase.from("premium_deliveries").insert({
@@ -409,7 +274,6 @@ const Checkout = () => {
       return;
     }
 
-    const orderId = crypto.randomUUID();
     const totalAmount = minimartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const baseAmount = totalAmount;
     const vendorId = minimartItems[0]?.vendorId;
@@ -477,7 +341,6 @@ const Checkout = () => {
     const businessTypeId = mtaaLoopItems[0]?.businessTypeId;
 
     try {
-      // Create order with MtaaLoop-specific fields
       const { data: newOrder, error: orderError } = await supabase
         .from("orders")
         .insert([
@@ -501,7 +364,6 @@ const Checkout = () => {
 
       if (orderError) throw orderError;
 
-      // Create order items with product_service_id
       const orderItems = mtaaLoopItems.map((item) => ({
         order_id: orderId,
         product_service_id: item.productServiceId,
@@ -513,7 +375,6 @@ const Checkout = () => {
       const { error: itemError } = await supabase.from("order_items").insert(orderItems);
       if (itemError) throw itemError;
 
-      // Create MtaaLoop delivery record
       const { error: deliveryError } = await supabase.from("mtaaloop_deliveries").insert({
         order_id: orderId,
         business_type_id: businessTypeId,
@@ -537,7 +398,7 @@ const Checkout = () => {
   };
 
   const handleRegularOrder = async (regularItems: CartItem[]) => {
-    const orderId = retryOrderId || crypto.randomUUID();
+    const orderId = crypto.randomUUID();
 
     let category: string | null = null;
     if (regularItems.length > 0) {
@@ -576,191 +437,45 @@ const Checkout = () => {
       })),
     };
 
-    // Only create a new order if it's not a retry
-    if (!retryOrderId) {
-      try {
-        const { error: orderError } = await supabase.from("orders").insert([
-          {
-            id: orderId,
-            customer_id: user?.id,
-            vendor_id: orderDetails.vendorId,
-            estate_id: orderDetails.estateId,
-            total_amount: orderDetails.totalAmount,
-            delivery_address: orderDetails.deliveryAddress,
-            customer_notes: orderDetails.customerNotes,
-            category: orderDetails.category,
-            house: deliveryAddress.house_number,
-            full_name: fullName,
-            user_email: user?.email,
-          },
-        ]);
-
-        if (orderError) throw orderError;
-
-        const orderItems = regularItems.map((item) => ({
-          order_id: orderId,
-          product_id: item.id,
-          product_name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-        }));
-
-        const { error: itemError } = await supabase.from("order_items").insert(orderItems);
-
-        if (itemError) throw itemError;
-      } catch (error: unknown) {
-        toast.error(`Failed to place order: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        return;
-      }
-    }
-
-    if (paymentMethod === "paystack") {
-      try {
-        console.log("Starting Paystack init for order:", orderId);
-
-        const { data, error } = await supabase.functions.invoke(
-          "payments-paystack-init",
-          {
-            body: { order_id: orderId },
-          }
-        );
-
-        if (error) {
-          console.error("Paystack init error:", error);
-          toast.error("Failed to initiate Paystack payment. Please try again.");
-          return;
-        }
-
-        console.log("Paystack init data:", data);
-
-        const { authorization_url } = data as {
-          authorization_url: string;
-          reference: string;
-        };
-
-        if (!authorization_url) {
-          console.error("No authorization_url returned from function:", data);
-          toast.error("Could not start Paystack checkout. Please try again.");
-          return;
-        }
-
-        setLastOrderId(orderId);
-        setLastOrderDetails(orderDetails);
-
-        // Redirect to Paystack hosted checkout
-        // The Paystack authorization_url is the base. We need to append our internal order_id
-        // so that it's available in the callback URL for our PaystackCallback component.
-        // Paystack will add its own `reference` parameter automatically.
-        const redirectUrl = new URL(authorization_url);
-        // The order_id is now required by the Paystack init function, but we also add it
-        // to the callback URL for our own client-side verification.
-        redirectUrl.searchParams.set("order_id", orderId); 
-        window.location.href = redirectUrl.toString();
-      } catch (error) {
-        console.error("Unexpected Paystack error:", error);
-        toast.error("Failed to initiate Paystack payment. Please try again.");
-      }
-
-      // Stop here so we don't also trigger M-PESA / other flows
-      return;
-    } else if (paymentMethod === "mpesa") {
-      setIsProcessingPayment(true);
-      setPaymentStatus("processing");
-      toast.info("Initiating M-PESA payment...");
-
-      try {
-        const response = await initiateMpesaPayment({
-          phone: mpesaPhone,
-          amount: total,
-          orderId,
-        });
-
-        if (response.success) {
-          toast.success("M-PESA STK Push sent! Please complete the payment on your phone.");
-          setPaymentStatus("success");
-
-          setTimeout(async () => {
-            const statusResponse = await checkPaymentStatus({
-              transactionId: response.transactionId!,
-            });
-            if (statusResponse.status === "success") {
-              clearCart();
-              toast.success("Payment successful! Order placed.");
-              setLastOrderId(orderId);
-              setLastOrderDetails(orderDetails);
-              setShowAnimation(true);
-            } else if (statusResponse.status === "failed") {
-              toast.error("Payment failed. Please try again.");
-              setPaymentStatus("failed");
-            } else {
-              toast.warning("Payment is still processing. Please check your M-PESA messages.");
-              clearCart();
-              setLastOrderId(orderId);
-              setLastOrderDetails(orderDetails);
-              setShowAnimation(true);
-            }
-          }, 30000);
-        } else {
-          toast.error(response.message);
-          setPaymentStatus("failed");
-        }
-      } catch (error) {
-        toast.error("Failed to initiate payment. Please try again.");
-        setPaymentStatus("failed");
-      } finally {
-        setIsProcessingPayment(false);
-      }
-    } else {
-      clearCart();
-      toast.success("Order placed successfully!");
-      setLastOrderId(orderId);
-      setLastOrderDetails(orderDetails);
-      setShowAnimation(true);
-    }
-  };
-
-  const handleRetryPaystack = async () => {
-    if (!lastOrderId) {
-      toast.error("No order to retry.");
-      return;
-    }
-    setIsRetrying(true);
-    setPaystackError(null);
-    console.log("Retrying Paystack for order:", lastOrderId);
-
     try {
-      const { data, error } = await supabase.functions.invoke("payments-paystack-init", {
-        body: { order_id: lastOrderId },
-      });
+      const { error: orderError } = await supabase.from("orders").insert([
+        {
+          id: orderId,
+          customer_id: user?.id,
+          vendor_id: orderDetails.vendorId,
+          estate_id: orderDetails.estateId,
+          total_amount: orderDetails.totalAmount,
+          delivery_address: orderDetails.deliveryAddress,
+          customer_notes: orderDetails.customerNotes,
+          category: orderDetails.category,
+          house: deliveryAddress.house_number,
+          full_name: fullName,
+          user_email: user?.email,
+        },
+      ]);
 
-      if (error) {
-        console.error("Paystack retry error:", error);
-        setPaystackError("Failed to retry payment. Please try again.");
-        toast.error("Failed to retry payment.");
-        return;
-      }
+      if (orderError) throw orderError;
 
-      const { authorization_url } = data as { authorization_url: string; reference: string };
+      const orderItems = regularItems.map((item) => ({
+        order_id: orderId,
+        product_id: item.id,
+        product_name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      }));
 
-      if (!authorization_url) {
-        console.error("No authorization_url on retry:", data);
-        setPaystackError("Could not restart Paystack checkout.");
-        toast.error("Could not restart Paystack checkout.");
-        return;
-      }
-
-      // Append order_id to the redirect URL for the callback page
-      const redirectUrl = new URL(authorization_url);
-      redirectUrl.searchParams.set("order_id", lastOrderId);
-      window.location.href = redirectUrl.toString();
-
-    } catch (err) {
-      console.error("Unexpected Paystack retry error:", err);
-      setPaystackError("Unexpected error while retrying payment.");
-      toast.error("Unexpected error while retrying payment.");
-    } finally {
-      setIsRetrying(false);
+      const { error: itemError } = await supabase.from("order_items").insert(orderItems);
+      if (itemError) throw itemError;
+    } catch (error: unknown) {
+      toast.error(`Failed to place order: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return;
     }
+
+    clearCart();
+    toast.success("Order placed successfully!");
+    setLastOrderId(orderId);
+    setLastOrderDetails(orderDetails);
+    setShowAnimation(true);
   };
 
   const handleAnimationComplete = () => {
@@ -776,7 +491,7 @@ const Checkout = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background pb-24 sm:pb-0">
       <div className="container px-4 py-4 sm:py-6 max-w-3xl mx-auto">
-        {/* Mobile-optimized header */}
+        {/* Header */}
         <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-6">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="touch-target shrink-0">
             <ArrowLeft className="h-5 w-5" />
@@ -789,7 +504,7 @@ const Checkout = () => {
           </div>
         </div>
 
-        {/* Enhanced step indicators */}
+        {/* Step indicators */}
         <div className="flex items-center justify-between mb-4 sm:mb-8 px-2 sm:px-0">
           {[
             { num: 1, label: "Delivery", icon: MapPin },
@@ -802,10 +517,10 @@ const Checkout = () => {
                 <div className="flex flex-col items-center gap-1">
                   <div
                     className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-sm sm:text-base transition-all ${
-                      s.num === step 
-                        ? "bg-primary text-primary-foreground shadow-md ring-4 ring-primary/20" 
-                        : s.num < step 
-                          ? "bg-primary text-primary-foreground" 
+                      s.num === step
+                        ? "bg-primary text-primary-foreground shadow-md ring-4 ring-primary/20"
+                        : s.num < step
+                          ? "bg-primary text-primary-foreground"
                           : "bg-muted text-muted-foreground"
                     }`}
                   >
@@ -823,6 +538,7 @@ const Checkout = () => {
           })}
         </div>
 
+        {/* STEP 1: Delivery */}
         {step === 1 && (
           <Card className="p-6 space-y-6 border-primary/10">
             <div className="flex items-center gap-3 mb-2">
@@ -958,14 +674,14 @@ const Checkout = () => {
                   instructions,
                   deliveryType,
                 });
-                
+
                 if (!validation.success) {
                   setFormErrors(validation.errors);
                   const firstError = Object.values(validation.errors)[0];
                   toast.error(firstError || "Please fix the form errors");
                   return;
                 }
-                
+
                 setFormErrors({});
                 setStep(2);
               }}
@@ -975,6 +691,7 @@ const Checkout = () => {
           </Card>
         )}
 
+        {/* STEP 2: Payment */}
         {step === 2 && (
           <Card className="p-6 space-y-6 border-primary/10">
             <div className="flex items-center gap-3 mb-2">
@@ -994,189 +711,51 @@ const Checkout = () => {
               <div className="space-y-4">
                 <div
                   className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                    paymentMethod === "mpesa" 
-                      ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 border-l-4" 
+                    paymentMethod === "wallet"
+                      ? "border-primary bg-primary/5 border-l-4"
                       : "border-border hover:border-primary/30"
-                  }`}
-                  onClick={() => setPaymentMethod("mpesa")}
-                >
-                  <div className="flex items-start space-x-2">
-                    <RadioGroupItem value="mpesa" id="mpesa" />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <Smartphone className="h-4 w-4 text-emerald-600" />
-                        <Label htmlFor="mpesa" className="font-semibold cursor-pointer text-base">
-                          M-PESA
-                        </Label>
-                      </div>
-                      <div className="mt-2 space-y-2">
-                        <div className="text-sm flex flex-col gap-1">
-                          <div className="flex items-center gap-2">
-                            Phone:
-                            {isEditingPhone ? (
-                              <div className="flex items-center gap-1">
-                                <Input
-                                  value={tempPhone}
-                                  onChange={(e) => {
-                                    setTempPhone(e.target.value);
-                                    clearFieldError("mpesaPhone");
-                                  }}
-                                  placeholder="0712345678"
-                                  className={`w-32 h-6 text-xs ${formErrors.mpesaPhone ? "border-destructive" : ""}`}
-                                  maxLength={13}
-                                />
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-6 w-6 p-0"
-                                  onClick={handleSavePhone}
-                                >
-                                  <Check className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-6 w-6 p-0"
-                                  onClick={handleCancelEdit}
-                                >
-                                  <X className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <>
-                                {mpesaPhone || <span className="text-muted-foreground">Not set</span>}
-                                <Button
-                                  variant="link"
-                                  className="p-0 h-auto text-xs"
-                                  onClick={handleEditPhone}
-                                >
-                                  <Edit2 className="h-3 w-3 mr-1" />
-                                  Edit
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                          {formErrors.mpesaPhone && (
-                            <p className="text-xs text-destructive flex items-center gap-1">
-                              <AlertCircle className="h-3 w-3" />
-                              {formErrors.mpesaPhone}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <p className="text-sm text-success mt-2">💚 Secure • Fast • Trusted</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  className={`p-4 border-2 rounded-lg cursor-pointer ${
-                    paymentMethod === "wallet" ? "border-primary bg-primary/5" : "border-border"
                   }`}
                   onClick={() => setPaymentMethod("wallet")}
                 >
                   <div className="flex items-start space-x-2">
                     <RadioGroupItem value="wallet" id="wallet" />
                     <div className="flex-1">
-                      <Label htmlFor="wallet" className="font-semibold cursor-pointer text-base">
-                        MtaaLoop Wallet
-                      </Label>
-                      <p className="text-sm text-muted-foreground mt-1">Balance: KSh 450</p>
-                      <p className="text-sm text-success mt-2">✅ Sufficient for this order</p>
+                      <div className="flex items-center gap-2">
+                        <Wallet className="h-4 w-4 text-primary" />
+                        <Label htmlFor="wallet" className="font-semibold cursor-pointer text-base">
+                          MtaaLoop Wallet
+                        </Label>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">Pay using your MtaaLoop Wallet balance</p>
+                      <p className="text-sm text-primary mt-2">✅ Fast & Secure</p>
                     </div>
                   </div>
                 </div>
 
                 <div
-                  className={`p-4 border-2 rounded-lg cursor-pointer ${
-                    paymentMethod === "mpesa_buygoods"
-                      ? "border-primary bg-primary/5"
-                      : "border-border"
+                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                    paymentMethod === "pay_on_delivery"
+                      ? "border-primary bg-primary/5 border-l-4"
+                      : "border-border hover:border-primary/30"
                   }`}
-                  onClick={() => setPaymentMethod("mpesa_buygoods")}
+                  onClick={() => setPaymentMethod("pay_on_delivery")}
                 >
                   <div className="flex items-start space-x-2">
-                    <RadioGroupItem value="mpesa_buygoods" id="mpesa_buygoods" />
+                    <RadioGroupItem value="pay_on_delivery" id="pay_on_delivery" />
                     <div className="flex-1">
-                      <Label
-                        htmlFor="mpesa_buygoods"
-                        className="font-semibold cursor-pointer text-base"
-                      >
-                        M-PESA Buy Goods
-                      </Label>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Pay using Buy Goods option
-                      </p>
-                      <p className="text-sm text-success mt-2">💚 Secure • Fast • Trusted</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  className={`p-4 border-2 rounded-lg cursor-pointer ${
-                    paymentMethod === "split" ? "border-primary bg-primary/5" : "border-border"
-                  }`}
-                  onClick={() => {
-                    setPaymentMethod("split");
-                    setShowSplitPayment(true);
-                  }}
-                >
-                  <div className="flex items-start space-x-2">
-                    <RadioGroupItem value="split" id="split" />
-                    <div className="flex-1">
-                      <Label htmlFor="split" className="font-semibold cursor-pointer text-base">
-                        Split Payment
-                      </Label>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Use multiple payment methods
-                      </p>
-                      <p className="text-sm text-primary mt-2">
-                        💳 Combine M-PESA + Wallet
-                      </p>
-                    </div>
-                    <Plus className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                </div>
-
-                <div
-                  className={`p-4 border-2 rounded-lg cursor-pointer ${
-                    paymentMethod === "paystack" ? "border-primary bg-primary/5" : "border-border"
-                  }`}
-                  onClick={() => setPaymentMethod("paystack")}
-                >
-                  <div className="flex items-start space-x-2">
-                    <RadioGroupItem value="paystack" id="paystack" />
-                    <div className="flex-1">
-                      <Label htmlFor="paystack" className="font-semibold cursor-pointer text-base">
-                        Paystack Checkout
-                      </Label>
+                      <div className="flex items-center gap-2">
+                        <Truck className="h-4 w-4 text-primary" />
+                        <Label htmlFor="pay_on_delivery" className="font-semibold cursor-pointer text-base">
+                          Pay on Delivery
+                        </Label>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">Pay when your order arrives</p>
+                      <p className="text-sm text-primary mt-2">🚚 Cash or M-PESA on delivery</p>
                     </div>
                   </div>
                 </div>
               </div>
             </RadioGroup>
-
-            {showSplitPayment && paymentMethod === "split" && (
-              <Card className="p-4 border-dashed">
-                <Label className="text-base font-semibold mb-3">
-                  Split Payment Details
-                </Label>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span>M-PESA</span>
-                    <Badge variant="secondary">KSh {Math.round(total * 0.6)}</Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>MtaaLoop Wallet</span>
-                    <Badge variant="secondary">KSh {Math.round(total * 0.4)}</Badge>
-                  </div>
-                  <div className="border-t pt-2 flex items-center justify-between font-semibold">
-                    <span>Total</span>
-                    <span>KSh {total}</span>
-                  </div>
-                </div>
-              </Card>
-            )}
 
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setStep(1)} className="flex-1">
@@ -1189,6 +768,7 @@ const Checkout = () => {
           </Card>
         )}
 
+        {/* STEP 3: Review */}
         {step === 3 && (
           <Card className="p-6 space-y-6">
             <h2 className="text-2xl font-bold">✅ Review Your Order</h2>
@@ -1226,14 +806,11 @@ const Checkout = () => {
               <div>
                 <div className="font-semibold mb-2">PAYMENT:</div>
                 <div className="text-sm">
-                  {paymentMethod === "mpesa" && "M-PESA (0712345678)"}
                   {paymentMethod === "wallet" && "MtaaLoop Wallet"}
-                  {paymentMethod === "mpesa_buygoods" && "M-PESA Buy Goods"}
-                  {paymentMethod === "split" && "Split Payment (M-PESA + Wallet)"}
-                  {paymentMethod === "paystack" && "Paystack Checkout"}
+                  {paymentMethod === "pay_on_delivery" && "Pay on Delivery"}
                 </div>
                 {appliedPromo && (
-                  <div className="mt-2 p-2 bg-success/10 rounded text-sm">
+                  <div className="mt-2 p-2 bg-primary/10 rounded text-sm">
                     🎟️ {appliedPromo.code} applied: Save KSh {discount}
                   </div>
                 )}
@@ -1261,7 +838,7 @@ const Checkout = () => {
                 <span>KSh {subtotal}</span>
               </div>
               {appliedPromo && (
-                <div className="flex justify-between text-success">
+                <div className="flex justify-between text-primary">
                   <span>Discount ({appliedPromo.code})</span>
                   <span>-KSh {discount}</span>
                 </div>
@@ -1301,7 +878,7 @@ const Checkout = () => {
               )}
             </div>
 
-            {/* Desktop buttons - hidden on mobile */}
+            {/* Desktop buttons */}
             <div className="hidden sm:flex gap-3">
               <Button
                 variant="outline"
@@ -1328,7 +905,7 @@ const Checkout = () => {
               </Button>
             </div>
 
-            {/* Mobile sticky footer - visible only on mobile */}
+            {/* Mobile sticky footer */}
             <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border sm:hidden safe-area-bottom z-50">
               <div className="flex gap-2 max-w-3xl mx-auto">
                 <Button
@@ -1358,49 +935,27 @@ const Checkout = () => {
               </div>
             </div>
 
-            {paymentMethod === "paystack" && lastOrderId && (
-              <div className="mt-4 space-y-2">
-                {paystackError && (
-                  <p className="text-sm text-destructive">
-                    {paystackError}
-                  </p>
-                )}
-                <Button
-                  variant="outline"
-                  onClick={handleRetryPaystack}
-                  disabled={isRetrying}
-                  className="w-full"
-                >
-                  {isRetrying ? "Retrying..." : "Retry Paystack Payment"}
-                </Button>
-              </div>
-            )}
+          </Card>
+        )}
 
-
-            {isProcessingPayment && (
-              <Card className="p-6 bg-primary/5 border-primary/20">
-                <div className="text-center space-y-3">
-                  <div className="text-4xl animate-bounce">📱</div>
-                  <h3 className="font-bold text-lg">Check Your Phone</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Enter your M-PESA PIN to complete the payment
-                  </p>
-                  <div className="flex items-center justify-center gap-2 text-sm text-primary">
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                    Waiting for confirmation...
-                  </div>
+        {/* Order summary footer */}
+        {step < 3 && (
+          <Card className="mt-4 p-4 border-primary/10">
+            <div className="space-y-2 text-sm">
+              <div className="font-semibold mb-2">Order Summary</div>
+              {items.map((item) => (
+                <div key={item.id} className="flex justify-between">
+                  <span>
+                    {item.quantity}x {item.name}
+                  </span>
+                  <span>KSh {item.price * item.quantity}</span>
                 </div>
-              </Card>
-            )}
-
-            <p className="text-center text-sm text-muted-foreground">
-              🔒 Secure payment via M-PESA
-              {import.meta.env.VITE_DEMO_PAYMENT_MODE === "true" && (
-                <span className="block text-warning mt-1">
-                  ⚠️ Demo Mode: Payments are simulated
-                </span>
-              )}
-            </p>
+              ))}
+              <div className="border-t pt-2 flex justify-between font-semibold text-base">
+                <span>Total</span>
+                <span className="text-primary">KSh {total}</span>
+              </div>
+            </div>
           </Card>
         )}
       </div>

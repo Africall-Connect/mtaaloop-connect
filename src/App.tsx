@@ -51,9 +51,6 @@ import VendorSubcategory from "./pages/vendor/VendorSubcategory";
 import ProductDetail from "./pages/vendor/ProductDetail";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
-import PaystackCallback from "./pages/PaystackCallback"; // Import the new component
-import PaymentCallbackPage from "./pages/PaymentCallbackPage";
-import PaymentFailed from "./pages/PaymentFailed"; // Import the new component
 import OrderTracking from "./pages/OrderTracking";
 import Account from "./pages/Account";
 import Addresses from "./pages/account/Addresses";
@@ -178,7 +175,14 @@ import MyBookings from "./pages/MyBookings";
 import ImageGeneratorPage from "./pages/ImageGenerator";
 import VendorPOS from "./pages/vendor/VendorPOS";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      gcTime: 300_000,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -295,10 +299,11 @@ const App = () => (
                 <ImageGeneratorPage />
               </ProtectedRoute>
             } />
-            <Route path="/payment/callback" element={<PaymentCallbackPage />} />
-            <Route path="/paystack/callback" element={<PaystackCallback />} />
-            <Route path="/payment-failed" element={<PaymentFailed />} />
-<Route path="/orders/:orderId" element={<OrderTracking />} />
+            <Route path="/orders/:orderId" element={
+              <ProtectedRoute>
+                <OrderTracking />
+              </ProtectedRoute>
+            } />
             <Route path="/trash-tracking/:orderId" element={
               <ProtectedRoute>
                 <TrashTracking />

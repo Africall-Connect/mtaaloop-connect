@@ -10,18 +10,6 @@ verify_jwt = true
 import_map = "./functions/pusher-trigger/deno.json"
 entrypoint = "./functions/pusher-trigger/index.ts"
 
-[functions.payments-paystack-init]
-enabled = true
-verify_jwt = false
-
-[functions.payments-verify]
-enabled = true
-verify_jwt = false
-
-[functions.payments-paystack-webhook]
-enabled = true
-verify_jwt = false
-
 [functions.admin-vendor-payouts]
 enabled = true
 verify_jwt = false
