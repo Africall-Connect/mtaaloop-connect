@@ -78,11 +78,11 @@ const Checkout = () => {
 
           const { data: preferences, error: preferencesError } = await supabase
             .from("user_preferences")
-            .select("estate_id, apartment_name")
+            .select("estate_id, apartment_name, house_name")
             .eq("user_id", user.id)
-            .single();
+            .maybeSingle();
 
-          if (preferencesError && preferencesError.code !== "PGRST116") {
+          if (preferencesError) {
             throw preferencesError;
           }
 
@@ -96,21 +96,16 @@ const Checkout = () => {
                 estate_name: preferences.apartment_name,
               }));
             }
+            if (preferences.house_name) {
+              setDeliveryAddress((prev) => ({
+                ...prev,
+                house_number: preferences.house_name,
+              }));
+            }
           }
 
-          // Pre-fill house number from user_preferences
-          const { data: prefWithHouse } = await supabase
-            .from("user_preferences")
-            .select("house_name")
-            .eq("user_id", user.id)
-            .single();
 
-          if (prefWithHouse?.house_name) {
-            setDeliveryAddress((prev) => ({
-              ...prev,
-              house_number: prefWithHouse.house_name,
-            }));
-          }
+
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
