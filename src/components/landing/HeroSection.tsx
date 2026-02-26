@@ -13,10 +13,27 @@ import { motion } from "framer-motion";
 import { CartoonIllustrations } from "./CartoonIllustrations";
 import { supabase } from "@/integrations/supabase/client";
 
-const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 30 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] as const, delay },
+// Dreamy wave: items slide in from alternating sides, settle with overshoot
+const waveFromLeft = (delay: number) => ({
+  initial: { x: -120, opacity: 0, scale: 0.95 },
+  whileInView: { x: 0, opacity: 1, scale: 1 },
+  viewport: { once: true },
+  transition: {
+    x: { type: "spring" as const, stiffness: 50, damping: 12, delay },
+    opacity: { duration: 0.6, delay },
+    scale: { duration: 0.5, delay: delay + 0.1 },
+  },
+});
+
+const waveFromRight = (delay: number) => ({
+  initial: { x: 120, opacity: 0, scale: 0.95 },
+  whileInView: { x: 0, opacity: 1, scale: 1 },
+  viewport: { once: true },
+  transition: {
+    x: { type: "spring" as const, stiffness: 50, damping: 12, delay },
+    opacity: { duration: 0.6, delay },
+    scale: { duration: 0.5, delay: delay + 0.1 },
+  },
 });
 
 export const HeroSection = () => {
@@ -36,50 +53,48 @@ export const HeroSection = () => {
   };
 
   return (
-    <section className="relative h-screen flex flex-col justify-center overflow-hidden bg-gradient-to-br from-yellow-100 via-blue-100 to-pink-100">
-      {/* Announcement Bar */}
-      <motion.div
-        {...fadeUp(0.2)}
-        className="absolute top-16 left-0 right-0 z-30 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 mx-6 rounded-lg shadow-lg border border-white/20"
-      >
-        <div className="container mx-auto flex items-center justify-between max-w-6xl">
-          <div className="flex items-center gap-3">
-            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <span className="font-semibold">New: MtaaLoop Connect is Live!</span>
-            <span className="hidden sm:inline text-white/90">Meet your neighbors through random video chats</span>
-          </div>
-          <Button
-            size="sm"
-            onClick={handleTryConnect}
-            className="bg-white text-blue-600 hover:bg-gray-100 font-semibold border border-white/30"
-          >
-            Try Connect
-          </Button>
-        </div>
-      </motion.div>
-
+    <section className="relative h-screen flex flex-col justify-center overflow-hidden bg-gradient-to-br from-amber-50 via-sky-50 to-rose-50">
       <CartoonIllustrations />
       <FloatingIcons />
 
-      {/* Top Navigation */}
-      <motion.nav 
-        {...fadeUp(0)}
+      {/* Announcement - waves in from right */}
+      <motion.div
+        {...waveFromRight(0.1)}
+        className="absolute top-16 left-0 right-0 z-30 mx-6"
+      >
+        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 text-white py-3 px-6 rounded-2xl shadow-2xl border border-white/10 backdrop-blur-sm">
+          <div className="container mx-auto flex items-center justify-between max-w-6xl">
+            <div className="flex items-center gap-3">
+              <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center animate-pulse">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <span className="font-bold tracking-wide">MtaaLoop Connect — Live Now</span>
+              <span className="hidden sm:inline text-white/80 text-sm">Random video chats with your actual neighbors</span>
+            </div>
+            <Button size="sm" onClick={handleTryConnect}
+              className="bg-white/20 text-white hover:bg-white/30 font-semibold border border-white/20 backdrop-blur-sm rounded-xl">
+              Try It
+            </Button>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Nav - waves in from left */}
+      <motion.nav {...waveFromLeft(0)}
         className="absolute top-0 w-full py-4 px-6 flex justify-between items-center z-20"
       >
         <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="Mtaaloop Logo" className="h-16 w-16 object-contain" />
-          <span className="text-2xl font-bold text-gray-900">Mtaaloop</span>
+          <img src="/logo.png" alt="Mtaaloop Logo" className="h-14 w-14 object-contain" />
+          <span className="text-2xl font-black text-gray-900 tracking-tight">Mtaaloop</span>
         </div>
-        <div className="flex gap-3">
-          <Button variant="ghost" onClick={handleTryConnect} className="gap-1">
+        <div className="flex gap-2">
+          <Button variant="ghost" onClick={handleTryConnect} className="gap-1 rounded-xl">
             <Video className="h-4 w-4" /> Connect
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="gap-1">
-                For Partners <ChevronDown className="h-4 w-4" />
+              <Button variant="ghost" className="gap-1 rounded-xl">
+                Partners <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-background border shadow-lg z-50">
@@ -88,50 +103,65 @@ export const HeroSection = () => {
               <DropdownMenuItem onClick={() => navigate('/auth/rider-signup')}>Become a Rider</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="ghost" onClick={() => navigate('/auth/login')}>Log In</Button>
-          <Button className="bg-primary hover:bg-primary/90 text-white" onClick={() => navigate('/auth/signup')}>Get Started</Button>
+          <Button variant="ghost" onClick={() => navigate('/auth/login')} className="rounded-xl">Log In</Button>
+          <Button className="bg-primary hover:bg-primary/90 text-white rounded-xl" onClick={() => navigate('/auth/signup')}>Get Started</Button>
         </div>
       </motion.nav>
 
       <div className="container px-4 relative z-10">
-        <div className="max-w-4xl mx-auto text-center space-y-6">
-          <motion.div 
-            {...fadeUp(0.3)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-sm font-medium text-gray-700"
+        <div className="max-w-5xl mx-auto text-center space-y-6">
+          {/* Badge waves from left */}
+          <motion.div {...waveFromLeft(0.2)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/60 backdrop-blur-md border border-white/40 text-sm font-semibold text-gray-700 shadow-sm"
           >
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span>Live in Your Building</span>
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+            Live in Your Building Right Now
           </motion.div>
 
-          <motion.h1 {...fadeUp(0.4)} className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight">
-            <span className="block">Where Neighbors Become</span>
-            <span className="block mt-2 text-gradient">Your Marketplace.</span>
+          {/* Title waves from right */}
+          <motion.h1 {...waveFromRight(0.35)}
+            className="text-5xl md:text-8xl font-black tracking-tight leading-[0.95]"
+          >
+            <span className="block text-gray-900">Your Building.</span>
+            <span className="block mt-1 bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+              Your Marketplace.
+            </span>
           </motion.h1>
 
-          <motion.p {...fadeUp(0.5)} className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
-            Imagine stepping out your door and the entire building is your shop. Fresh meals, everyday essentials, expert services — all from people who live where you live.
+          {/* Subtitle waves from left */}
+          <motion.p {...waveFromLeft(0.5)}
+            className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed"
+          >
+            Every meal, every service, every hidden gem — from someone who shares your elevator. 
+            Not a city away. Not a neighborhood away. <span className="font-semibold text-gray-700">Right here.</span>
           </motion.p>
 
-          <motion.div {...fadeUp(0.6)} className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-2">
+          {/* CTAs wave from right */}
+          <motion.div {...waveFromRight(0.65)}
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-2"
+          >
             <Button size="lg" onClick={() => navigate('/auth/signup')}
-              className="group text-lg px-8 py-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5">
-              Join Your Building — It's Free
+              className="text-lg px-10 py-7 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300">
+              Claim Your Building — Free
             </Button>
             <Button size="lg" variant="outline" onClick={() => navigate('/auth/login')}
-              className="text-lg px-8 py-6 border-2 border-pink-500 text-pink-500 hover:bg-pink-500 hover:text-white rounded-full transition-all duration-300 hover:-translate-y-0.5">
+              className="text-lg px-10 py-7 border-2 border-gray-300 text-gray-700 hover:border-gray-500 rounded-2xl transition-all duration-300 hover:scale-[1.02]">
               <LogIn className="mr-2 h-5 w-5" /> Welcome Back
             </Button>
           </motion.div>
 
-          <div className="grid grid-cols-3 gap-8 pt-8 max-w-2xl mx-auto">
+          {/* Stats wave in one by one from left */}
+          <div className="grid grid-cols-3 gap-6 pt-8 max-w-xl mx-auto">
             {[
-              { value: "5-15min", label: "To Your Door" },
-              { value: "2,000+", label: "Residents Connected" },
-              { value: "40+", label: "Building Vendors" },
+              { value: "5–15min", label: "Delivery" },
+              { value: "2,000+", label: "Residents" },
+              { value: "40+", label: "Vendors" },
             ].map((stat, i) => (
-              <motion.div key={stat.label} {...fadeUp(0.7 + i * 0.1)} className="space-y-1">
-                <div className="text-3xl md:text-4xl font-bold text-gray-900">{stat.value}</div>
-                <div className="text-sm text-gray-900 font-medium">{stat.label}</div>
+              <motion.div key={stat.label} {...waveFromLeft(0.8 + i * 0.12)}
+                className="bg-white/50 backdrop-blur-sm rounded-2xl p-4 border border-white/40 shadow-sm"
+              >
+                <div className="text-2xl md:text-3xl font-black text-gray-900">{stat.value}</div>
+                <div className="text-xs text-gray-500 font-medium mt-1">{stat.label}</div>
               </motion.div>
             ))}
           </div>
