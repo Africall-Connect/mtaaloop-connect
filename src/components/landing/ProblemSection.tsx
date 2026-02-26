@@ -1,9 +1,6 @@
 import { motion } from "framer-motion";
-import { useRef } from "react";
-import { useInView } from "framer-motion";
-import { SectionSeparator } from "./SectionSeparator";
-import { ComparisonBook } from "./ComparisonBook";
 import { Clock, MapPin, Hourglass, Map, Smile, Frown } from 'lucide-react';
+import { ComparisonBook } from "./ComparisonBook";
 import "./ComparisonBook.css";
 
 const fadeUp = (delay = 0) => ({
@@ -15,12 +12,12 @@ const fadeUp = (delay = 0) => ({
 
 export const ProblemSection = () => {
   return (
-    <section className="relative py-24 bg-gradient-to-br from-yellow-50 via-blue-50 to-pink-50">
+    <section className="h-screen flex flex-col justify-center bg-gradient-to-br from-yellow-50 via-blue-50 to-pink-50 overflow-hidden">
       <div className="container px-4 z-10 relative">
         <motion.h2 {...fadeUp(0)} className="text-4xl md:text-5xl font-bold text-center mb-4 text-gray-800">
           The Old Way is Broken. We Rebuilt It.
         </motion.h2>
-        <motion.p {...fadeUp(0.1)} className="text-xl text-gray-600 text-center mb-16 max-w-3xl mx-auto">
+        <motion.p {...fadeUp(0.1)} className="text-xl text-gray-600 text-center mb-12 max-w-3xl mx-auto">
           Other apps send strangers from across town. We keep everything inside your building — faster, safer, more personal.
         </motion.p>
 
@@ -85,9 +82,6 @@ export const ProblemSection = () => {
             />
           </motion.div>
         </div>
-      </div>
-      <div className="absolute bottom-0 left-0 right-0 text-white">
-        <SectionSeparator />
       </div>
     </section>
   );

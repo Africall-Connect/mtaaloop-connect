@@ -2,7 +2,6 @@ import { Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { SectionSeparator } from "./SectionSeparator";
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 40 },
@@ -15,9 +14,9 @@ export const SocialProof = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="relative py-20 bg-gradient-to-br from-yellow-100 via-blue-100 to-pink-100">
+    <section className="h-screen flex flex-col justify-center bg-gradient-to-br from-yellow-100 via-blue-100 to-pink-100 overflow-hidden">
       <div className="container px-4 z-10 relative">
-        <div className="text-center mb-12">
+        <div className="text-center mb-10">
           <motion.h2 {...fadeUp(0)} className="text-4xl md:text-5xl font-bold mb-4 text-gray-800">
             Already Home to Thriving Communities
           </motion.h2>
@@ -27,10 +26,7 @@ export const SocialProof = () => {
         </div>
 
         <div className="max-w-4xl mx-auto">
-          <motion.div
-            {...fadeUp(0.2)}
-            className="bg-white/80 rounded-2xl p-8 mb-8 shadow-lg backdrop-blur-sm hover:shadow-xl transition-shadow duration-300"
-          >
+          <motion.div {...fadeUp(0.2)} className="bg-white/80 rounded-2xl p-8 mb-6 shadow-lg backdrop-blur-sm hover:shadow-xl transition-shadow duration-300">
             <div className="flex items-start gap-6">
               <div className="w-20 h-20 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
                 <Building2 className="h-10 w-10 text-white" />
@@ -50,24 +46,18 @@ export const SocialProof = () => {
             </div>
           </motion.div>
 
-          <motion.div
-            {...fadeUp(0.3)}
-            className="bg-white/80 rounded-2xl p-8 text-center border-2 border-dashed border-gray-300 shadow-lg backdrop-blur-sm hover:shadow-xl transition-shadow duration-300"
-          >
+          <motion.div {...fadeUp(0.3)} className="bg-white/80 rounded-2xl p-8 text-center border-2 border-dashed border-gray-300 shadow-lg backdrop-blur-sm hover:shadow-xl transition-shadow duration-300">
             <h3 className="text-2xl font-bold mb-4 text-gray-700">Your Building Could Be Next</h3>
             <p className="text-gray-600 mb-6">
               Don't wait for someone else to bring Mtaaloop to your apartment. 
               Be the one who transforms your building into a thriving marketplace.
             </p>
-            <Button
-              className="bg-pink-500 hover:bg-pink-600 text-white rounded-full"
-              onClick={() => navigate('/auth/signup')}
-            >
+            <Button className="bg-pink-500 hover:bg-pink-600 text-white rounded-full" onClick={() => navigate('/auth/signup')}>
               Register Your Building
             </Button>
           </motion.div>
 
-          <div className="grid grid-cols-3 gap-6 mt-12 text-center">
+          <div className="grid grid-cols-3 gap-6 mt-8 text-center">
             {[
               { value: "1,500+", label: "Happy Neighbors", color: "text-blue-500" },
               { value: "40+", label: "Building Vendors", color: "text-pink-500" },
@@ -80,9 +70,6 @@ export const SocialProof = () => {
             ))}
           </div>
         </div>
-      </div>
-      <div className="absolute bottom-0 left-0 right-0 text-white">
-        <SectionSeparator />
       </div>
     </section>
   );
