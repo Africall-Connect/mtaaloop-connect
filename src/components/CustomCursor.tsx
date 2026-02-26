@@ -41,8 +41,8 @@ export const CustomCursor = () => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Smooth follow with variable easing
-    const ease = hovering.current ? 0.2 : 0.12;
+    // Smooth follow — fast response
+    const ease = hovering.current ? 0.45 : 0.35;
     cursor.current.x += (mouse.current.x - cursor.current.x) * ease;
     cursor.current.y += (mouse.current.y - cursor.current.y) * ease;
 
