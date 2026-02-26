@@ -69,6 +69,7 @@ export function ServiceRequestForm({ service, onSuccess }: ServiceRequestFormPro
         .from('service_requests')
         .insert({
           service_id: service.id,
+          service_name: service.name,
           customer_id: user.id,
           estate_id: currentApartment?.id !== 'general-location' ? currentApartment?.id : null,
           amount: isSubscriptionUsage ? 0 : service.base_price,
