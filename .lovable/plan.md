@@ -1,30 +1,29 @@
 
 
-## Admin Onboarding Section
+## Plan: Add Zod Validation + Rider Onboarding Tab
 
-**Goal**: Add an admin page at `/admin/onboarding` where admins can manually create vendor or customer accounts on their behalf — filling in the details, creating the auth user, assigning roles, and setting up profiles.
+### Changes to `src/pages/admin/AdminOnboarding.tsx`
 
-### Implementation Steps
+**1. Add Zod validation schemas**
+- Shared base schema: `fullName` (2-100 chars), `email` (valid format), `phone` (Kenyan format `+254` or `07xx`, 10-15 digits), `password` (min 8 chars, must contain uppercase, lowercase, and number)
+- Vendor schema: extends base with `businessName` (required, 2-100), `businessType` (required), `businessPhone` (same phone validation)
+- Customer schema: base schema only
+- Rider schema: extends base with `idNumber` (required), `vehicleType` (required), optional `vehicleRegistration` and `licenseNumber`
 
-1. **Create `src/pages/admin/AdminOnboarding.tsx`**
-   - Tabbed UI with two tabs: "Onboard Vendor" and "Onboard Customer"
-   - **Vendor tab**: Form with fields matching `VendorSignup.tsx` (full name, email, phone, password, business name, business type, business description, business phone, business address, estate selection)
-     - On submit: calls `supabase.auth.signUp()` to create the user, then inserts into `vendor_profiles` with `is_approved: true` (since admin is onboarding, auto-approve)
-     - Also inserts `user_roles` row with role `vendor`
-   - **Customer tab**: Form with fields matching `Signup.tsx` (full name, email, phone, password)
-     - On submit: calls `supabase.auth.signUp()`, upserts `profiles`, inserts `user_roles` with role `customer`
-   - Admin-only page protected by `ProtectedRoute` with `requiredRole="admin"`
-   - Includes success/error toasts, loading states, and a "back to dashboard" link
+**2. Integrate validation into submit handlers**
+- Parse form data with Zod before calling Supabase
+- Display field-level validation errors below each input using red text
+- Clear errors on successful submission or when user modifies the field
 
-2. **Add route in `src/App.tsx`**
-   - Add lazy import for `AdminOnboarding`
-   - Add route `/admin/onboarding` wrapped in `<ProtectedRoute requiredRole="admin">`
+**3. Add Rider/Delivery Agent tab (3rd tab)**
+- Fields: fullName, email, phone, password, idNumber, vehicleType, vehicleRegistration (conditional), licenseNumber (conditional), estateId (optional)
+- On submit: `supabase.auth.signUp()` → insert into `rider_profiles` (with `is_approved: true` since admin is onboarding) → insert `user_roles` with role `rider`
+- TabsList changes from `grid-cols-2` to `grid-cols-3`
+- Add `Bike` icon from lucide-react for the tab
 
-3. **Add navigation card in `src/pages/admin/AdminDashboard.tsx`**
-   - New card in the management grid with a `UserPlus` icon labeled "Onboard Users"
-   - Links to `/admin/onboarding`
+**4. Update header subtitle**
+- Change "vendor or customer" to "vendor, customer, or delivery agent"
 
-### Security Note
-- The admin creates the auth account via `supabase.auth.signUp()` client-side. This means the new user will receive a confirmation email. The admin sets a temporary password the user can change later.
-- Role assignment uses existing `user_roles` table pattern with RLS.
+### Files Modified
+- `src/pages/admin/AdminOnboarding.tsx` — full rewrite with Zod schemas, validation errors state, rider tab, and rider submit handler
 
