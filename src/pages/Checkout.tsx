@@ -658,37 +658,6 @@ const Checkout = () => {
               />
             )}
 
-            {/* Desktop button inside card */}
-            <div className="hidden sm:block">
-              <Button
-                className="w-full"
-                size="lg"
-                onClick={() => {
-                  const validation = validateDeliveryStep({
-                    estate_name: deliveryAddress.estate_name,
-                    house_number: deliveryAddress.house_number,
-                    instructions,
-                    deliveryType,
-                  });
-
-                  if (!validation.success) {
-                    setFormErrors(validation.errors);
-                    const firstError = Object.values(validation.errors)[0];
-                    toast.error(firstError || "Please fix the form errors");
-                    return;
-                  }
-
-                  setFormErrors({});
-                  setStep(2);
-                }}
-              >
-                Continue to Payment →
-              </Button>
-            </div>
-          </Card>
-
-          {/* Mobile sticky footer for Step 1 */}
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border sm:hidden safe-area-bottom z-50">
             <Button
               className="w-full"
               size="lg"
@@ -713,7 +682,7 @@ const Checkout = () => {
             >
               Continue to Payment →
             </Button>
-          </div>
+          </Card>
           </>
         )}
         {/* STEP 2: Payment */}
