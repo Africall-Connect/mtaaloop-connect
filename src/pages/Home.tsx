@@ -1,8 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { Search, ShoppingBag, MapPin, Users, Stethoscope, ArrowRight, Calendar, CalendarCheck, Sparkles } from "lucide-react";
 import { ScrollAnimatedSection, ScrollAnimatedGrid } from "@/components/ScrollAnimations";
 import { HOME_SERVICES_SHOWCASE } from "@/lib/serviceImages";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,40 @@ interface ProductWithVendor {
     slug: string;
   };
 }
+
+// Parallax service card component
+const ParallaxServiceCard = ({ svc, onClick }: { svc: typeof HOME_SERVICES_SHOWCASE[number]; onClick: () => void }) => {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: cardRef,
+    offset: ["start end", "end start"],
+  });
+  const imgY = useTransform(scrollYProgress, [0, 1], ["-10%", "10%"]);
+  const imgScale = useTransform(scrollYProgress, [0, 0.5, 1], [1.15, 1.05, 1.15]);
+
+  return (
+    <Card
+      ref={cardRef}
+      className="group overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-0"
+      onClick={onClick}
+    >
+      <div className="relative h-28 sm:h-36 overflow-hidden">
+        <motion.img
+          src={svc.image}
+          alt={svc.title}
+          className="absolute inset-0 w-full h-[130%] object-cover group-hover:brightness-110 transition-[filter] duration-500"
+          style={{ y: imgY, scale: imgScale }}
+          loading="lazy"
+        />
+        <div className={`absolute inset-0 bg-gradient-to-t ${svc.color} from-black/50 to-transparent`} />
+        <div className="absolute bottom-2 left-3 right-3">
+          <h3 className="font-bold text-sm sm:text-base text-white drop-shadow-lg">{svc.title}</h3>
+          <p className="text-[10px] sm:text-xs text-white/80 line-clamp-1">{svc.description}</p>
+        </div>
+      </div>
+    </Card>
+  );
+};
 
 const Home = () => {
   const navigate = useNavigate();
@@ -556,25 +591,7 @@ const Home = () => {
           </div>
           <ScrollAnimatedGrid className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {HOME_SERVICES_SHOWCASE.map((svc) => (
-              <Card
-                key={svc.title}
-                className="group overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-0"
-                onClick={() => navigate(svc.route)}
-              >
-                <div className="relative h-28 sm:h-36 overflow-hidden">
-                  <img
-                    src={svc.image}
-                    alt={svc.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    loading="lazy"
-                  />
-                  <div className={`absolute inset-0 bg-gradient-to-t ${svc.color} from-black/50 to-transparent`} />
-                  <div className="absolute bottom-2 left-3 right-3">
-                    <h3 className="font-bold text-sm sm:text-base text-white drop-shadow-lg">{svc.title}</h3>
-                    <p className="text-[10px] sm:text-xs text-white/80 line-clamp-1">{svc.description}</p>
-                  </div>
-                </div>
-              </Card>
+              <ParallaxServiceCard key={svc.title} svc={svc} onClick={() => navigate(svc.route)} />
             ))}
           </ScrollAnimatedGrid>
           <Button 
