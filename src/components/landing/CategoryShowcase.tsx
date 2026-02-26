@@ -29,7 +29,6 @@ export const CategoryShowcase = () => {
         .select('*')
         .eq('is_active', true)
         .order('display_order', { ascending: true });
-
       if (categoriesError) throw categoriesError;
 
       const { data: subcategoriesData, error: subcategoriesError } = await supabase
@@ -37,7 +36,6 @@ export const CategoryShowcase = () => {
         .select('*')
         .eq('is_active', true)
         .order('display_order', { ascending: true });
-
       if (subcategoriesError) throw subcategoriesError;
 
       setCategories(categoriesData || []);
@@ -87,64 +85,44 @@ export const CategoryShowcase = () => {
 
   const getExamplesForCategory = (categoryId: string) => {
     const categorySubs = subcategories.filter(sub => sub.category_id === categoryId);
-    if (categorySubs.length >= 3) {
-      return categorySubs.slice(0, 3).map(sub => sub.name).join(", ");
-    } else if (categorySubs.length > 0) {
-      return categorySubs.map(sub => sub.name).join(", ");
-    }
+    if (categorySubs.length >= 3) return categorySubs.slice(0, 3).map(sub => sub.name).join(", ");
+    if (categorySubs.length > 0) return categorySubs.map(sub => sub.name).join(", ");
     return "Various services";
   };
 
   if (loading) {
-    return <div className="text-center py-8">Loading categories...</div>;
+    return (
+      <section className="h-screen flex items-center justify-center bg-muted/30">
+        <div className="text-center text-muted-foreground">Loading categories...</div>
+      </section>
+    );
   }
 
   const gradients = [
-    "from-orange-500/20 to-red-500/20",
-    "from-blue-500/20 to-cyan-500/20",
-    "from-green-500/20 to-emerald-500/20",
-    "from-pink-500/20 to-purple-500/20",
-    "from-slate-500/20 to-gray-500/20",
-    "from-amber-500/20 to-yellow-500/20",
-    "from-teal-500/20 to-green-500/20",
-    "from-red-500/20 to-pink-500/20",
+    "from-orange-500/20 to-red-500/20", "from-blue-500/20 to-cyan-500/20",
+    "from-green-500/20 to-emerald-500/20", "from-pink-500/20 to-purple-500/20",
+    "from-slate-500/20 to-gray-500/20", "from-amber-500/20 to-yellow-500/20",
+    "from-teal-500/20 to-green-500/20", "from-red-500/20 to-pink-500/20",
     "from-indigo-500/20 to-blue-500/20",
   ];
 
   return (
-    <section className="py-24 bg-muted/30">
+    <section className="h-screen flex flex-col justify-center bg-muted/30 overflow-hidden">
       <div className="container px-4">
-        <motion.h2
-          {...fadeUp(0)}
-          className="text-4xl md:text-5xl font-bold text-center mb-4"
-        >
-          Everything Your Building Needs, Under One Roof
+        <motion.h2 {...fadeUp(0)} className="text-4xl md:text-5xl font-bold text-center mb-4">
+          Everything Your Building Needs
         </motion.h2>
-        <motion.p
-          {...fadeUp(0.1)}
-          className="text-xl text-muted-foreground text-center mb-16"
-        >
+        <motion.p {...fadeUp(0.1)} className="text-xl text-muted-foreground text-center mb-10">
           From the vendor next door to experts across the hall — it's all here
         </motion.p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {categories.slice(0, 9).map((category, index) => (
-            <motion.div
-              key={category.id}
-              {...fadeUp(0.1 + index * 0.08)}
-            >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-6xl mx-auto">
+          {categories.slice(0, 6).map((category, index) => (
+            <motion.div key={category.id} {...fadeUp(0.1 + index * 0.08)}>
               <Link to={`/categories/${category.slug}`}>
-                <Card
-                  className={`
-                    group relative overflow-hidden cursor-pointer 
-                    border-2 border-border hover:border-primary/50
-                    transition-all duration-300 hover:shadow-lg hover:-translate-y-1
-                    ${index < 2 ? "md:col-span-2 lg:col-span-1" : ""}
-                  `}
-                >
+                <Card className="group relative overflow-hidden cursor-pointer border-2 border-border hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                   <div className={`absolute inset-0 bg-gradient-to-br ${gradients[index % 9]} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
-                  
-                  <div className="relative p-6 space-y-4">
+                  <div className="relative p-5 space-y-3">
                     <div className="flex items-start justify-between">
                       <div className="p-3 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
                         <img src={getImageForCategory(category.name)} alt={category.name} className="w-8 h-8 object-cover" />
@@ -154,12 +132,10 @@ export const CategoryShowcase = () => {
                         <div className="text-xs text-muted-foreground">vendors</div>
                       </div>
                     </div>
-
                     <div>
-                      <h3 className="text-xl font-bold mb-2">{category.name}</h3>
+                      <h3 className="text-lg font-bold mb-1">{category.name}</h3>
                       <p className="text-sm text-muted-foreground">{getExamplesForCategory(category.id)}</p>
                     </div>
-
                     <div className="flex items-center text-sm font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
                       Explore →
                     </div>
@@ -170,10 +146,7 @@ export const CategoryShowcase = () => {
           ))}
         </div>
 
-        <motion.div
-          {...fadeUp(0.5)}
-          className="text-center mt-12"
-        >
+        <motion.div {...fadeUp(0.5)} className="text-center mt-8">
           <button className="text-primary font-semibold text-lg hover:underline">
             See All {categories.length}+ Categories →
           </button>

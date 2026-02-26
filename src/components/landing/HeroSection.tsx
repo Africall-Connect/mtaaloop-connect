@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { motion } from "framer-motion";
 import { CartoonIllustrations } from "./CartoonIllustrations";
-import { SectionSeparator } from "./SectionSeparator";
 import { supabase } from "@/integrations/supabase/client";
 
 const fadeUp = (delay = 0) => ({
@@ -37,7 +36,7 @@ export const HeroSection = () => {
   };
 
   return (
-    <section className="relative min-h-screen flex flex-col justify-center overflow-hidden bg-gradient-to-br from-yellow-100 via-blue-100 to-pink-100">
+    <section className="relative h-screen flex flex-col justify-center overflow-hidden bg-gradient-to-br from-yellow-100 via-blue-100 to-pink-100">
       {/* Announcement Bar */}
       <motion.div
         {...fadeUp(0.2)}
@@ -70,17 +69,12 @@ export const HeroSection = () => {
         className="absolute top-0 w-full py-4 px-6 flex justify-between items-center z-20"
       >
         <div className="flex items-center gap-2">
-          <img 
-            src="/logo.png" 
-            alt="Mtaaloop Logo" 
-            className="h-16 w-16 object-contain" 
-          />
+          <img src="/logo.png" alt="Mtaaloop Logo" className="h-16 w-16 object-contain" />
           <span className="text-2xl font-bold text-gray-900">Mtaaloop</span>
         </div>
         <div className="flex gap-3">
           <Button variant="ghost" onClick={handleTryConnect} className="gap-1">
-            <Video className="h-4 w-4" />
-            Connect
+            <Video className="h-4 w-4" /> Connect
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -89,28 +83,18 @@ export const HeroSection = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-background border shadow-lg z-50">
-              <DropdownMenuItem onClick={() => navigate('/auth/vendor-signup')}>
-                Join as Vendor
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/auth/estate-signup')}>
-                Register Estate
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/auth/rider-signup')}>
-                Become a Rider
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/auth/vendor-signup')}>Join as Vendor</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/auth/estate-signup')}>Register Estate</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/auth/rider-signup')}>Become a Rider</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="ghost" onClick={() => navigate('/auth/login')}>
-            Log In
-          </Button>
-          <Button className="bg-primary hover:bg-primary/90 text-white" onClick={() => navigate('/auth/signup')}>
-            Get Started
-          </Button>
+          <Button variant="ghost" onClick={() => navigate('/auth/login')}>Log In</Button>
+          <Button className="bg-primary hover:bg-primary/90 text-white" onClick={() => navigate('/auth/signup')}>Get Started</Button>
         </div>
       </motion.nav>
 
-      <div className="container px-4 py-20 relative z-10">
-        <div className="max-w-4xl mx-auto text-center space-y-8">
+      <div className="container px-4 relative z-10">
+        <div className="max-w-4xl mx-auto text-center space-y-6">
           <motion.div 
             {...fadeUp(0.3)}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-sm font-medium text-gray-700"
@@ -119,67 +103,39 @@ export const HeroSection = () => {
             <span>Live in Your Building</span>
           </motion.div>
 
-          <motion.h1 
-            {...fadeUp(0.4)}
-            className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight"
-          >
+          <motion.h1 {...fadeUp(0.4)} className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight">
             <span className="block">Where Neighbors Become</span>
             <span className="block mt-2 text-gradient">Your Marketplace.</span>
           </motion.h1>
 
-          <motion.p 
-            {...fadeUp(0.5)}
-            className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto"
-          >
-            Imagine stepping out your door and the entire building is your shop.
-            Fresh meals, everyday essentials, expert services — all from people who live where you live.
-            Delivered before you finish your coffee.
+          <motion.p {...fadeUp(0.5)} className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
+            Imagine stepping out your door and the entire building is your shop. Fresh meals, everyday essentials, expert services — all from people who live where you live.
           </motion.p>
 
-          <motion.div 
-            {...fadeUp(0.6)}
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4"
-          >
-            <Button
-              size="lg"
-              onClick={() => navigate('/auth/signup')}
-              className="group text-lg px-8 py-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-            >
+          <motion.div {...fadeUp(0.6)} className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-2">
+            <Button size="lg" onClick={() => navigate('/auth/signup')}
+              className="group text-lg px-8 py-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5">
               Join Your Building — It's Free
             </Button>
-
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => navigate('/auth/login')}
-              className="text-lg px-8 py-6 border-2 border-pink-500 text-pink-500 hover:bg-pink-500 hover:text-white rounded-full transition-all duration-300 hover:-translate-y-0.5"
-            >
-              <LogIn className="mr-2 h-5 w-5" />
-              Welcome Back
+            <Button size="lg" variant="outline" onClick={() => navigate('/auth/login')}
+              className="text-lg px-8 py-6 border-2 border-pink-500 text-pink-500 hover:bg-pink-500 hover:text-white rounded-full transition-all duration-300 hover:-translate-y-0.5">
+              <LogIn className="mr-2 h-5 w-5" /> Welcome Back
             </Button>
           </motion.div>
 
-          <div className="grid grid-cols-3 gap-8 pt-12 max-w-2xl mx-auto">
+          <div className="grid grid-cols-3 gap-8 pt-8 max-w-2xl mx-auto">
             {[
               { value: "5-15min", label: "To Your Door" },
               { value: "2,000+", label: "Residents Connected" },
               { value: "40+", label: "Building Vendors" },
             ].map((stat, i) => (
-              <motion.div
-                key={stat.label}
-                {...fadeUp(0.7 + i * 0.1)}
-                className="space-y-1"
-              >
+              <motion.div key={stat.label} {...fadeUp(0.7 + i * 0.1)} className="space-y-1">
                 <div className="text-3xl md:text-4xl font-bold text-gray-900">{stat.value}</div>
                 <div className="text-sm text-gray-900 font-medium">{stat.label}</div>
               </motion.div>
             ))}
           </div>
         </div>
-      </div>
-
-      <div className="absolute bottom-0 left-0 right-0 text-white">
-        <SectionSeparator />
       </div>
     </section>
   );

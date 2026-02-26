@@ -9,15 +9,31 @@ import { Footer } from "@/components/landing/Footer";
 
 const LandingPage = () => {
   return (
-    <div className="min-h-screen overflow-x-hidden">
-      <HeroSection />
-      <ProblemSection />
-      <HowItWorksSection />
-      <CategoryShowcase />
-      <GuaranteeSection />
-      <SocialProof />
-      <FinalCTA />
-      <Footer />
+    <div className="h-screen overflow-y-auto snap-y snap-mandatory">
+      <div className="snap-start">
+        <HeroSection />
+      </div>
+      <div className="snap-start">
+        <ProblemSection />
+      </div>
+      <div className="snap-start">
+        <HowItWorksSection />
+      </div>
+      <div className="snap-start">
+        <CategoryShowcase />
+      </div>
+      <div className="snap-start">
+        <GuaranteeSection />
+      </div>
+      <div className="snap-start">
+        <SocialProof />
+      </div>
+      <div className="snap-start">
+        <FinalCTA />
+      </div>
+      <div className="snap-start">
+        <Footer />
+      </div>
     </div>
   );
 };
