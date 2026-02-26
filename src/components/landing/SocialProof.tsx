@@ -1,71 +1,83 @@
-import { Building2 } from "lucide-react";
+import { Building2, Users, Store, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
-const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 40 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, amount: 0.2 },
-  transition: { duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] as const, delay },
+const waveIn = (fromRight: boolean, delay: number) => ({
+  initial: { x: fromRight ? 130 : -130, opacity: 0 },
+  whileInView: { x: 0, opacity: 1 },
+  viewport: { once: true },
+  transition: {
+    x: { type: "spring" as const, stiffness: 45, damping: 13, delay },
+    opacity: { duration: 0.5, delay },
+  },
 });
 
 export const SocialProof = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="h-screen flex flex-col justify-center bg-gradient-to-br from-yellow-100 via-blue-100 to-pink-100 overflow-hidden">
+    <section className="h-screen flex flex-col justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-violet-50 overflow-hidden">
       <div className="container px-4 z-10 relative">
-        <div className="text-center mb-10">
-          <motion.h2 {...fadeUp(0)} className="text-4xl md:text-5xl font-bold mb-4 text-gray-800">
-            Already Home to Thriving Communities
-          </motion.h2>
-          <motion.p {...fadeUp(0.1)} className="text-xl text-gray-600">
-            Real buildings. Real neighbors. Real commerce happening right now.
-          </motion.p>
-        </div>
+        <motion.div {...waveIn(true, 0)} className="text-center mb-10">
+          <span className="inline-block px-4 py-1.5 bg-purple-100 text-purple-700 rounded-full text-sm font-bold mb-4">Social Proof</span>
+          <h2 className="text-4xl md:text-6xl font-black text-gray-900 tracking-tight">
+            Already Alive & Thriving.
+          </h2>
+          <p className="text-lg text-gray-500 mt-3 max-w-xl mx-auto">Real buildings. Real neighbors. Real commerce.</p>
+        </motion.div>
 
-        <div className="max-w-4xl mx-auto">
-          <motion.div {...fadeUp(0.2)} className="bg-white/80 rounded-2xl p-8 mb-6 shadow-lg backdrop-blur-sm hover:shadow-xl transition-shadow duration-300">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <motion.div {...waveIn(false, 0.2)}
+            className="bg-white/70 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-white/50 hover:shadow-2xl transition-all duration-300"
+          >
             <div className="flex items-start gap-6">
-              <div className="w-20 h-20 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Building2 className="h-10 w-10 text-white" />
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                <Building2 className="h-8 w-8 text-white" />
               </div>
               <div className="flex-1">
-                <h3 className="text-2xl font-bold mb-2 text-gray-800">Royal Suburbs by Tsavo</h3>
-                <div className="flex flex-wrap gap-3 mb-3">
-                  <span className="px-3 py-1 bg-blue-100 rounded-full text-sm font-medium text-blue-800">2,000 Units</span>
-                  <span className="px-3 py-1 bg-blue-100 rounded-full text-sm font-medium text-blue-800">4 Phases</span>
-                  <span className="px-3 py-1 bg-blue-100 rounded-full text-sm font-medium text-blue-800">500 Units per Phase</span>
+                <h3 className="text-2xl font-black mb-2 text-gray-900">Royal Suburbs by Tsavo</h3>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {["2,000 Units", "4 Phases", "500/Phase"].map(tag => (
+                    <span key={tag} className="px-3 py-1 bg-blue-50 rounded-full text-xs font-bold text-blue-700">{tag}</span>
+                  ))}
                 </div>
-                <p className="text-gray-600">
-                  The flagship Mtaaloop community. 2,000 families connected to their building's vendors, 
-                  ordering daily essentials and discovering new services — all within arm's reach.
+                <p className="text-gray-500 text-sm leading-relaxed">
+                  The flagship Mtaaloop community. 2,000 families ordering daily essentials, discovering hidden gems, 
+                  and building a micro-economy — all within arm's reach.
                 </p>
               </div>
             </div>
           </motion.div>
 
-          <motion.div {...fadeUp(0.3)} className="bg-white/80 rounded-2xl p-8 text-center border-2 border-dashed border-gray-300 shadow-lg backdrop-blur-sm hover:shadow-xl transition-shadow duration-300">
-            <h3 className="text-2xl font-bold mb-4 text-gray-700">Your Building Could Be Next</h3>
-            <p className="text-gray-600 mb-6">
-              Don't wait for someone else to bring Mtaaloop to your apartment. 
-              Be the one who transforms your building into a thriving marketplace.
+          <motion.div {...waveIn(true, 0.35)}
+            className="bg-white/50 backdrop-blur-sm rounded-3xl p-8 text-center border-2 border-dashed border-gray-200 hover:border-purple-300 transition-colors duration-300"
+          >
+            <h3 className="text-2xl font-black mb-3 text-gray-800">Your Building Is Next.</h3>
+            <p className="text-gray-500 mb-5 text-sm max-w-md mx-auto">
+              Don't wait. Be the legend who brought Mtaaloop to your apartment.
             </p>
-            <Button className="bg-pink-500 hover:bg-pink-600 text-white rounded-full" onClick={() => navigate('/auth/signup')}>
+            <Button className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white rounded-xl shadow-lg" 
+              onClick={() => navigate('/auth/signup')}>
               Register Your Building
             </Button>
           </motion.div>
 
-          <div className="grid grid-cols-3 gap-6 mt-8 text-center">
+          {/* Stats wave in */}
+          <div className="grid grid-cols-3 gap-4">
             {[
-              { value: "1,500+", label: "Happy Neighbors", color: "text-blue-500" },
-              { value: "40+", label: "Building Vendors", color: "text-pink-500" },
-              { value: "1", label: "Thriving Complex", color: "text-green-500" },
+              { icon: Users, value: "1,500+", label: "Happy Neighbors", gradient: "from-blue-500 to-cyan-400" },
+              { icon: Store, value: "40+", label: "Building Vendors", gradient: "from-pink-500 to-rose-400" },
+              { icon: TrendingUp, value: "1", label: "Thriving Complex", gradient: "from-emerald-500 to-teal-400" },
             ].map((stat, i) => (
-              <motion.div key={stat.label} {...fadeUp(0.4 + i * 0.1)}>
-                <div className={`text-3xl font-bold ${stat.color} mb-2`}>{stat.value}</div>
-                <div className="text-sm text-gray-600">{stat.label}</div>
+              <motion.div key={stat.label} {...waveIn(i % 2 === 0, 0.5 + i * 0.1)}
+                className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 text-center border border-white/40 shadow-sm"
+              >
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center mx-auto mb-2 shadow`}>
+                  <stat.icon className="w-5 h-5 text-white" />
+                </div>
+                <div className="text-2xl font-black text-gray-900">{stat.value}</div>
+                <div className="text-xs text-gray-500">{stat.label}</div>
               </motion.div>
             ))}
           </div>

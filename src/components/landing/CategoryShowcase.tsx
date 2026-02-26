@@ -5,11 +5,14 @@ import { Card } from "@/components/ui/card";
 import { VendorCategory, VendorSubcategory } from "@/types/database";
 import { motion } from "framer-motion";
 
-const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 40 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, amount: 0.2 },
-  transition: { duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] as const, delay },
+const waveIn = (fromRight: boolean, delay: number) => ({
+  initial: { x: fromRight ? 120 : -120, opacity: 0 },
+  whileInView: { x: 0, opacity: 1 },
+  viewport: { once: true },
+  transition: {
+    x: { type: "spring" as const, stiffness: 45, damping: 13, delay },
+    opacity: { duration: 0.5, delay },
+  },
 });
 
 export const CategoryShowcase = () => {
@@ -25,23 +28,15 @@ export const CategoryShowcase = () => {
     try {
       setLoading(true);
       const { data: categoriesData, error: categoriesError } = await supabase
-        .from('vendor_categories')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order', { ascending: true });
+        .from('vendor_categories').select('*').eq('is_active', true).order('display_order', { ascending: true });
       if (categoriesError) throw categoriesError;
-
       const { data: subcategoriesData, error: subcategoriesError } = await supabase
-        .from('vendor_subcategories')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order', { ascending: true });
+        .from('vendor_subcategories').select('*').eq('is_active', true).order('display_order', { ascending: true });
       if (subcategoriesError) throw subcategoriesError;
-
       setCategories(categoriesData || []);
       setSubcategories(subcategoriesData || []);
     } catch (error) {
-      console.error("Error fetching categories for showcase:", error);
+      console.error("Error fetching categories:", error);
     } finally {
       setLoading(false);
     }
@@ -53,34 +48,10 @@ export const CategoryShowcase = () => {
       "Groceries & Essentials": "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=32&h=32&fit=crop",
       "Health & Wellness": "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=32&h=32&fit=crop",
       "Beauty & Spa": "https://images.unsplash.com/photo-1560750588-73207b1ef5b8?w=32&h=32&fit=crop",
-      "Auto Services": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=32&h=32&fit=crop",
-      "Liquor Store": "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=32&h=32&fit=crop",
       "Home Services": "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=32&h=32&fit=crop",
       "Repairs & Maintenance": "https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=32&h=32&fit=crop",
-      "Fashion & Clothing": "https://images.unsplash.com/photo-1445205170230-053b83016050?w=32&h=32&fit=crop",
-      "Electronics & Gadgets": "https://images.unsplash.com/photo-1498049794561-7780e7231661?w=32&h=32&fit=crop",
-      "Fitness & Sports": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=32&h=32&fit=crop",
-      "Education & Tutoring": "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=32&h=32&fit=crop",
-      "Events & Entertainment": "https://images.unsplash.com/photo-1511578314322-379afb476865?w=32&h=32&fit=crop",
-      "Professional Services": "https://images.unsplash.com/photo-1552664730-d307ca884978?w=32&h=32&fit=crop",
-      "Pet Services": "https://images.unsplash.com/photo-1544568100-847a948585b9?w=32&h=32&fit=crop",
-      "Home & Garden": "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=32&h=32&fit=crop",
-      "Books & Stationery": "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=32&h=32&fit=crop",
-      "Baby & Kids": "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=32&h=32&fit=crop",
-      "Transport & Logistics": "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=32&h=32&fit=crop",
-      "Accommodation": "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=32&h=32&fit=crop",
-      "Flowers & Gifts": "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=32&h=32&fit=crop",
-      "Utilities & Services": "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=32&h=32&fit=crop",
-      "Security Services": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=32&h=32&fit=crop",
-      "Religious Services": "https://images.unsplash.com/photo-1507692049790-de58290a4354?w=32&h=32&fit=crop",
-      "Creative Services": "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=32&h=32&fit=crop",
-      "Construction Services": "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=32&h=32&fit=crop",
-      "Agriculture & Farming": "https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?w=32&h=32&fit=crop",
-      "Waste & Recycling": "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=32&h=32&fit=crop",
-      "Wedding Services": "https://images.unsplash.com/photo-1519741497674-611481863552?w=32&h=32&fit=crop",
-      "Special Occasions": "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=32&h=32&fit=crop",
     };
-    return imageMap[categoryName] || "https://via.placeholder.com/32x32?text=Category";
+    return imageMap[categoryName] || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=32&h=32&fit=crop";
   };
 
   const getExamplesForCategory = (categoryId: string) => {
@@ -92,51 +63,45 @@ export const CategoryShowcase = () => {
 
   if (loading) {
     return (
-      <section className="h-screen flex items-center justify-center bg-muted/30">
-        <div className="text-center text-muted-foreground">Loading categories...</div>
+      <section className="h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
+        <div className="text-gray-400 text-lg">Loading categories...</div>
       </section>
     );
   }
 
   const gradients = [
-    "from-orange-500/20 to-red-500/20", "from-blue-500/20 to-cyan-500/20",
-    "from-green-500/20 to-emerald-500/20", "from-pink-500/20 to-purple-500/20",
-    "from-slate-500/20 to-gray-500/20", "from-amber-500/20 to-yellow-500/20",
-    "from-teal-500/20 to-green-500/20", "from-red-500/20 to-pink-500/20",
-    "from-indigo-500/20 to-blue-500/20",
+    "from-orange-400 to-rose-400", "from-blue-400 to-indigo-400",
+    "from-emerald-400 to-teal-400", "from-pink-400 to-purple-400",
+    "from-amber-400 to-yellow-400", "from-cyan-400 to-blue-400",
   ];
 
   return (
-    <section className="h-screen flex flex-col justify-center bg-muted/30 overflow-hidden">
+    <section className="h-screen flex flex-col justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 overflow-hidden">
       <div className="container px-4">
-        <motion.h2 {...fadeUp(0)} className="text-4xl md:text-5xl font-bold text-center mb-4">
-          Everything Your Building Needs
-        </motion.h2>
-        <motion.p {...fadeUp(0.1)} className="text-xl text-muted-foreground text-center mb-10">
-          From the vendor next door to experts across the hall — it's all here
-        </motion.p>
+        <motion.div {...waveIn(false, 0)} className="text-center mb-10">
+          <span className="inline-block px-4 py-1.5 bg-teal-100 text-teal-700 rounded-full text-sm font-bold mb-4">Categories</span>
+          <h2 className="text-4xl md:text-6xl font-black text-gray-900 tracking-tight">
+            Everything. Under One Roof.
+          </h2>
+          <p className="text-lg text-gray-500 mt-3">From the vendor next door to experts across the hall</p>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
           {categories.slice(0, 6).map((category, index) => (
-            <motion.div key={category.id} {...fadeUp(0.1 + index * 0.08)}>
+            <motion.div key={category.id} {...waveIn(index % 2 === 1, 0.1 + index * 0.1)}>
               <Link to={`/categories/${category.slug}`}>
-                <Card className="group relative overflow-hidden cursor-pointer border-2 border-border hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                  <div className={`absolute inset-0 bg-gradient-to-br ${gradients[index % 9]} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+                <Card className="group relative overflow-hidden cursor-pointer border border-gray-100 hover:border-gray-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 rounded-2xl bg-white/70 backdrop-blur-sm">
                   <div className="relative p-5 space-y-3">
                     <div className="flex items-start justify-between">
-                      <div className="p-3 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                        <img src={getImageForCategory(category.name)} alt={category.name} className="w-8 h-8 object-cover" />
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-primary">{Math.floor(Math.random() * 50) + 10}</div>
-                        <div className="text-xs text-muted-foreground">vendors</div>
+                      <div className={`p-3 rounded-xl bg-gradient-to-br ${gradients[index % 6]} shadow-lg`}>
+                        <img src={getImageForCategory(category.name)} alt={category.name} className="w-6 h-6 object-cover rounded" />
                       </div>
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold mb-1">{category.name}</h3>
-                      <p className="text-sm text-muted-foreground">{getExamplesForCategory(category.id)}</p>
+                      <h3 className="text-lg font-black text-gray-900 mb-1">{category.name}</h3>
+                      <p className="text-xs text-gray-500">{getExamplesForCategory(category.id)}</p>
                     </div>
-                    <div className="flex items-center text-sm font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center text-xs font-bold text-gray-400 group-hover:text-gray-700 transition-colors">
                       Explore →
                     </div>
                   </div>
@@ -146,8 +111,8 @@ export const CategoryShowcase = () => {
           ))}
         </div>
 
-        <motion.div {...fadeUp(0.5)} className="text-center mt-8">
-          <button className="text-primary font-semibold text-lg hover:underline">
+        <motion.div {...waveIn(true, 0.7)} className="text-center mt-8">
+          <button className="text-primary font-bold text-sm hover:underline">
             See All {categories.length}+ Categories →
           </button>
         </motion.div>
