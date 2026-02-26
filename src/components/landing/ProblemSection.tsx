@@ -1,4 +1,4 @@
-import { motion, Variants } from "framer-motion";
+import { motion } from "framer-motion";
 import { useRef } from "react";
 import { useInView } from "framer-motion";
 import { SectionSeparator } from "./SectionSeparator";
@@ -6,87 +6,26 @@ import { ComparisonBook } from "./ComparisonBook";
 import { Clock, MapPin, Hourglass, Map, Smile, Frown } from 'lucide-react';
 import "./ComparisonBook.css";
 
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 40 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, amount: 0.2 },
+  transition: { duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] as const, delay },
+});
+
 export const ProblemSection = () => {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.15 });
-
-  const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.08,
-      },
-    },
-  };
-
-  const fromLeft: Variants = {
-    hidden: { x: -120, opacity: 0 },
-    visible: {
-      x: 0,
-      opacity: 1,
-      transition: {
-        type: "spring" as const,
-        stiffness: 70,
-        damping: 14,
-      },
-    },
-  };
-
-  const fromRight: Variants = {
-    hidden: { x: 120, opacity: 0 },
-    visible: {
-      x: 0,
-      opacity: 1,
-      transition: {
-        type: "spring" as const,
-        stiffness: 70,
-        damping: 14,
-      },
-    },
-  };
-
-  const headingVariant: Variants = {
-    hidden: { x: -80, opacity: 0 },
-    visible: {
-      x: 0,
-      opacity: 1,
-      transition: {
-        type: "spring" as const,
-        stiffness: 80,
-        damping: 15,
-      },
-    },
-  };
-
   return (
-    <section ref={ref} className="relative py-24 bg-gradient-to-br from-yellow-50 via-blue-50 to-pink-50">
+    <section className="relative py-24 bg-gradient-to-br from-yellow-50 via-blue-50 to-pink-50">
       <div className="container px-4 z-10 relative">
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate={isInView ? "visible" : "hidden"}
-        >
-          <motion.h2 variants={headingVariant} className="text-4xl md:text-5xl font-bold text-center mb-4 text-gray-800">
-            The Old Way is Broken. We Rebuilt It.
-          </motion.h2>
-          <motion.p variants={fromRight} className="text-xl text-gray-600 text-center mb-16 max-w-3xl mx-auto">
-            Other apps send strangers from across town. We keep everything inside your building — faster, safer, more personal.
-          </motion.p>
-        </motion.div>
+        <motion.h2 {...fadeUp(0)} className="text-4xl md:text-5xl font-bold text-center mb-4 text-gray-800">
+          The Old Way is Broken. We Rebuilt It.
+        </motion.h2>
+        <motion.p {...fadeUp(0.1)} className="text-xl text-gray-600 text-center mb-16 max-w-3xl mx-auto">
+          Other apps send strangers from across town. We keep everything inside your building — faster, safer, more personal.
+        </motion.p>
 
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate={isInView ? "visible" : "hidden"}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto"
-        >
-          {/* Comparison 1 - slides from left */}
-          <motion.div 
-            variants={fromLeft}
-            whileInView={{ x: [0, 5, -5, 0] }}
-            transition={{ x: { duration: 6, repeat: Infinity, repeatType: "mirror", delay: 1 } }}
-          >
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
+          <motion.div {...fadeUp(0.2)}>
             <ComparisonBook
               solutionSide="left"
               leftPageContent={
@@ -116,12 +55,7 @@ export const ProblemSection = () => {
             />
           </motion.div>
 
-          {/* Comparison 2 - slides from right */}
-          <motion.div 
-            variants={fromRight}
-            whileInView={{ x: [0, -5, 5, 0] }}
-            transition={{ x: { duration: 6, repeat: Infinity, repeatType: "mirror", delay: 1.5 } }}
-          >
+          <motion.div {...fadeUp(0.35)}>
             <ComparisonBook
               solutionSide="left"
               leftPageContent={
@@ -150,7 +84,7 @@ export const ProblemSection = () => {
               }
             />
           </motion.div>
-        </motion.div>
+        </div>
       </div>
       <div className="absolute bottom-0 left-0 right-0 text-white">
         <SectionSeparator />
