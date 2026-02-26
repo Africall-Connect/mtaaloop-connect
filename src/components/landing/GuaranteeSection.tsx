@@ -6,31 +6,31 @@ import { SectionSeparator } from "./SectionSeparator";
 
 export const GuaranteeSection = () => {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.2 });
+  const isInView = useInView(ref, { once: true, amount: 0.15 });
 
   const promises = [
     {
       icon: Rocket,
-      title: "5-15 Minute Delivery",
-      description: "From Your Building",
+      title: "Absurdly Fast Delivery",
+      description: "5-15 minutes. Because your vendor is literally upstairs.",
       color: "text-blue-500",
     },
     {
       icon: Heart,
-      title: "Build Community",
-      description: "Support Your Neighbors",
+      title: "Neighbors, Not Strangers",
+      description: "Every purchase strengthens your building's micro-economy.",
       color: "text-pink-500",
     },
     {
       icon: Shield,
-      title: "Safe & Secure",
-      description: "M-PESA Protected",
+      title: "M-PESA Fortress",
+      description: "Every transaction is locked, verified, and instant. Sleep easy.",
       color: "text-green-500",
     },
     {
       icon: RefreshCw,
-      title: "Apartment-Exclusive",
-      description: "Your Building's Marketplace",
+      title: "Your Building Only",
+      description: "An exclusive marketplace that belongs to your apartment complex alone.",
       color: "text-blue-500",
     },
   ];
@@ -40,32 +40,44 @@ export const GuaranteeSection = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2,
+        staggerChildren: 0.08,
       },
     },
   };
 
-  const itemVariants: Variants = {
-    hidden: { y: 20, opacity: 0 },
+  const headingVariant: Variants = {
+    hidden: { x: -80, opacity: 0 },
     visible: {
-      y: 0,
+      x: 0,
       opacity: 1,
-      transition: {
-        duration: 0.5,
-      },
+      transition: { type: "spring" as const, stiffness: 80, damping: 15 },
     },
   };
+
+  const getItemVariant = (index: number): Variants => ({
+    hidden: { x: -100 - index * 20, opacity: 0 },
+    visible: {
+      x: 0,
+      opacity: 1,
+      transition: {
+        type: "spring" as const,
+        stiffness: 70,
+        damping: 14,
+        delay: index * 0.1,
+      },
+    },
+  });
 
   return (
     <section ref={ref} className="relative py-24 bg-gradient-to-br from-yellow-100 via-blue-100 to-pink-100">
       <div className="container px-4 z-10 relative">
         <motion.h2
-          variants={itemVariants}
+          variants={headingVariant}
           initial="hidden"
           animate={isInView ? "visible" : "hidden"}
           className="text-4xl md:text-5xl font-bold text-center mb-16 text-gray-800"
         >
-          Our Promise
+          Our Promise to You
         </motion.h2>
 
         <motion.div
@@ -77,8 +89,12 @@ export const GuaranteeSection = () => {
           {promises.map((promise, index) => (
             <motion.div
               key={index}
-              variants={itemVariants}
-              whileHover={{ y: -10, transition: { duration: 0.2 } }}
+              variants={getItemVariant(index)}
+              initial="hidden"
+              animate={isInView ? "visible" : "hidden"}
+              whileInView={{ x: [0, 5, -5, 0] }}
+              transition={{ x: { duration: 5 + index, repeat: Infinity, repeatType: "mirror", delay: 2 + index * 0.3 } }}
+              whileHover={{ x: 8, transition: { duration: 0.2 } }}
               className="text-center space-y-4 group"
             >
               <div className="inline-flex p-6 rounded-full bg-white/80 border-2 border-gray-200 transition-all duration-300 shadow-lg backdrop-blur-sm">

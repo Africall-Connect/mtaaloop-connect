@@ -9,65 +9,49 @@ import { SectionSeparator } from "./SectionSeparator";
 export const SocialProof = () => {
   const navigate = useNavigate();
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.2 });
+  const isInView = useInView(ref, { once: true, amount: 0.15 });
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2,
+        staggerChildren: 0.08,
       },
     },
   };
 
-  const itemVariants: Variants = {
-    hidden: { y: 20, opacity: 0 },
+  const fromLeft: Variants = {
+    hidden: { x: -120, opacity: 0 },
     visible: {
-      y: 0,
+      x: 0,
       opacity: 1,
-      transition: {
-        duration: 0.5,
-      },
+      transition: { type: "spring" as const, stiffness: 70, damping: 14 },
     },
   };
 
-  const cardVariants: Variants = {
-    hidden: (direction: 'left' | 'right') => ({
-      x: direction === 'left' ? -100 : 100,
-      opacity: 0,
-    }),
+  const fromRight: Variants = {
+    hidden: { x: 120, opacity: 0 },
+    visible: {
+      x: 0,
+      opacity: 1,
+      transition: { type: "spring" as const, stiffness: 70, damping: 14 },
+    },
+  };
+
+  const statFromRight = (index: number): Variants => ({
+    hidden: { x: 80 + index * 30, opacity: 0 },
     visible: {
       x: 0,
       opacity: 1,
       transition: {
-        duration: 0.6,
+        type: "spring" as const,
+        stiffness: 100,
+        damping: 16,
+        delay: index * 0.12,
       },
     },
-  };
-
-  const statsVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-      },
-    },
-  };
-
-  const statItemVariants: Variants = {
-    hidden: { scale: 0.5, opacity: 0 },
-    visible: {
-      scale: 1,
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 260,
-        damping: 20,
-      },
-    },
-  };
+  });
 
   return (
     <section ref={ref} className="relative py-20 bg-gradient-to-br from-yellow-100 via-blue-100 to-pink-100">
@@ -78,21 +62,22 @@ export const SocialProof = () => {
           animate={isInView ? "visible" : "hidden"}
           className="text-center mb-12"
         >
-          <motion.h2 variants={itemVariants} className="text-4xl md:text-5xl font-bold mb-4 text-gray-800">
-            Already Trusted By
+          <motion.h2 variants={fromLeft} className="text-4xl md:text-5xl font-bold mb-4 text-gray-800">
+            Already Home to Thriving Communities
           </motion.h2>
-          <motion.p variants={itemVariants} className="text-xl text-gray-600">
-            Real apartment communities using Mtaalopp today
+          <motion.p variants={fromRight} className="text-xl text-gray-600">
+            Real buildings. Real neighbors. Real commerce happening right now.
           </motion.p>
         </motion.div>
 
         <div className="max-w-4xl mx-auto">
           {/* Royal Suburbs by Tsavo */}
           <motion.div
-            custom="left"
-            variants={cardVariants}
+            variants={fromLeft}
             initial="hidden"
             animate={isInView ? "visible" : "hidden"}
+            whileInView={{ x: [0, 4, -4, 0] }}
+            transition={{ x: { duration: 6, repeat: Infinity, repeatType: "mirror", delay: 1 } }}
             className="bg-white/80 rounded-2xl p-8 mb-8 shadow-lg backdrop-blur-sm"
           >
             <div className="flex items-start gap-6">
@@ -113,8 +98,8 @@ export const SocialProof = () => {
                   </span>
                 </div>
                 <p className="text-gray-600">
-                  The largest apartment community on Mtaalopp. Residents enjoy access to vendors
-                  from all phases plus nearby businesses within 500m radius. Fast deliveries, strong community.
+                  The flagship Mtaaloop community. 2,000 families connected to their building's vendors, 
+                  ordering daily essentials and discovering new services — all within arm's reach.
                 </p>
               </div>
             </div>
@@ -122,15 +107,17 @@ export const SocialProof = () => {
 
           {/* Coming Soon Card */}
           <motion.div
-            custom="right"
-            variants={cardVariants}
+            variants={fromRight}
             initial="hidden"
             animate={isInView ? "visible" : "hidden"}
+            whileInView={{ x: [0, -4, 4, 0] }}
+            transition={{ x: { duration: 6, repeat: Infinity, repeatType: "mirror", delay: 1.5 } }}
             className="bg-white/80 rounded-2xl p-8 text-center border-2 border-dashed border-gray-300 shadow-lg backdrop-blur-sm"
           >
-            <h3 className="text-2xl font-bold mb-4 text-gray-700">Your Apartment Building Coming Soon</h3>
+            <h3 className="text-2xl font-bold mb-4 text-gray-700">Your Building Could Be Next</h3>
             <p className="text-gray-600 mb-6">
-              Don't see your building? Register it and we'll set up your exclusive marketplace.
+              Don't wait for someone else to bring Mtaaloop to your apartment. 
+              Be the one who transforms your building into a thriving marketplace.
             </p>
             <Button
               className="bg-pink-500 hover:bg-pink-600 text-white rounded-full"
@@ -140,26 +127,24 @@ export const SocialProof = () => {
             </Button>
           </motion.div>
 
-          {/* Stats */}
-          <motion.div
-            variants={statsVariants}
-            initial="hidden"
-            animate={isInView ? "visible" : "hidden"}
-            className="grid grid-cols-3 gap-6 mt-12 text-center"
-          >
-            <motion.div variants={statItemVariants}>
-              <div className="text-3xl font-bold text-blue-500 mb-2">1,500+</div>
-              <div className="text-sm text-gray-600">Happy Customers</div>
-            </motion.div>
-            <motion.div variants={statItemVariants}>
-              <div className="text-3xl font-bold text-pink-500 mb-2">40+</div>
-              <div className="text-sm text-gray-600">Active Vendors</div>
-            </motion.div>
-            <motion.div variants={statItemVariants}>
-              <div className="text-3xl font-bold text-green-500 mb-2">1</div>
-              <div className="text-sm text-gray-600">Apartment Complex</div>
-            </motion.div>
-          </motion.div>
+          {/* Stats wave in from right */}
+          <div className="grid grid-cols-3 gap-6 mt-12 text-center">
+            {[
+              { value: "1,500+", label: "Happy Neighbors", color: "text-blue-500" },
+              { value: "40+", label: "Building Vendors", color: "text-pink-500" },
+              { value: "1", label: "Thriving Complex", color: "text-green-500" },
+            ].map((stat, i) => (
+              <motion.div 
+                key={stat.label}
+                variants={statFromRight(i)}
+                initial="hidden"
+                animate={isInView ? "visible" : "hidden"}
+              >
+                <div className={`text-3xl font-bold ${stat.color} mb-2`}>{stat.value}</div>
+                <div className="text-sm text-gray-600">{stat.label}</div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </div>
       <div className="absolute bottom-0 left-0 right-0 text-white">
