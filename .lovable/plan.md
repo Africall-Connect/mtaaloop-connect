@@ -1,29 +1,16 @@
 
 
-## Plan: Add Zod Validation + Rider Onboarding Tab
+## Fix: Checkout page not rendering properly
 
-### Changes to `src/pages/admin/AdminOnboarding.tsx`
+**Root cause**: The query to `customer_addresses` table (lines 101-116) references a table that doesn't exist in the database, causing an uncaught error that may prevent the page from rendering correctly — hiding the "Continue to Payment" button and other UI elements.
 
-**1. Add Zod validation schemas**
-- Shared base schema: `fullName` (2-100 chars), `email` (valid format), `phone` (Kenyan format `+254` or `07xx`, 10-15 digits), `password` (min 8 chars, must contain uppercase, lowercase, and number)
-- Vendor schema: extends base with `businessName` (required, 2-100), `businessType` (required), `businessPhone` (same phone validation)
-- Customer schema: base schema only
-- Rider schema: extends base with `idNumber` (required), `vehicleType` (required), optional `vehicleRegistration` and `licenseNumber`
+### Implementation
 
-**2. Integrate validation into submit handlers**
-- Parse form data with Zod before calling Supabase
-- Display field-level validation errors below each input using red text
-- Clear errors on successful submission or when user modifies the field
+**Edit `src/pages/Checkout.tsx`**:
 
-**3. Add Rider/Delivery Agent tab (3rd tab)**
-- Fields: fullName, email, phone, password, idNumber, vehicleType, vehicleRegistration (conditional), licenseNumber (conditional), estateId (optional)
-- On submit: `supabase.auth.signUp()` → insert into `rider_profiles` (with `is_approved: true` since admin is onboarding) → insert `user_roles` with role `rider`
-- TabsList changes from `grid-cols-2` to `grid-cols-3`
-- Add `Bike` icon from lucide-react for the tab
+1. **Remove the broken `customer_addresses` query** (lines 101-116) — this table doesn't exist in the schema
+2. **Replace with localStorage lookup** — read the apartment context from `localStorage` (key: `selectedApartment`) which stores `{"house_name":"..."}`, and use it to pre-fill `house_number`
+3. The estate name is already populated from `user_preferences` (lines 79-98), so no change needed there
 
-**4. Update header subtitle**
-- Change "vendor or customer" to "vendor, customer, or delivery agent"
-
-### Files Modified
-- `src/pages/admin/AdminOnboarding.tsx` — full rewrite with Zod schemas, validation errors state, rider tab, and rider submit handler
+This is a single targeted fix: delete ~16 lines querying a non-existent table and add ~5 lines reading from localStorage instead.
 
