@@ -98,20 +98,17 @@ const Checkout = () => {
             }
           }
 
-          const { data: address, error: addressError } = await supabase
-            .from("customer_addresses")
-            .select("house_number")
+          // Pre-fill house number from user_preferences
+          const { data: prefWithHouse } = await supabase
+            .from("user_preferences")
+            .select("house_name")
             .eq("user_id", user.id)
             .single();
 
-          if (addressError && addressError.code !== "PGRST116") {
-            throw addressError;
-          }
-
-          if (address) {
+          if (prefWithHouse?.house_name) {
             setDeliveryAddress((prev) => ({
               ...prev,
-              house_number: address.house_number || "",
+              house_number: prefWithHouse.house_name,
             }));
           }
         }
