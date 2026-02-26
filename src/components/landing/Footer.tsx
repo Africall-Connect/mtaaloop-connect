@@ -11,7 +11,7 @@ const fadeUp = (delay = 0) => ({
 
 export const Footer = () => {
   return (
-    <footer className="bg-gray-800 text-white border-t py-12">
+    <footer className="h-screen flex flex-col justify-center bg-gray-800 text-white">
       <div className="container px-4">
         <div className="grid md:grid-cols-4 gap-8 mb-8">
           <motion.div {...fadeUp(0)} className="space-y-4">
