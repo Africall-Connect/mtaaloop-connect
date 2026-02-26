@@ -7,6 +7,7 @@ import { useSubscription } from '@/contexts/SubscriptionContext';
 import { MicroService, UsageType } from '@/types/subscription';
 import { cn } from '@/lib/utils';
 import { getServiceIcon } from '@/lib/serviceIcons';
+import { getServiceImage } from '@/lib/serviceImages';
 
 interface ServiceCardProps {
   service: MicroService;
@@ -34,31 +35,38 @@ export function ServiceCard({ service, onClick }: ServiceCardProps) {
   return (
     <Card 
       className={cn(
-        "group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1",
+        "group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 overflow-hidden",
         canUseForFree && "ring-1 ring-emerald-500/30 bg-emerald-50/30"
       )}
       onClick={handleClick}
     >
+      {/* Service Image Banner */}
+      <div className="relative h-28 sm:h-36 overflow-hidden">
+        <img 
+          src={getServiceImage(service.slug)} 
+          alt={service.name}
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+        <div className="absolute bottom-2 left-2 flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-background/90 backdrop-blur-sm flex items-center justify-center">
+            <IconComponent className="w-4 h-4 text-primary" />
+          </div>
+          <h3 className="font-bold text-sm sm:text-base text-white drop-shadow-md">{service.name}</h3>
+        </div>
+        {canUseForFree && (
+          <Badge className="absolute top-2 right-2 bg-emerald-100 text-emerald-700 text-xs px-1.5 py-0.5">
+            <Check className="h-3 w-3 sm:mr-1" />
+            <span className="hidden sm:inline">Included</span>
+          </Badge>
+        )}
+      </div>
+
       <CardContent className="p-3 sm:p-4">
         <div className="flex items-start gap-3 sm:gap-4">
-          {/* Icon */}
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-            <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-          </div>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            {/* Header row with title and badge */}
-            <div className="flex items-start justify-between gap-2 mb-1">
-              <h3 className="font-semibold text-sm sm:text-base line-clamp-1">{service.name}</h3>
-              {canUseForFree && (
-                <Badge className="bg-emerald-100 text-emerald-700 text-xs shrink-0 px-1.5 py-0.5">
-                  <Check className="h-3 w-3 sm:mr-1" />
-                  <span className="hidden sm:inline">Included</span>
-                </Badge>
-              )}
-            </div>
-
             <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
               {service.description}
             </p>

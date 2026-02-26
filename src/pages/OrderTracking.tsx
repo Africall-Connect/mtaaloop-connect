@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { getServiceImage } from "@/lib/serviceImages";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -73,10 +74,13 @@ interface CategoryMessaging {
   notificationTitle: string;
   timelineLabel: string;
   deliveredMessage: string;
+  waitingHeadline: string;
+  waitingSubtext: string;
+  waitingTip: string;
+  imageSlug: string;
 }
 
 const CATEGORY_MESSAGING: Record<string, CategoryMessaging> = {
-  // Inventory Categories
   "Food & Drinks": {
     icon: "👨‍🍳",
     preparingTitle: "Preparing your order",
@@ -84,6 +88,10 @@ const CATEGORY_MESSAGING: Record<string, CategoryMessaging> = {
     notificationTitle: "Cooking Started! 👨‍🍳",
     timelineLabel: "Preparing Your Order",
     deliveredMessage: "Enjoy your meal!",
+    waitingHeadline: "Your chef is crafting something delicious...",
+    waitingSubtext: "Sit back and let the aroma come to you 🍽️",
+    waitingTip: "💡 While you wait, why not set the table?",
+    imageSlug: "food-drinks",
   },
   "Restaurant": {
     icon: "👨‍🍳",
@@ -92,6 +100,10 @@ const CATEGORY_MESSAGING: Record<string, CategoryMessaging> = {
     notificationTitle: "Cooking Started! 👨‍🍳",
     timelineLabel: "Preparing Your Meal",
     deliveredMessage: "Enjoy your meal!",
+    waitingHeadline: "A culinary masterpiece is underway...",
+    waitingSubtext: "Your personal chef is putting the finishing touches 🧑‍🍳",
+    waitingTip: "💡 Pro tip: Great meals taste better with good company!",
+    imageSlug: "restaurant",
   },
   "Living Essentials": {
     icon: "🧴",
@@ -100,6 +112,10 @@ const CATEGORY_MESSAGING: Record<string, CategoryMessaging> = {
     notificationTitle: "Packing Started! 📦",
     timelineLabel: "Packing Your Items",
     deliveredMessage: "Enjoy your items!",
+    waitingHeadline: "Your essentials are being rounded up...",
+    waitingSubtext: "We're making sure nothing is missing from your list ✅",
+    waitingTip: "💡 Stock up smart — add essentials to your favourites for quick re-orders!",
+    imageSlug: "living-essentials",
   },
   "Groceries & Food": {
     icon: "🛒",
@@ -108,8 +124,11 @@ const CATEGORY_MESSAGING: Record<string, CategoryMessaging> = {
     notificationTitle: "Packing Started! 🛒",
     timelineLabel: "Packing Your Groceries",
     deliveredMessage: "Enjoy your groceries!",
+    waitingHeadline: "Fresh picks coming your way...",
+    waitingSubtext: "We're selecting the best items for you 🥬🍎",
+    waitingTip: "💡 Did you know? Our vendors hand-pick the freshest produce just for you!",
+    imageSlug: "fresh-produce",
   },
-  // Service Categories
   "Utilities & Services": {
     icon: "🔧",
     preparingTitle: "Preparing your service",
@@ -117,6 +136,10 @@ const CATEGORY_MESSAGING: Record<string, CategoryMessaging> = {
     notificationTitle: "Service Preparing! 🔧",
     timelineLabel: "Preparing Your Service",
     deliveredMessage: "Service complete!",
+    waitingHeadline: "Your service is being arranged...",
+    waitingSubtext: "A specialist is being assigned to handle your request 🛠️",
+    waitingTip: "💡 Make sure your space is accessible for the service provider.",
+    imageSlug: "utilities-services",
   },
   "Home Services": {
     icon: "🏠",
@@ -125,8 +148,11 @@ const CATEGORY_MESSAGING: Record<string, CategoryMessaging> = {
     notificationTitle: "Service Preparing! 🏠",
     timelineLabel: "Arranging Your Service",
     deliveredMessage: "Service complete!",
+    waitingHeadline: "Your space is about to sparkle...",
+    waitingSubtext: "Our cleaning pro is gearing up and heading your way ✨",
+    waitingTip: "💡 Clear any fragile items from surfaces for the best clean possible!",
+    imageSlug: "house-cleaning",
   },
-  // Booking Categories
   "Beauty & Spa": {
     icon: "💅",
     preparingTitle: "Preparing your appointment",
@@ -134,6 +160,10 @@ const CATEGORY_MESSAGING: Record<string, CategoryMessaging> = {
     notificationTitle: "Appointment Ready! 💅",
     timelineLabel: "Preparing Your Appointment",
     deliveredMessage: "Thank you for your visit!",
+    waitingHeadline: "Glamour is on its way...",
+    waitingSubtext: "Your beauty specialist is preparing your session 💄",
+    waitingTip: "💡 Arrive relaxed — your pampering session is almost ready!",
+    imageSlug: "beauty-spa",
   },
   "Accommodation": {
     icon: "🏨",
@@ -142,8 +172,11 @@ const CATEGORY_MESSAGING: Record<string, CategoryMessaging> = {
     notificationTitle: "Booking Confirmed! 🏨",
     timelineLabel: "Preparing Your Stay",
     deliveredMessage: "Enjoy your stay!",
+    waitingHeadline: "Your cozy stay is being prepared...",
+    waitingSubtext: "Fresh linens, clean towels, and a warm welcome await 🛏️",
+    waitingTip: "💡 Pack light — most essentials are provided at your accommodation!",
+    imageSlug: "accommodation",
   },
-  // Pharmacy (Hybrid)
   "Pharmacy": {
     icon: "💊",
     preparingTitle: "Preparing your medication",
@@ -151,8 +184,11 @@ const CATEGORY_MESSAGING: Record<string, CategoryMessaging> = {
     notificationTitle: "Medication Ready! 💊",
     timelineLabel: "Preparing Your Medication",
     deliveredMessage: "Take care of yourself!",
+    waitingHeadline: "Your health matters...",
+    waitingSubtext: "Our pharmacist is carefully preparing your medication 🏥",
+    waitingTip: "💡 Remember to follow the dosage instructions on your prescription.",
+    imageSlug: "pharmacy",
   },
-  // Legacy support
   "Liquor Store": {
     icon: "🍷",
     preparingTitle: "Preparing your drinks",
@@ -160,10 +196,13 @@ const CATEGORY_MESSAGING: Record<string, CategoryMessaging> = {
     notificationTitle: "Drinks Preparing! 🍷",
     timelineLabel: "Preparing Your Drinks",
     deliveredMessage: "Enjoy responsibly!",
+    waitingHeadline: "Fine selection incoming...",
+    waitingSubtext: "Your drinks are being carefully packaged 🥂",
+    waitingTip: "💡 Chill your glasses for the perfect pour!",
+    imageSlug: "liquor-store",
   },
 };
 
-// Default fallback for unknown categories
 const DEFAULT_MESSAGING: CategoryMessaging = {
   icon: "📦",
   preparingTitle: "Preparing your order",
@@ -171,6 +210,10 @@ const DEFAULT_MESSAGING: CategoryMessaging = {
   notificationTitle: "Order Preparing! 📦",
   timelineLabel: "Preparing Your Order",
   deliveredMessage: "Enjoy!",
+  waitingHeadline: "Your order is on its way...",
+  waitingSubtext: "We're preparing everything with care 🎁",
+  waitingTip: "💡 You'll get notified the moment your order is ready!",
+  imageSlug: "package-collection",
 };
 
 // Helper function to get category messaging
@@ -1153,28 +1196,49 @@ const OrderTracking = () => {
           </div>
         ) : (
           <div className="space-y-6">
-            <Card className="p-8 text-center relative overflow-hidden">
-              {/* Animated background effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 animate-pulse"></div>
-              
-              <div className="relative z-10">
-                <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-primary/10 mb-4 animate-bounce">
-                  <span className="text-4xl">
-                    {orderStatus === "pending"
-                      ? "⏰"
-                      : orderStatus === "accepted" || orderStatus === "preparing"
-                      ? getCategoryMessaging(orderData?.category).icon
-                      : "🚴"}
-                  </span>
+            <Card className="relative overflow-hidden">
+              {/* Category-specific hero image */}
+              <div className="relative h-40 sm:h-48 overflow-hidden">
+                <img 
+                  src={getServiceImage(getCategoryMessaging(orderData?.category).imageSlug)}
+                  alt="Order category"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+                <div className="absolute bottom-0 inset-x-0 p-6 text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-background/90 backdrop-blur-sm mb-3 animate-bounce shadow-lg">
+                    <span className="text-3xl">
+                      {orderStatus === "pending"
+                        ? "⏰"
+                        : orderStatus === "accepted" || orderStatus === "preparing"
+                        ? getCategoryMessaging(orderData?.category).icon
+                        : "🚴"}
+                    </span>
+                  </div>
                 </div>
-                <h2 className="text-2xl font-bold mb-2">{getStatusLabel(orderStatus, orderData.isPremium)}</h2>
-                <p className="text-muted-foreground mb-2">
+              </div>
+              
+              <div className="p-6 text-center -mt-2">
+                <h2 className="text-xl sm:text-2xl font-bold mb-1">
+                  {orderStatus === "preparing" || orderStatus === "accepted"
+                    ? getCategoryMessaging(orderData?.category).waitingHeadline
+                    : getStatusLabel(orderStatus, orderData.isPremium)}
+                </h2>
+                <p className="text-muted-foreground mb-3 text-sm sm:text-base">
                   {orderStatus === "pending" && "Your order will be confirmed shortly"}
-                  {orderStatus === "accepted" && "The vendor is preparing your order"}
-                  {orderStatus === "preparing" && getCategoryMessaging(orderData?.category).preparingDescription}
-                  {orderStatus === "ready" && "Your order is ready for pickup"}
-                  {orderStatus === "in_transit" && "Arriving soon"}
+                  {orderStatus === "accepted" && getCategoryMessaging(orderData?.category).waitingSubtext}
+                  {orderStatus === "preparing" && getCategoryMessaging(orderData?.category).waitingSubtext}
+                  {orderStatus === "ready" && "Your order is packed and ready for pickup!"}
+                  {orderStatus === "in_transit" && "Almost there — your rider is on the way! 🏍️"}
                 </p>
+
+                {/* Category-specific waiting tip */}
+                {(orderStatus === "pending" || orderStatus === "accepted" || orderStatus === "preparing") && (
+                  <div className="inline-block bg-muted/60 backdrop-blur-sm rounded-lg px-4 py-2 text-xs sm:text-sm text-muted-foreground mb-4">
+                    {getCategoryMessaging(orderData?.category).waitingTip}
+                  </div>
+                )}
+
                 {lastUpdateTime && (
                   <Badge variant="secondary" className="mb-4">
                     Last updated: {lastUpdateTime}

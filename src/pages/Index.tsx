@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, LogIn, Plus, X, Store, CalendarCheck, Clock, Sparkles, ShoppingCart, Home, Pill } from "lucide-react";
+import { getServiceImage } from "@/lib/serviceImages";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -216,12 +217,16 @@ const BookingServiceCard = ({
       className="overflow-hidden cursor-pointer border-primary/10 hover:border-primary/30 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group"
       onClick={() => onServiceClick(service)}
     >
-      <div className="aspect-[4/3] relative overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5">
-        <div className="w-full h-full flex items-center justify-center">
-          <Sparkles className="w-10 h-10 text-primary/40 group-hover:text-primary/60 transition-colors" />
-        </div>
+      <div className="aspect-[4/3] relative overflow-hidden">
+        <img
+          src={getServiceImage(service.category || service.name)}
+          alt={service.name}
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
         {service.category && (
-          <Badge variant="secondary" className="absolute top-2 left-2 text-xs">
+          <Badge variant="secondary" className="absolute top-2 left-2 text-xs bg-background/80 backdrop-blur-sm">
             {service.category}
           </Badge>
         )}

@@ -1,0 +1,142 @@
+// Centralized service & category image mapping
+// High-quality curated Unsplash images for visual service representation
+
+export const SERVICE_IMAGES: Record<string, string> = {
+  // ============= Beauty & Spa =============
+  'hair-salon': 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=600&h=400&fit=crop',
+  'barber': 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&h=400&fit=crop',
+  'nail-salon': 'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=600&h=400&fit=crop',
+  'massage': 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=600&h=400&fit=crop',
+  'facial': 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600&h=400&fit=crop',
+  'makeup-service': 'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=600&h=400&fit=crop',
+  'bridal-package': 'https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=400&fit=crop',
+  'beauty-spa': 'https://images.unsplash.com/photo-1540555700478-4be289fbec6d?w=600&h=400&fit=crop',
+
+  // ============= Home Services =============
+  'cleaning-services': 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&h=400&fit=crop',
+  'house-cleaning': 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&h=400&fit=crop',
+  'laundry-services': 'https://images.unsplash.com/photo-1545173168-9f1947eebb7f?w=600&h=400&fit=crop',
+  'electrical': 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&h=400&fit=crop',
+  'home-services': 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&h=400&fit=crop',
+
+  // ============= Utilities =============
+  'gas-delivery': 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=600&h=400&fit=crop',
+  'water-delivery': 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=600&h=400&fit=crop',
+  'utilities-services': 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&h=400&fit=crop',
+
+  // ============= Quick Services =============
+  'trash-collection': 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=600&h=400&fit=crop',
+  'package-collection': 'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=600&h=400&fit=crop',
+  'osha-viombo': 'https://images.unsplash.com/photo-1585421514284-efb74c2b69ba?w=600&h=400&fit=crop',
+  'quick-cleaning': 'https://images.unsplash.com/photo-1563453392212-326f5e854473?w=600&h=400&fit=crop',
+  'laundry-sorting': 'https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?w=600&h=400&fit=crop',
+  'quick-meal-prep': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop',
+  'errands': 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=600&h=400&fit=crop',
+
+  // ============= Food & Drinks =============
+  'food-drinks': 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&h=400&fit=crop',
+  'fast-food': 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=600&h=400&fit=crop',
+  'traditional-food': 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=600&h=400&fit=crop',
+  'restaurant': 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&h=400&fit=crop',
+
+  // ============= Groceries =============
+  'groceries-food': 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&h=400&fit=crop',
+  'fresh-produce': 'https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=600&h=400&fit=crop',
+
+  // ============= Pharmacy =============
+  'pharmacy': 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=600&h=400&fit=crop',
+  'consultation': 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&h=400&fit=crop',
+
+  // ============= Accommodation =============
+  'accommodation': 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=400&fit=crop',
+  'guest-houses': 'https://images.unsplash.com/photo-1582719508461-905c673771fd?w=600&h=400&fit=crop',
+  'airbnb': 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&h=400&fit=crop',
+
+  // ============= Liquor =============
+  'liquor-store': 'https://images.unsplash.com/photo-1569529465841-dfecdab7503b?w=600&h=400&fit=crop',
+
+  // ============= Living Essentials =============
+  'living-essentials': 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=600&h=400&fit=crop',
+};
+
+// Convert a name/category to a slug for lookup
+export function toSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/&/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
+// Get image URL for a service/category by name or slug
+export function getServiceImage(nameOrSlug: string): string {
+  // Try direct slug lookup first
+  if (SERVICE_IMAGES[nameOrSlug]) return SERVICE_IMAGES[nameOrSlug];
+  
+  // Try converting name to slug
+  const slug = toSlug(nameOrSlug);
+  if (SERVICE_IMAGES[slug]) return SERVICE_IMAGES[slug];
+
+  // Fallback
+  return 'https://images.unsplash.com/photo-1521791136064-7986c2920216?w=600&h=400&fit=crop';
+}
+
+// Home page services showcase data
+export const HOME_SERVICES_SHOWCASE = [
+  {
+    title: 'Beauty & Spa',
+    description: 'Hair, nails, massage & more',
+    image: SERVICE_IMAGES['beauty-spa'],
+    route: '/categories/beauty-spa',
+    color: 'from-pink-500/20 to-rose-500/20',
+  },
+  {
+    title: 'House Cleaning',
+    description: 'Professional home cleaning',
+    image: SERVICE_IMAGES['house-cleaning'],
+    route: '/categories/home-services',
+    color: 'from-blue-500/20 to-cyan-500/20',
+  },
+  {
+    title: 'Laundry',
+    description: 'Wash, iron & fold',
+    image: SERVICE_IMAGES['laundry-services'],
+    route: '/categories/home-services',
+    color: 'from-indigo-500/20 to-violet-500/20',
+  },
+  {
+    title: 'Gas Delivery',
+    description: 'Quick gas cylinder refills',
+    image: SERVICE_IMAGES['gas-delivery'],
+    route: '/categories/utilities',
+    color: 'from-orange-500/20 to-amber-500/20',
+  },
+  {
+    title: 'Trash Collection',
+    description: 'Reliable waste pickup',
+    image: SERVICE_IMAGES['trash-collection'],
+    route: '/services/trash-collection',
+    color: 'from-emerald-500/20 to-green-500/20',
+  },
+  {
+    title: 'Meal Prep',
+    description: 'Fresh meals prepared for you',
+    image: SERVICE_IMAGES['quick-meal-prep'],
+    route: '/services/quick-meal-prep',
+    color: 'from-red-500/20 to-orange-500/20',
+  },
+  {
+    title: 'Electrical Repairs',
+    description: 'Licensed electricians',
+    image: SERVICE_IMAGES['electrical'],
+    route: '/categories/home-services',
+    color: 'from-yellow-500/20 to-amber-500/20',
+  },
+  {
+    title: 'Pharmacy',
+    description: 'Medications & consultations',
+    image: SERVICE_IMAGES['pharmacy'],
+    route: '/categories/pharmacy',
+    color: 'from-teal-500/20 to-emerald-500/20',
+  },
+];
