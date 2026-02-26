@@ -1,55 +1,33 @@
 
 
-## Plan: Enhance Customer Service Visibility + Category-Unique Order Waiting Bay + AI-Generated Service Images
+## System Health Audit: Issues Found
 
-### 1. Create a Rich Services Showcase Section on Home Page
-- Add a new **"Services at Your Fingertips"** section on `src/pages/Home.tsx` below products
-- Display all service categories (Home Services, Beauty & Spa, Utilities, Quick Services) as visually rich cards with **hardcoded curated images** (high-quality Unsplash URLs) for each service type:
-  - House Cleaning → cleaning image
-  - Laundry → laundry image  
-  - Hair Salon → salon image
-  - Massage → massage image
-  - Gas Delivery → gas cylinder image
-  - Trash Collection → waste management image
-  - Meal Prep → cooking image
-  - etc.
-- Each card is clickable, navigating to the relevant category/service page
-- Wrap in `ScrollAnimatedGrid` for the unique scroll animations
+### Critical Issue: Missing Service Tracking Route & Page
+All 6 Quick Services (Trash Collection, Quick Cleaning, Laundry Sorting, etc.) navigate to `/service-tracking/:requestId` after a service request is submitted. **This route does not exist in `App.tsx` and there is no `ServiceTracking` page component.** This means after a customer requests any Quick Service, they hit a 404 page.
 
-### 2. Update Index.tsx (Marketplace) Services Section
-- Replace the generic `Sparkles` icon placeholder in `BookingServiceCard` with curated service images mapped by category/name
-- Create a new file `src/lib/serviceImages.ts` containing a mapping of service/category slugs to high-quality image URLs
+Additionally, the `ServiceRequestForm` inserts into a `service_requests` Supabase table that likely does not exist in the database (no migration found), so the insert would fail with an error before even reaching the missing route.
 
-### 3. Create `src/lib/serviceImages.ts`
-- Map of category + subcategory names to curated Unsplash image URLs:
-  - Beauty & Spa subcategories (Hair, Nails, Massage, Facial, Makeup, Bridal)
-  - Home Services subcategories (Cleaning, Laundry, Electrical)
-  - Utilities (Gas, Water)
-  - Quick Services (Trash, Package, Dish washing, Cleaning, Laundry sorting, Meal prep, Errands)
-  - Pharmacy, Accommodation, Food categories
+### Other Issues Detected
+1. **`user_subscriptions` table missing** -- Network requests show 404 errors for this table. The code falls back to mock data gracefully, but subscription features are non-functional.
+2. **Framer Motion scroll warning** -- Console warns about non-static positioned containers for parallax components. Cosmetic but indicates the parallax cards may not calculate offsets correctly.
 
-### 4. Enhance QuickServices Page with Service Images
-- Update `src/components/services/ServiceCard.tsx` to show a service image alongside the icon
-- Add an image banner/thumbnail area using the `serviceImages` map
+### Plan: Fix Service Request Flow End-to-End
 
-### 5. Category-Unique Order Waiting Bay
-- Update `src/pages/OrderTracking.tsx` to have **unique, category-specific waiting messages and wording** beyond just icons:
-  - **Food & Drinks / Restaurant**: "Your chef is crafting something delicious... Sit back and let the aroma come to you"
-  - **Home Services / Cleaning**: "Your space is about to sparkle... Our cleaning pro is gearing up"
-  - **Beauty & Spa**: "Glamour is on its way... Your beauty specialist is preparing your session"
-  - **Pharmacy**: "Your health matters... Our pharmacist is carefully preparing your medication"
-  - **Groceries**: "Fresh picks coming your way... We're selecting the best items for you"
-  - **Liquor Store**: "Fine selection incoming... Your drinks are being carefully packaged"
-  - **Utilities & Services**: "Your service is being arranged... A specialist is being assigned"
-  - **Accommodation**: "Your cozy stay is being prepared... Fresh linens and all"
-- Add unique **waiting tips** per category (e.g., "While you wait, why not set the table?" for food)
-- Add category-specific **animated illustrations** using curated images in the waiting card
+**Step 1: Create `src/pages/ServiceTracking.tsx`**
+- New page that fetches a service request by ID from Supabase (or shows mock/fallback if table doesn't exist)
+- Displays: service name, status (pending/assigned/in-progress/completed), assigned agent info, customer notes, scheduled time
+- Category-specific waiting bay messaging reusing the pattern from `OrderTracking.tsx` (unique wording per service type)
+- Progress stepper: Requested → Agent Assigned → In Progress → Completed
 
-### 6. Files to Create/Edit
-- **Create**: `src/lib/serviceImages.ts` — centralized service image URL mapping
-- **Edit**: `src/pages/Home.tsx` — add services showcase section with images
-- **Edit**: `src/pages/Index.tsx` — update BookingServiceCard to use images
-- **Edit**: `src/components/services/ServiceCard.tsx` — add image thumbnail
-- **Edit**: `src/pages/QuickServices.tsx` — add visual hero images per service
-- **Edit**: `src/pages/OrderTracking.tsx` — unique category-specific waiting bay copy, tips, and images
+**Step 2: Register the route in `App.tsx`**
+- Add lazy import for `ServiceTracking`
+- Add route: `/service-tracking/:requestId` inside `ProtectedRoute`
+
+**Step 3: Fix parallax container warning**
+- Add `position: relative` to the Services section wrapper in `Home.tsx` to resolve the framer-motion scroll offset warning
+
+### Files to Edit
+- **Create**: `src/pages/ServiceTracking.tsx`
+- **Edit**: `src/App.tsx` -- add lazy import + route
+- **Edit**: `src/pages/Home.tsx` -- add `relative` class to services section
 
