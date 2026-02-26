@@ -1,83 +1,38 @@
 
 
-# Plan: Remove Paystack/M-Pesa + Fix All Remaining Issues
+# Pre-Launch Improvements for 10,000 Users
 
-## Scope
+## Current Gaps Found
 
-1. Remove all Paystack payment integration (frontend pages, edge functions, checkout options)
-2. Remove M-Pesa payment integration (service, checkout options, STK push flow)
-3. Fix order tracking route protection (re-add `ProtectedRoute`)
-4. Clean up checkout to only keep working payment methods (Wallet, placeholder "Pay on Delivery")
-5. Clean up orphaned files and references
-6. Optimize QueryClient for scalability
+1. **No code splitting** -- All 160+ pages are eagerly loaded in one bundle. Every user downloads the entire app on first visit, causing slow initial load times.
+2. **No error boundary** -- Any runtime error crashes the entire app with a white screen. No graceful recovery.
+3. **Duplicate Supabase clients** -- `src/integrations/supabase/client.ts` and `src/lib/supabaseClient.ts` both create separate clients with slightly different configs. Some hooks use one, some use the other, causing session inconsistencies.
+4. **QueryClient missing retry/refocus config** -- No `retry` limit or `refetchOnWindowFocus` control. Failed queries retry infinitely by default, and every tab focus triggers refetches across all queries.
+5. **No loading skeletons or Suspense boundaries** -- Lazy-loaded routes need fallback UI.
 
----
+## Plan
 
-## Files to Delete
+### 1. Add React.lazy code splitting for heavy route groups
+**File:** `src/App.tsx`
+- Wrap all page imports (except Index, Login, Signup) with `React.lazy(() => import(...))`
+- Add `<Suspense fallback={<LoadingSpinner />}>` around `<Routes>`
+- This alone can reduce initial bundle size by 60-80%
 
-| File | Reason |
-|------|--------|
-| `src/pages/PaystackCallback.tsx` | Paystack-specific callback page |
-| `src/pages/PaymentCallbackPage.tsx` | Paystack verification page |
-| `src/pages/PaymentFailed.tsx` | Paystack failure page |
-| `src/pages/PaymentLogsPage.tsx` | Payment logs tied to Paystack provider |
-| `src/services/paymentService.ts` | M-Pesa + Paystack retry service |
-| `src/services/OrderPaymentSection.tsx` | Paystack retry UI component |
-| `src/pages/OrderPaymentSection.tsx` | Empty file |
-| `supabase/functions/payments-paystack-init/index.ts` | Paystack init edge function |
-| `supabase/functions/payments-paystack-webhook/index.ts` | Paystack webhook edge function |
-| `supabase/functions/payments-verify/index.ts` | Paystack verify edge function |
+### 2. Add a global ErrorBoundary
+**File:** `src/components/ErrorBoundary.tsx` (new)
+- Create a class component that catches render errors
+- Shows a friendly "Something went wrong" UI with a retry button
+- Wrap the app in `src/App.tsx` with this boundary
 
-## Files to Modify
+### 3. Consolidate duplicate Supabase clients
+**File:** `src/lib/supabaseClient.ts`
+- Re-export from `src/integrations/supabase/client.ts` instead of creating a second client
+- This prevents session drift between the two clients
 
-### `src/App.tsx`
-- Remove imports: `PaystackCallback`, `PaymentCallbackPage`, `PaymentFailed`
-- Remove routes: `/payment/callback`, `/paystack/callback`, `/payment-failed`
-- Re-wrap `/orders/:orderId` with `<ProtectedRoute>`
-- Add `staleTime` and `gcTime` to `QueryClient` for scalability
+### 4. Tune QueryClient defaults
+**File:** `src/App.tsx`
+- Add `retry: 2` (don't retry forever)
+- Add `refetchOnWindowFocus: false` (prevent excessive refetches with many tabs)
 
-### `src/pages/Checkout.tsx`
-- Remove import of `initiateMpesaPayment`, `checkPaymentStatus` from paymentService
-- Remove all Paystack payment flow (`handleRetryPaystack`, paystack init invoke, redirect logic)
-- Remove M-Pesa STK push flow (lines 666-712)
-- Remove M-Pesa phone state, editing UI, validation
-- Remove payment method options: `mpesa`, `mpesa_buygoods`, `paystack`, `split`
-- Keep only: `wallet` and add a new `pay_on_delivery` option
-- Remove `paystackError`, `isRetrying`, `retryOrderId` state
-- Clean up review step text references to M-Pesa/Paystack
-- Simplify the order placement to just create the order and show animation (no external payment redirect)
-
-### `src/pages/OrderDetailsPage.tsx`
-- Remove `OrderPaymentSection` import and usage
-- Keep dispute form and order display
-
-### `src/lib/schemas/checkoutSchema.ts`
-- Remove `mpesa`, `mpesa_buygoods`, `mpesa_paybill`, `paystack`, `split` from payment method enum
-- Keep `wallet`, add `pay_on_delivery`
-- Remove `mpesaPhoneSchema`, `paybillSchema`, `tillNumberSchema`
-- Remove M-Pesa-specific validation in `validatePaymentStep`
-- Remove `validateMpesaPhone` export
-
-### `supabase/config.toml`
-- Remove function config blocks for `payments-paystack-init`, `payments-verify`, `payments-paystack-webhook`
-
-### `src/config/env.ts`
-- Remove `mpesa` config block
-
-### `src/pages/OrderTracking.tsx`
-- Change hardcoded "Payment Method: M-PESA (Paid)" text to generic "Payment: Confirmed"
-
-## Summary of Fixes
-
-| Issue | Fix |
-|-------|-----|
-| Paystack callback URL wrong | Removed entirely |
-| payments-verify `user_id` vs `customer_id` | Removed entirely |
-| Order tracking unprotected | Re-wrapped with `ProtectedRoute` |
-| Fake email in Paystack | Removed entirely |
-| M-Pesa backend doesn't exist | Removed entirely |
-| Paystack reference collision | Removed entirely |
-| QueryClient no cache config | Add `staleTime: 30000`, `gcTime: 300000` |
-
-Payment integration will be replaced later with a different API. For now, orders use "MtaaLoop Wallet" or "Pay on Delivery."
+These four changes directly address the biggest scalability and reliability risks for a 10k-user launch.
 
