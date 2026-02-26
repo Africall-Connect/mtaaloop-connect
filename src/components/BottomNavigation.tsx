@@ -21,6 +21,7 @@ export const BottomNavigation = () => {
 
   const shouldHide =
     location.pathname === "/" ||
+    location.pathname === "/marketplace" ||
     hiddenPrefixes.some((prefix) => location.pathname.startsWith(prefix)) ||
     hiddenExactOrPrefix.some(
       (path) => location.pathname === path || location.pathname.startsWith(path)
