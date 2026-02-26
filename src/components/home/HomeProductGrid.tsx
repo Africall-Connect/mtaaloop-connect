@@ -2,6 +2,7 @@ import { HomeProductCard } from "./HomeProductCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { PackageSearch } from "lucide-react";
+import { ScrollAnimatedGrid } from "@/components/ScrollAnimations";
 
 interface ProductWithVendor {
   id: string;
@@ -64,7 +65,7 @@ export const HomeProductGrid = ({
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
+    <ScrollAnimatedGrid className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
       {products.map((product) => (
         <HomeProductCard
           key={product.id}
@@ -73,6 +74,6 @@ export const HomeProductGrid = ({
           onProductClick={onProductClick}
         />
       ))}
-    </div>
+    </ScrollAnimatedGrid>
   );
 };

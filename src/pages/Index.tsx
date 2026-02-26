@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { getOperationalType } from "@/lib/categories";
 import { DURATION_OPTIONS } from "@/types/booking";
+import { ScrollAnimatedGrid, ScrollAnimatedSection } from "@/components/ScrollAnimations";
 
 interface ProductWithVendor {
   id: string;
@@ -125,7 +126,7 @@ const ProductSection = ({
         </div>
       )}
       
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+      <ScrollAnimatedGrid className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
         {filteredProducts.map((product) => (
           <CompactProductCard
             key={product.id}
@@ -134,7 +135,7 @@ const ProductSection = ({
             onProductClick={onProductClick}
           />
         ))}
-      </div>
+      </ScrollAnimatedGrid>
     </section>
   );
 };
@@ -283,7 +284,7 @@ const BookingServicesSection = ({
         </div>
       </div>
       
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+      <ScrollAnimatedGrid className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
         {services.map((service) => (
           <BookingServiceCard
             key={service.id}
@@ -291,7 +292,7 @@ const BookingServicesSection = ({
             onServiceClick={onServiceClick}
           />
         ))}
-      </div>
+      </ScrollAnimatedGrid>
     </section>
   );
 };

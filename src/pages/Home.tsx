@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { Search, ShoppingBag, MapPin, Users, Stethoscope, ArrowRight, Calendar, CalendarCheck } from "lucide-react";
+import { ScrollAnimatedSection, ScrollAnimatedGrid } from "@/components/ScrollAnimations";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -479,14 +480,14 @@ const Home = () => {
 
       <div className="container px-4 py-6 md:py-8 max-w-6xl mx-auto">
         {/* Welcome Section */}
-        <div className="mb-4 sm:mb-6">
+        <ScrollAnimatedSection direction="left" className="mb-4 sm:mb-6">
           <h1 className="text-xl md:text-3xl font-bold mb-1">
             Welcome to Mtaaloop
           </h1>
           <p className="text-muted-foreground text-sm md:text-base">
             Everything you need, delivered to your doorstep
           </p>
-        </div>
+        </ScrollAnimatedSection>
 
         {/* Search */}
         <form onSubmit={handleSearch} className="relative mb-4 sm:mb-6">
@@ -542,7 +543,7 @@ const Home = () => {
 
         {/* Health & Consultations Section */}
         {pharmacies.length > 0 && (
-          <section className="mb-8 mt-8">
+          <ScrollAnimatedSection direction="right" className="mb-8 mt-8">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-primary/10 rounded-full">
                 <Stethoscope className="h-5 w-5 text-primary" />
@@ -636,7 +637,7 @@ const Home = () => {
                 My Consultations
               </Button>
             </div>
-          </section>
+          </ScrollAnimatedSection>
         )}
 
         {/* Booking Services Section */}
