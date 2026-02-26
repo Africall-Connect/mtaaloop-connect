@@ -184,6 +184,7 @@ const LaundrySorting = lazy(() => import("./pages/services/LaundrySorting"));
 const QuickMealPrep = lazy(() => import("./pages/services/QuickMealPrep"));
 const PackageCollection = lazy(() => import("./pages/services/PackageCollection"));
 const ErrandsService = lazy(() => import("./pages/services/ErrandsService"));
+const ServiceTracking = lazy(() => import("./pages/ServiceTracking"));
 const MyConsultations = lazy(() => import("./pages/MyConsultations"));
 const MyBookings = lazy(() => import("./pages/MyBookings"));
 const ImageGeneratorPage = lazy(() => import("./pages/ImageGenerator"));
@@ -332,6 +333,11 @@ const App = () => (
               <Route path="/trash-tracking/:orderId" element={
                 <ProtectedRoute>
                   <TrashTracking />
+                </ProtectedRoute>
+              } />
+              <Route path="/service-tracking/:requestId" element={
+                <ProtectedRoute>
+                  <ServiceTracking />
                 </ProtectedRoute>
               } />
               <Route path="/account" element={
