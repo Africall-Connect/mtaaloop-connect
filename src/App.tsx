@@ -39,6 +39,7 @@ const RiderApprovals = lazy(() => import("./pages/admin/RiderApprovals"));
 const AdminLiveChatAssign = lazy(() => import("./pages/AdminLiveChatAssign"));
 const ManageMtaaLoopMart = lazy(() => import("./pages/admin/ManageMtaaLoopMart"));
 const AdminVendorPayouts = lazy(() => import("./pages/admin/AdminVendorPayouts"));
+const AdminOnboarding = lazy(() => import("./pages/admin/AdminOnboarding"));
 
 // Role-specific
 const RiderDashboard = lazy(() => import("./pages/rider/RiderDashboard"));
@@ -616,6 +617,12 @@ const App = () => (
               <Route path="/admin/compliance" element={
                 <ProtectedRoute requiredRole="admin">
                   <ComplianceDashboard />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/admin/onboarding" element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminOnboarding />
                 </ProtectedRoute>
               } />
 

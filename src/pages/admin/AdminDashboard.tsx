@@ -17,7 +17,8 @@ import {
   MessageSquare,
   ShoppingCart,
   Activity,
-  DollarSign
+  DollarSign,
+  UserPlus
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -387,7 +388,25 @@ export default function AdminDashboard() {
             </Link>
           </Card>
 
-          <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-950 dark:to-teal-900 border-teal-200 dark:border-teal-700 animate-fade-in animation-delay-1300">
+          <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-950 dark:to-rose-900 border-rose-200 dark:border-rose-700 animate-fade-in animation-delay-1300">
+            <Link to="/admin/onboarding" className="block h-full">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-3 text-rose-900 dark:text-rose-100">
+                  <div className="p-3 bg-rose-500 rounded-xl group-hover:bg-rose-600 transition-colors">
+                    <UserPlus className="h-6 w-6 text-white" />
+                  </div>
+                  <span className="text-lg font-semibold">Onboard Users</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="text-sm text-rose-700 dark:text-rose-200 leading-relaxed">
+                  Manually create vendor or customer accounts on their behalf
+                </p>
+              </CardContent>
+            </Link>
+          </Card>
+
+          <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-950 dark:to-teal-900 border-teal-200 dark:border-teal-700 animate-fade-in animation-delay-1400">
             <Link to="/admin/compliance" className="block h-full">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-3 text-teal-900 dark:text-teal-100">
