@@ -1,16 +1,21 @@
 import { Link } from "react-router-dom";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { VendorCategory, VendorSubcategory } from "@/types/database";
-import { motion, useInView } from "framer-motion";
+import { motion } from "framer-motion";
+
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 40 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, amount: 0.2 },
+  transition: { duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] as const, delay },
+});
 
 export const CategoryShowcase = () => {
   const [categories, setCategories] = useState<VendorCategory[]>([]);
   const [subcategories, setSubcategories] = useState<VendorSubcategory[]>([]);
   const [loading, setLoading] = useState(true);
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.15 });
 
   useEffect(() => {
     fetchCategoriesAndSubcategories();
@@ -94,28 +99,6 @@ export const CategoryShowcase = () => {
     return <div className="text-center py-8">Loading categories...</div>;
   }
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.06 },
-    },
-  };
-
-  const getCardVariant = (index: number) => ({
-    hidden: { x: index % 2 === 0 ? -100 : 100, opacity: 0 },
-    visible: {
-      x: 0,
-      opacity: 1,
-      transition: {
-        type: "spring" as const,
-        stiffness: 70,
-        damping: 14,
-        delay: index * 0.06,
-      },
-    },
-  });
-
   const gradients = [
     "from-orange-500/20 to-red-500/20",
     "from-blue-500/20 to-cyan-500/20",
@@ -129,44 +112,33 @@ export const CategoryShowcase = () => {
   ];
 
   return (
-    <section ref={ref} className="py-24 bg-muted/30">
+    <section className="py-24 bg-muted/30">
       <div className="container px-4">
         <motion.h2
-          initial={{ x: -80, opacity: 0 }}
-          animate={isInView ? { x: 0, opacity: 1 } : {}}
-          transition={{ type: "spring", stiffness: 80, damping: 15 }}
+          {...fadeUp(0)}
           className="text-4xl md:text-5xl font-bold text-center mb-4"
         >
           Everything Your Building Needs, Under One Roof
         </motion.h2>
         <motion.p
-          initial={{ x: 80, opacity: 0 }}
-          animate={isInView ? { x: 0, opacity: 1 } : {}}
-          transition={{ type: "spring", stiffness: 80, damping: 15, delay: 0.1 }}
+          {...fadeUp(0.1)}
           className="text-xl text-muted-foreground text-center mb-16"
         >
           From the vendor next door to experts across the hall — it's all here
         </motion.p>
 
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate={isInView ? "visible" : "hidden"}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto"
-        >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {categories.slice(0, 9).map((category, index) => (
             <motion.div
               key={category.id}
-              variants={getCardVariant(index)}
-              whileInView={{ x: [0, index % 2 === 0 ? 3 : -3, 0] }}
-              transition={{ x: { duration: 5 + index * 0.5, repeat: Infinity, repeatType: "mirror", delay: 2 } }}
+              {...fadeUp(0.1 + index * 0.08)}
             >
               <Link to={`/categories/${category.slug}`}>
                 <Card
                   className={`
                     group relative overflow-hidden cursor-pointer 
                     border-2 border-border hover:border-primary/50
-                    transition-all duration-300 hover:shadow-lg
+                    transition-all duration-300 hover:shadow-lg hover:-translate-y-1
                     ${index < 2 ? "md:col-span-2 lg:col-span-1" : ""}
                   `}
                 >
@@ -196,12 +168,10 @@ export const CategoryShowcase = () => {
               </Link>
             </motion.div>
           ))}
-        </motion.div>
+        </div>
 
         <motion.div
-          initial={{ x: 60, opacity: 0 }}
-          animate={isInView ? { x: 0, opacity: 1 } : {}}
-          transition={{ type: "spring", stiffness: 80, damping: 15, delay: 0.6 }}
+          {...fadeUp(0.5)}
           className="text-center mt-12"
         >
           <button className="text-primary font-semibold text-lg hover:underline">
