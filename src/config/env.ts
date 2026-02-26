@@ -25,14 +25,6 @@ export const config = {
   notifications: {
     pushEnabled: false,
   },
-  mpesa: {
-    enabled: false,
-    env: 'sandbox' as const,
-    consumerKey: undefined,
-    consumerSecret: undefined,
-    shortcode: undefined,
-    passkey: undefined,
-  },
 } as const;
 
 // Type for the config

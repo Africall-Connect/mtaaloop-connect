@@ -1,8 +1,5 @@
 import { z } from "zod";
 
-// Kenyan phone number regex: 07XXXXXXXX, +254XXXXXXXXX, or 254XXXXXXXXX
-const kenyaPhoneRegex = /^(\+?254|0)[17]\d{8}$/;
-
 export const deliveryAddressSchema = z.object({
   estate_name: z
     .string()
@@ -23,39 +20,12 @@ export const deliveryInstructionsSchema = z
   .max(500, "Instructions must be less than 500 characters")
   .optional();
 
-export const mpesaPhoneSchema = z
-  .string()
-  .trim()
-  .regex(kenyaPhoneRegex, "Please enter a valid Kenyan phone number (e.g., 0712345678 or +254712345678)");
-
-export const paybillSchema = z.object({
-  paybillNumber: z
-    .string()
-    .trim()
-    .regex(/^\d{5,7}$/, "Paybill number must be 5-7 digits"),
-  accountNumber: z
-    .string()
-    .trim()
-    .min(1, "Account number is required")
-    .max(20, "Account number must be less than 20 characters")
-    .regex(/^[a-zA-Z0-9]+$/, "Account number can only contain letters and numbers"),
-});
-
-export const tillNumberSchema = z
-  .string()
-  .trim()
-  .regex(/^\d{5,7}$/, "Till number must be 5-7 digits");
-
 // Full checkout form schema
 export const checkoutFormSchema = z.object({
   deliveryAddress: deliveryAddressSchema,
   instructions: deliveryInstructionsSchema,
   deliveryType: z.enum(["asap", "schedule"]),
-  paymentMethod: z.enum(["mpesa", "wallet", "mpesa_buygoods", "mpesa_paybill", "split", "paystack"]),
-  mpesaPhone: mpesaPhoneSchema.optional(),
-  paybillNumber: z.string().optional(),
-  accountNumber: z.string().optional(),
-  tillNumber: z.string().optional(),
+  paymentMethod: z.enum(["wallet", "pay_on_delivery"]),
   agreedToTerms: z.literal(true, {
     errorMap: () => ({ message: "You must agree to Terms & Conditions" }),
   }),
@@ -68,30 +38,10 @@ export const deliveryStepSchema = z.object({
   deliveryType: z.enum(["asap", "schedule"]),
 });
 
-// Payment step validation (conditional based on payment method)
+// Payment step validation
 export const paymentStepSchema = z.discriminatedUnion("paymentMethod", [
-  z.object({
-    paymentMethod: z.literal("mpesa"),
-    mpesaPhone: mpesaPhoneSchema,
-  }),
-  z.object({
-    paymentMethod: z.literal("mpesa_buygoods"),
-    tillNumber: tillNumberSchema,
-  }),
-  z.object({
-    paymentMethod: z.literal("mpesa_paybill"),
-    paybillNumber: z.string().regex(/^\d{5,7}$/, "Paybill number must be 5-7 digits"),
-    accountNumber: z.string().min(1, "Account number is required").max(20),
-  }),
-  z.object({
-    paymentMethod: z.literal("wallet"),
-  }),
-  z.object({
-    paymentMethod: z.literal("split"),
-  }),
-  z.object({
-    paymentMethod: z.literal("paystack"),
-  }),
+  z.object({ paymentMethod: z.literal("wallet") }),
+  z.object({ paymentMethod: z.literal("pay_on_delivery") }),
 ]);
 
 // Types inferred from schemas
@@ -129,43 +79,10 @@ export function validateDeliveryStep(data: {
   return { success: false, errors };
 }
 
-export function validateMpesaPhone(phone: string): { valid: boolean; error?: string } {
-  const result = mpesaPhoneSchema.safeParse(phone);
-  if (result.success) {
-    return { valid: true };
-  }
-  return { valid: false, error: result.error.errors[0]?.message };
-}
-
 export function validatePaymentStep(
-  paymentMethod: string,
-  data: {
-    mpesaPhone?: string;
-    tillNumber?: string;
-    paybillNumber?: string;
-    accountNumber?: string;
-  }
+  paymentMethod: string
 ): { success: boolean; errors: Record<string, string> } {
-  let schema;
-  let validationData: Record<string, unknown> = { paymentMethod };
-
-  switch (paymentMethod) {
-    case "mpesa":
-      validationData.mpesaPhone = data.mpesaPhone || "";
-      break;
-    case "mpesa_buygoods":
-      validationData.tillNumber = data.tillNumber || "";
-      break;
-    case "mpesa_paybill":
-      validationData.paybillNumber = data.paybillNumber || "";
-      validationData.accountNumber = data.accountNumber || "";
-      break;
-    default:
-      // wallet, split, paystack don't need extra validation
-      break;
-  }
-
-  const result = paymentStepSchema.safeParse(validationData);
+  const result = paymentStepSchema.safeParse({ paymentMethod });
 
   if (result.success) {
     return { success: true, errors: {} };
@@ -184,23 +101,18 @@ export function validatePaymentStep(
 export function sanitizeCheckoutData(data: {
   instructions?: string;
   houseNumber: string;
-  phone?: string;
 }): {
   instructions: string;
   houseNumber: string;
-  phone: string;
 } {
   return {
     instructions: (data.instructions || "")
       .trim()
       .slice(0, 500)
-      .replace(/<[^>]*>/g, ""), // Strip any HTML tags
+      .replace(/<[^>]*>/g, ""),
     houseNumber: data.houseNumber
       .trim()
       .slice(0, 50)
-      .replace(/[^a-zA-Z0-9\s\-\/]/g, ""), // Only allow safe characters
-    phone: (data.phone || "")
-      .trim()
-      .replace(/[^\d+]/g, ""), // Only digits and +
+      .replace(/[^a-zA-Z0-9\s\-\/]/g, ""),
   };
 }

@@ -1135,7 +1135,7 @@ const OrderTracking = () => {
                             <div style="display:flex;justify-content:space-between;padding:10px 0;font-weight:bold;border-top:1px solid #ddd"><div>Total</div><div>KSh ${total}</div></div>
                           </div>
 
-                          <div style="margin-top:10px;font-size:12px;color:#666">Payment Method: M-PESA (Paid)</div>
+                          <div style="margin-top:10px;font-size:12px;color:#666">Payment: Confirmed</div>
 
                           <a href="#" onclick="window.print();return false;" class="print-btn">Print / Save PDF</a>
                         </body>
@@ -1362,7 +1362,7 @@ const OrderTracking = () => {
                   <span>Total</span>
                   <span>KSh {orderData.total_amount}</span>
                 </div>
-                <div className="text-sm text-muted-foreground mt-2">Payment: M-PESA (Paid)</div>
+                <div className="text-sm text-muted-foreground mt-2">Payment: Confirmed</div>
               </div>
             </Card>
 

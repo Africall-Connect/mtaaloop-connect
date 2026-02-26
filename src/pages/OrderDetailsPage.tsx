@@ -6,8 +6,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Order } from "@/types/database";
-import OrderPaymentSection from "@/services/OrderPaymentSection";
-
 
 const OrderDetailsPage = () => {
   const { orderId } = useParams<{ orderId: string }>();
@@ -20,7 +18,6 @@ const OrderDetailsPage = () => {
   const [reason, setReason] = useState("");
   const [details, setDetails] = useState("");
   const [submittingDispute, setSubmittingDispute] = useState(false);
-
 
   const handleCreateDispute = async () => {
     if (!user || !order) return;
@@ -55,11 +52,6 @@ const OrderDetailsPage = () => {
   };
 
   useEffect(() => {
-    // Check if the 'retry' query param is present and trigger the retry flow
-    // This logic is now handled inside the OrderPaymentSection, but leaving this
-    // as a placeholder in case you want to add a page-level effect.
-
-    // You would also fetch and display order details here
     const fetchOrder = async () => {
       if (!orderId) return;
       setStatus("loading");
@@ -79,12 +71,7 @@ const OrderDetailsPage = () => {
       {status === "loading" && <p>Loading order...</p>}
       {order && (
         <div>
-          <pre className="mt-4 p-4 bg-gray-100 rounded"><code>{JSON.stringify(order, null, 2)}</code></pre>
-
-          <div className="my-4 p-4 border rounded-md">
-            <h2 className="text-lg font-semibold mb-2">Payment</h2>
-            <OrderPaymentSection orderId={order.id} />
-          </div>
+          <pre className="mt-4 p-4 bg-muted rounded"><code>{JSON.stringify(order, null, 2)}</code></pre>
 
           <div className="mt-6 border-t pt-4">
             {!showDisputeForm ? (
