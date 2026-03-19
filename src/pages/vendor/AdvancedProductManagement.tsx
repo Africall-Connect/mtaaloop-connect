@@ -50,13 +50,30 @@ export default function AdvancedProductManagement() {
   const [hasCategories, setHasCategories] = useState(false);
   const [checkingCategories, setCheckingCategories] = useState(true);
 
+  const resolveVendorProfileId = useCallback(async (): Promise<string | null> => {
+    // Try localStorage first
+    const cached = typeof window !== 'undefined' ? localStorage.getItem('ml_vendor_profile_id') : null;
+    if (cached) return cached;
+
+    // Fallback: look up from DB using auth user
+    if (!user?.id) return null;
+    const { data: profile } = await supabase
+      .from('vendor_profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (profile?.id) {
+      localStorage.setItem('ml_vendor_profile_id', profile.id);
+      return profile.id;
+    }
+    return null;
+  }, [user?.id]);
+
   const checkCategories = useCallback(async () => {
     try {
       setCheckingCategories(true);
-      const vendorProfileId =
-        typeof window !== 'undefined'
-          ? localStorage.getItem('ml_vendor_profile_id')
-          : null;
+      const vendorProfileId = await resolveVendorProfileId();
 
       if (!vendorProfileId) {
         setCheckingCategories(false);
@@ -71,32 +88,24 @@ export default function AdvancedProductManagement() {
         .eq('vendor_id', vendorProfileId)
         .limit(1);
 
-      // Check for subcategories
-      const { data: subcategories } = await supabase
-        .from('vendor_subcategories')
-        .select('id')
-        .eq('vendor_id', vendorProfileId)
-        .limit(1);
-
       const hasCats = (categories?.length || 0) > 0;
-      const hasSubCats = (subcategories?.length || 0) > 0;
       
-      setHasCategories(hasCats && hasSubCats);
+      setHasCategories(hasCats);
       
-      if (!hasCats || !hasSubCats) {
-        toast.error('Please set up both product categories and subcategories first.');
+      if (!hasCats) {
+        toast.error('Please set up product categories first.');
         setTimeout(() => {
           navigate('/vendor/categories');
         }, 1500);
       }
     } catch (error) {
-      console.error('Error checking for categories or subcategories:', error);
+      console.error('Error checking for categories:', error);
       toast.error('Could not verify your vendor setup. Please try again.');
     } finally {
       setCheckingCategories(false);
       setLoading(false);
     }
-  }, [navigate]);
+  }, [navigate, resolveVendorProfileId]);
 
   const fetchProducts = useCallback(async () => {
   try {
