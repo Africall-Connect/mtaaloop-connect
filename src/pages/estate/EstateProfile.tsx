@@ -75,29 +75,29 @@ export default function EstateProfile() {
 
   const fetchProfile = useCallback(async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('estates')
         .select('*')
-        .eq('manager_id', user?.id)
+        .eq('approved_by', user?.id)
         .single();
 
       if (error) throw error;
 
-      setProfile(data);
+      setProfile(data as any);
       setFormData({
         name: data.name || '',
         location: data.location || '',
         description: data.description || '',
         total_units: data.total_units || 0,
-        latitude: data.latitude?.toString() || '',
-        longitude: data.longitude?.toString() || '',
-        amenities: data.amenities || [],
+        latitude: '',
+        longitude: '',
+        amenities: Array.isArray(data.amenities) ? data.amenities : [],
         estate_type: data.estate_type || '',
         contact_phone: data.contact_phone || '',
         contact_email: data.contact_email || '',
-        website_url: data.website_url || '',
-        operating_hours: data.operating_hours || { start: '06:00', end: '23:00' },
-        images: data.images || []
+        website_url: '',
+        operating_hours: { start: '06:00', end: '23:00' },
+        images: data.estate_photos || []
       });
     } catch (error) {
       console.error('Error fetching profile:', error);

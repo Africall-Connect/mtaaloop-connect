@@ -65,7 +65,7 @@ export default function ResidentManagement({ estateId }: ResidentManagementProps
     if (!confirm('Are you sure you want to remove this resident?')) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('estate_residents')
         .delete()
         .eq('id', residentId);

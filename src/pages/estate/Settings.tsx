@@ -75,10 +75,10 @@ export default function Settings() {
 
   const fetchSettings = useCallback(async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('estates')
         .select('*')
-        .eq('manager_id', user?.id)
+        .eq('approved_by', user?.id)
         .single();
 
       if (error) throw error;

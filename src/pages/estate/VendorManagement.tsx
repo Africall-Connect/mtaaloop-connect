@@ -39,14 +39,14 @@ export default function VendorManagement({ estateId }: VendorManagementProps) {
 
   const fetchVendors = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from('vendors')
+      const { data, error } = await (supabase as any)
+        .from('vendor_profiles')
         .select('*')
         .eq('estate_id', estateId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setVendors(data || []);
+      setVendors((data as any) || []);
     } catch (error) {
       console.error('Error fetching vendors:', error);
     } finally {

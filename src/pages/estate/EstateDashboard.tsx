@@ -149,10 +149,10 @@ export default function EstateDashboard() {
   const fetchEstateData = useCallback(async () => {
     try {
       // Fetch estate info
-      const { data: estateData, error: estateError } = await supabase
+      const { data: estateData, error: estateError } = await (supabase as any)
         .from('estates')
-        .select('id, name, location, total_units, is_approved, active_vendors_count, active_residents_count')
-        .eq('manager_id', user?.id)
+        .select('id, name, location, total_units, is_approved')
+        .eq('approved_by', user?.id)
         .single();
 
       if (estateError) throw estateError;
