@@ -19,7 +19,8 @@ import {
   Activity,
   DollarSign,
   UserPlus,
-  Flower2
+  Flower2,
+  Package
 } from 'lucide-react';
 
 export default function AdminDashboard() {
