@@ -632,6 +632,11 @@ const App = () => (
                   <SeedIloraFlowers />
                 </ProtectedRoute>
               } />
+              <Route path="/admin/seed-products" element={
+                <ProtectedRoute requiredRole="admin">
+                  <SeedVendorProducts />
+                </ProtectedRoute>
+              } />
 
               {/* Vendor routes */}
               <Route path="/vendor/dashboard" element={
