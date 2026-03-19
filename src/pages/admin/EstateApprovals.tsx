@@ -19,16 +19,15 @@ import { toast } from 'sonner';
 interface Estate {
   id: string;
   name: string;
-  slug: string;
+  slug: string | null;
   location: string;
-  county: string;
+  county: string | null;
   address: string;
-  total_units: number;
-  manager_name: string;
-  manager_phone: string;
-  manager_email: string;
-  is_approved: boolean;
-  created_at: string;
+  total_units: number | null;
+  contact_phone: string | null;
+  contact_email: string | null;
+  is_approved: boolean | null;
+  created_at: string | null;
 }
 
 export default function EstateApprovals() {
