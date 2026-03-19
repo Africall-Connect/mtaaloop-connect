@@ -626,6 +626,11 @@ const App = () => (
                   <AdminOnboarding />
                 </ProtectedRoute>
               } />
+              <Route path="/admin/seed-ilora" element={
+                <ProtectedRoute requiredRole="admin">
+                  <SeedIloraFlowers />
+                </ProtectedRoute>
+              } />
 
               {/* Vendor routes */}
               <Route path="/vendor/dashboard" element={
