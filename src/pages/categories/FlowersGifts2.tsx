@@ -122,7 +122,7 @@ const FlowersGifts2 = () => {
         <div className="p-4">
           <div className="flex items-start gap-3 mb-2">
             {vendor.logo_url && (
-              <img src={vendor.logo_url} alt={`${vendor.business_name} logo`} className="w-12 h-12 rounded-full object-cover border-2 border-gray-200" />
+              <img src={vendor.logo_url} alt={`${vendor.business_name} logo`} className="w-12 h-12 rounded-full object-cover border-2 border-border" />
             )}
             <div className="flex-1 min-w-0">
               <h3 className="font-bold text-lg line-clamp-1">{vendor.business_name}</h3>
