@@ -36,6 +36,7 @@ export const MAIN_CATEGORIES = [
   "Groceries & Food",
   "Restaurant",
   "Liquor Store",
+  "Flowers & Gifts",
   // Service
   "Utilities & Services",
   "Home Services",
