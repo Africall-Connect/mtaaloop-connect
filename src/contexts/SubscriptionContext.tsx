@@ -195,7 +195,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       // Upsert usage record
-      const { error } = await supabase.rpc('increment_subscription_usage', {
+      const { error } = await (supabase as any).rpc('increment_subscription_usage', {
         p_user_id: user.id,
         p_usage_type: serviceType,
         p_period_month: currentPeriod,
@@ -203,7 +203,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         // RPC might not exist, try direct update
-        const { data: existing } = await supabase
+        const { data: existing } = await (supabase as any)
           .from('subscription_usage')
           .select('id, used_amount')
           .eq('user_id', user.id)
@@ -212,12 +212,12 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
           .maybeSingle();
 
         if (existing) {
-          await supabase
+          await (supabase as any)
             .from('subscription_usage')
-            .update({ used_amount: existing.used_amount + 1 })
-            .eq('id', existing.id);
+            .update({ used_amount: (existing as any).used_amount + 1 })
+            .eq('id', (existing as any).id);
         } else {
-          await supabase.from('subscription_usage').insert({
+          await (supabase as any).from('subscription_usage').insert({
             user_id: user.id,
             usage_type: serviceType,
             period_month: currentPeriod,
