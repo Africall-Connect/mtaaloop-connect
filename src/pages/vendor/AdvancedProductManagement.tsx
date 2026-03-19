@@ -109,13 +109,10 @@ export default function AdvancedProductManagement() {
 
   const fetchProducts = useCallback(async () => {
   try {
-    const vendorProfileId =
-      typeof window !== "undefined"
-        ? localStorage.getItem("ml_vendor_profile_id")
-        : null;
+    const vendorProfileId = await resolveVendorProfileId();
 
     if (!vendorProfileId) {
-      console.warn("No vendor profile ID found in storage");
+      console.warn("No vendor profile ID found");
       setProducts([]);
       return;
     }
