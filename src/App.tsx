@@ -581,6 +581,11 @@ const App = () => (
                   <VendorApprovals />
                 </ProtectedRoute>
               } />
+              <Route path="/admin/vendor-management" element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminVendorManagement />
+                </ProtectedRoute>
+              } />
               <Route path="/admin/estate-approvals" element={
                 <ProtectedRoute requiredRole="admin">
                   <EstateApprovals />
