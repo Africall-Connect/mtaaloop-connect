@@ -67,17 +67,18 @@ const TrashCollection = () => {
 
           // Fetch user address
           const { data: address, error: addressError } = await supabase
-            .from("customer_addresses")
-            .select("house_number")
+            .from("delivery_addresses")
+            .select("unit_number")
             .eq("user_id", user.id)
-            .single();
+            .eq("is_default", true)
+            .maybeSingle();
 
-          if (addressError && addressError.code !== "PGRST116") {
-            throw addressError;
+          if (addressError) {
+            console.error("Error fetching address:", addressError);
           }
 
           if (address) {
-            setHouseNumber(address.house_number || "");
+            setHouseNumber(address.unit_number || "");
           }
         }
       } catch (error) {

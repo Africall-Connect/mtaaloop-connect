@@ -98,7 +98,7 @@ const Addresses = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setAddresses(data || []);
+      setAddresses((data as any) || []);
     } catch (error) {
       console.error("Error fetching addresses:", error);
       toast({

@@ -5,14 +5,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Order } from "@/types/database";
-
 const OrderDetailsPage = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState<"loading" | "loaded">("loading");
-  const [order, setOrder] = useState<Order | null>(null);
+  const [order, setOrder] = useState<any | null>(null);
   const { user } = useAuth();
   const [showDisputeForm, setShowDisputeForm] = useState(false);
   const [reason, setReason] = useState("");

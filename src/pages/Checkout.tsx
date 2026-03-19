@@ -192,10 +192,9 @@ const Checkout = () => {
             product_name: i.name, quantity: i.quantity, price: i.price,
           }))
         );
-        await supabase.from("mtaaloop_deliveries").insert({
-          order_id: orderId, business_type_id: bTypeId, estate_id: estateId,
-          status: "pending", delivery_address: addr,
-          delivery_instructions: instructions, delivery_fee: deliveryFee,
+        await (supabase.from("deliveries") as any).insert({
+          order_id: orderId, estate_id: estateId,
+          status: "pending", delivery_fee: deliveryFee,
         });
         orderItems.forEach(i => removeItem(i.id));
         setLastOrderId(orderId);

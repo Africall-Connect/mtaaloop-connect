@@ -25,14 +25,14 @@ export default function ResidentManagement({ estateId }: ResidentManagementProps
 
   const fetchResidents = useCallback(async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('estate_residents')
         .select('*')
         .eq('estate_id', estateId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setResidents(data || []);
+      setResidents((data as any) || []);
     } catch (error) {
       console.error('Error fetching residents:', error);
     } finally {
@@ -46,7 +46,7 @@ export default function ResidentManagement({ estateId }: ResidentManagementProps
 
   const approveResident = async (residentId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('estate_residents')
         .update({ is_approved: true })
         .eq('id', residentId);
@@ -65,7 +65,7 @@ export default function ResidentManagement({ estateId }: ResidentManagementProps
     if (!confirm('Are you sure you want to remove this resident?')) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('estate_residents')
         .delete()
         .eq('id', residentId);

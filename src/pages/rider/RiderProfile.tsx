@@ -88,17 +88,17 @@ export default function RiderProfile() {
       }
 
       if (profileData) {
-        setProfile(profileData);
+        setProfile(profileData as any);
         setFormData({
           full_name: profileData.full_name || '',
           phone: profileData.phone || '',
           vehicle_type: profileData.vehicle_type || 'motorcycle',
           license_number: profileData.license_number || '',
           vehicle_registration: profileData.vehicle_registration || '',
-          emergency_contact: profileData.emergency_contact || '',
-          emergency_contact_phone: profileData.emergency_contact_phone || '',
-          address: profileData.address || '',
-          city: profileData.city || '',
+          emergency_contact: (profileData as any).emergency_contact || '',
+          emergency_contact_phone: (profileData as any).emergency_contact_phone || '',
+          address: (profileData as any).address || '',
+          city: (profileData as any).city || '',
         });
       } else {
         // Create new profile if it doesn't exist
@@ -118,7 +118,7 @@ export default function RiderProfile() {
           .single();
 
         if (!createError && created) {
-          setProfile(created);
+          setProfile(created as any);
           setFormData({
             full_name: created.full_name,
             phone: created.phone || '',

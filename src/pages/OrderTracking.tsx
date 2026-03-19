@@ -506,10 +506,9 @@ const OrderTracking = () => {
   setIsCreatingOrder(true);
   console.log("[createOrder] incoming orderDetails =", orderDetails);
   try {
-    const { data: newOrder, error: orderError } = await supabase
+    const { data: newOrder, error: orderError } = await (supabase as any)
       .from("orders")
-      .insert({
-        id: orderId, // you’re controlling the id
+      .insert([{
         customer_id: user!.id,
         vendor_id: orderDetails.vendorId,
         estate_id: orderDetails.estateId || null,
@@ -517,7 +516,7 @@ const OrderTracking = () => {
         status: "pending",
         delivery_address: orderDetails.deliveryAddress,
         customer_notes: orderDetails.customerNotes || null,
-      })
+      }])
       .select()
       .single();
 
@@ -561,10 +560,10 @@ const OrderTracking = () => {
     // Insert order items
     const orderItems = (orderDetails.items as Record<string, unknown>[]).map((item: Record<string, unknown>) => ({
       order_id: newOrder.id,
-      product_id: item.product_id,
-      product_name: item.name,
-      quantity: item.quantity,
-      price: item.price,
+      product_id: item.product_id as string,
+      product_name: item.name as string,
+      quantity: item.quantity as number,
+      price: item.price as number,
     }));
 
     const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
@@ -775,9 +774,10 @@ const OrderTracking = () => {
       
       // Award loyalty points for review (optional)
       if (orderData?.customer_id) {
-        supabase.rpc('increment_loyalty_points', {
-          customer_id: orderData.customer_id,
-          points: 5
+        supabase.rpc('award_points', {
+          user_uuid: orderData.customer_id,
+          points_to_add: 5,
+          activity_type: 'review_submitted',
         }).then(() => {
           toast.success("You earned 5 bonus points! 💚");
         });

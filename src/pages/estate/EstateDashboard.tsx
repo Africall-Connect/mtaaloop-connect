@@ -48,22 +48,22 @@ export default function EstateDashboard() {
   const fetchStats = useCallback(async (estateId: string) => {
     try {
       // Get active residents count
-      const { count: residentsCount } = await supabase
+      const { count: residentsCount } = await (supabase as any)
         .from('estate_residents')
         .select('*', { count: 'exact', head: true })
         .eq('estate_id', estateId)
         .eq('is_approved', true);
 
       // Get pending approvals count
-      const { count: pendingCount } = await supabase
+      const { count: pendingCount } = await (supabase as any)
         .from('estate_residents')
         .select('*', { count: 'exact', head: true })
         .eq('estate_id', estateId)
         .eq('is_approved', false);
 
-      // Get active vendors count (assuming vendors table exists)
-      const { count: vendorsCount } = await supabase
-        .from('vendors')
+      // Get active vendors count
+      const { count: vendorsCount } = await (supabase as any)
+        .from('vendor_profiles')
         .select('*', { count: 'exact', head: true })
         .eq('estate_id', estateId)
         .eq('is_approved', true);
@@ -149,10 +149,10 @@ export default function EstateDashboard() {
   const fetchEstateData = useCallback(async () => {
     try {
       // Fetch estate info
-      const { data: estateData, error: estateError } = await supabase
+      const { data: estateData, error: estateError } = await (supabase as any)
         .from('estates')
-        .select('id, name, location, total_units, is_approved, active_vendors_count, active_residents_count')
-        .eq('manager_id', user?.id)
+        .select('id, name, location, total_units, is_approved')
+        .eq('approved_by', user?.id)
         .single();
 
       if (estateError) throw estateError;

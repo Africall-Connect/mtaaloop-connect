@@ -84,8 +84,8 @@ export default function RiderActiveOrders({ riderId }: RiderActiveOrdersProps) {
       }
 
       // Transform the data to match our interface
-      const transformedOrders = data?.map(delivery => ({
-        ...delivery.orders,
+      const transformedOrders = data?.map((delivery: any) => ({
+        ...(delivery.orders || {}),
         delivery_fee: delivery.delivery_fee,
         status: delivery.status
       })) || [];

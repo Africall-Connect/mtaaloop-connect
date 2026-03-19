@@ -85,13 +85,13 @@ export default function RiderCustomerManagement() {
 
       const customerIds = Array.from(customerMap.keys());
 
-      const { data: customerProfiles } = await supabase
-        .from('estate_residents')
+      const { data: customerProfiles } = await (supabase as any)
+        .from('customer_profiles')
         .select('*')
-        .in('id', customerIds);
+        .in('user_id', customerIds);
 
-      const enrichedCustomers = customerProfiles?.map(profile => {
-        const stats = customerMap.get(profile.id);
+      const enrichedCustomers = (customerProfiles as any[])?.map((profile: any) => {
+        const stats = customerMap.get(profile.user_id);
         if (!stats) return null;
         
         const lastOrder = stats.orders.sort((a, b) =>

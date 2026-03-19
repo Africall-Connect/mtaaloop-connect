@@ -123,8 +123,8 @@ export default function AnalyticsDashboard() {
       const previousOrderCount = previousOrders?.length || 0;
       const orderGrowth = previousOrderCount > 0 ? ((currentOrderCount - previousOrderCount) / previousOrderCount) * 100 : 0;
 
-      const uniqueCustomers = new Set(currentOrders?.map(o => o.user_id)).size;
-      const previousUniqueCustomers = new Set(previousOrders?.map(o => o.user_id)).size;
+      const uniqueCustomers = new Set(currentOrders?.map((o: any) => o.customer_id || o.user_id)).size;
+      const previousUniqueCustomers = new Set(previousOrders?.map((o: any) => o.customer_id || o.user_id)).size;
       const customerGrowth = previousUniqueCustomers > 0 ? ((uniqueCustomers - previousUniqueCustomers) / previousUniqueCustomers) * 100 : 0;
 
       const avgOrder = currentOrderCount > 0 ? currentRevenue / currentOrderCount : 0;
@@ -132,16 +132,16 @@ export default function AnalyticsDashboard() {
       const avgOrderGrowth = previousAvgOrder > 0 ? ((avgOrder - previousAvgOrder) / previousAvgOrder) * 100 : 0;
 
       // Get top products
-      const { data: topProductsData } = await supabase
+      const { data: topProductsData } = await (supabase as any)
         .from('order_items')
-        .select('product_id, quantity, subtotal, products!inner(id, name, price, image_url)')
+        .select('product_id, quantity, price, products!inner(id, name, price, image_url)')
         .eq('products.vendor_id', vendorId);
 
       const productStats = new Map<string, TopProduct>();
-      topProductsData?.forEach(item => {
+      topProductsData?.forEach((item: any) => {
         const p = item.products as unknown as { id: string; name: string; price: number; image_url: string };
         const existing = productStats.get(p.id) || { id: p.id, name: p.name, revenue: 0, orders: 0, image_url: p.image_url, price: p.price, total_quantity: 0 };
-        existing.revenue += Number(item.subtotal || 0);
+        existing.revenue += Number(item.price || 0);
         existing.orders += 1;
         existing.total_quantity = (existing.total_quantity || 0) + (item.quantity || 0);
         productStats.set(p.id, existing);

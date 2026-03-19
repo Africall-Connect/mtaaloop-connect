@@ -40,7 +40,7 @@ export default function Notifications({ estateId }: NotificationsProps) {
       const notificationsList: Notification[] = [];
 
       // Check for pending resident approvals
-      const { data: pendingResidents } = await supabase
+      const { data: pendingResidents } = await (supabase as any)
         .from('estate_residents')
         .select('*')
         .eq('estate_id', estateId)
@@ -48,7 +48,7 @@ export default function Notifications({ estateId }: NotificationsProps) {
         .order('created_at', { ascending: false })
         .limit(5);
 
-      pendingResidents?.forEach(resident => {
+      pendingResidents?.forEach((resident: any) => {
         notificationsList.push({
           id: `resident-${resident.id}`,
           type: 'resident_request',
@@ -61,15 +61,15 @@ export default function Notifications({ estateId }: NotificationsProps) {
       });
 
       // Check for pending vendor approvals
-      const { data: pendingVendors } = await supabase
-        .from('vendors')
+      const { data: pendingVendors } = await (supabase as any)
+        .from('vendor_profiles')
         .select('*')
         .eq('estate_id', estateId)
         .eq('is_approved', false)
         .order('created_at', { ascending: false })
         .limit(5);
 
-      pendingVendors?.forEach(vendor => {
+      pendingVendors?.forEach((vendor: any) => {
         notificationsList.push({
           id: `vendor-${vendor.id}`,
           type: 'vendor_request',
@@ -84,24 +84,20 @@ export default function Notifications({ estateId }: NotificationsProps) {
       // Check for recent orders
       const { data: recentOrders } = await supabase
         .from('orders')
-        .select(`
-          *,
-          vendor:vendors(business_name),
-          resident:estate_residents(apartment_number)
-        `)
+        .select('*')
         .eq('estate_id', estateId)
         .order('created_at', { ascending: false })
         .limit(10);
 
-      recentOrders?.forEach(order => {
+      recentOrders?.forEach((order: any) => {
         notificationsList.push({
           id: `order-${order.id}`,
           type: 'order',
           title: 'New Order Placed',
-          message: `Order from ${order.resident?.apartment_number} at ${order.vendor?.business_name}`,
+          message: `New order placed - KES ${order.total_amount || 0}`,
           is_read: false,
           created_at: order.created_at,
-          metadata: { orderId: order.id, amount: order.final_amount }
+          metadata: { orderId: order.id, amount: order.total_amount }
         });
       });
 

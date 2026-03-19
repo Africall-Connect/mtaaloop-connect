@@ -19,16 +19,15 @@ import { toast } from 'sonner';
 interface Estate {
   id: string;
   name: string;
-  slug: string;
+  slug: string | null;
   location: string;
-  county: string;
+  county: string | null;
   address: string;
-  total_units: number;
-  manager_name: string;
-  manager_phone: string;
-  manager_email: string;
-  is_approved: boolean;
-  created_at: string;
+  total_units: number | null;
+  contact_phone: string | null;
+  contact_email: string | null;
+  is_approved: boolean | null;
+  created_at: string | null;
 }
 
 export default function EstateApprovals() {
@@ -52,7 +51,7 @@ export default function EstateApprovals() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setEstates(data || []);
+      setEstates((data as any) || []);
     } catch (error) {
       console.error('Error fetching estates:', error);
       toast.error('Failed to load estate applications');
@@ -177,15 +176,14 @@ export default function EstateApprovals() {
                         <p className="text-sm text-muted-foreground">{estate.address}</p>
                       </div>
                       <div className="space-y-2">
-                        <h4 className="font-semibold text-sm">Manager Information</h4>
-                        <p className="text-sm font-medium">{estate.manager_name}</p>
+                        <h4 className="font-semibold text-sm">Contact Information</h4>
                         <div className="flex items-center gap-2 text-sm">
                           <Phone className="h-4 w-4 text-muted-foreground" />
-                          <span>{estate.manager_phone}</span>
+                          <span>{estate.contact_phone || 'N/A'}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
                           <Mail className="h-4 w-4 text-muted-foreground" />
-                          <span>{estate.manager_email}</span>
+                          <span>{estate.contact_email || 'N/A'}</span>
                         </div>
                       </div>
                     </div>

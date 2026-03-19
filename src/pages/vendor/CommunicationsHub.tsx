@@ -52,28 +52,23 @@ export default function CommunicationsHub() {
 
   const fetchConversations = useCallback(async () => {
     try {
-      const { data: messagesData } = await supabase
+      const { data: messagesData } = await (supabase as any)
         .from('messages')
-        .select(`
-          *,
-          customer:customers(first_name, last_name, email, phone)
-        `)
+        .select('*')
         .eq('vendor_id', user?.id)
         .order('created_at', { ascending: false });
 
       const conversationMap = new Map<string, Conversation>();
 
-      messagesData?.forEach(msg => {
+      messagesData?.forEach((msg: any) => {
         const customerId = msg.customer_id;
-        const customerName = msg.customer?.first_name
-          ? `${msg.customer.first_name} ${msg.customer.last_name || ''}`.trim()
-          : 'Customer';
+        const customerName = 'Customer';
 
         if (!conversationMap.has(customerId)) {
           conversationMap.set(customerId, {
             customer_id: customerId,
             customer_name: customerName,
-            customer_email: msg.customer?.email || '',
+            customer_email: '',
             last_message: msg.message,
             last_message_time: msg.created_at,
             unread_count: 0,
@@ -97,19 +92,16 @@ export default function CommunicationsHub() {
 
   const fetchMessages = useCallback(async (customerId: string) => {
     try {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('messages')
-        .select(`
-          *,
-          customer:customers(first_name, last_name, email, phone)
-        `)
+        .select('*')
         .eq('vendor_id', user?.id)
         .eq('customer_id', customerId)
         .order('created_at', { ascending: true });
 
-      setMessages(data || []);
+      setMessages((data as any) || []);
 
-      await supabase
+      await (supabase as any)
         .from('messages')
         .update({ is_read: true })
         .eq('vendor_id', user?.id)
@@ -160,7 +152,7 @@ export default function CommunicationsHub() {
     if (!newMessage.trim() || !selectedConversation) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('messages')
         .insert([{
           vendor_id: user?.id,
