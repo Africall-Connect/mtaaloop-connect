@@ -40,6 +40,7 @@ const AdminLiveChatAssign = lazy(() => import("./pages/AdminLiveChatAssign"));
 const ManageMtaaLoopMart = lazy(() => import("./pages/admin/ManageMtaaLoopMart"));
 const AdminVendorPayouts = lazy(() => import("./pages/admin/AdminVendorPayouts"));
 const AdminOnboarding = lazy(() => import("./pages/admin/AdminOnboarding"));
+const SeedIloraFlowers = lazy(() => import("./pages/admin/SeedIloraFlowers"));
 
 // Role-specific
 const RiderDashboard = lazy(() => import("./pages/rider/RiderDashboard"));
