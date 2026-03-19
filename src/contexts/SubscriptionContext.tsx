@@ -78,7 +78,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       setState(prev => ({ ...prev, loading: true }));
 
       // Try to fetch from database
-      const { data: subscriptionData, error: subError } = await supabase
+      const { data: subscriptionData, error: subError } = await (supabase as any)
         .from('user_subscriptions')
         .select(`
           *,
@@ -90,7 +90,6 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         .maybeSingle();
 
       if (subError && subError.code !== 'PGRST116') {
-        // Table might not exist yet, use mock data
         console.log('Using mock subscription data (tables not yet created)');
         setState({ ...defaultState, loading: false });
         return;
@@ -101,27 +100,29 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      const plan = subscriptionData.plan as SubscriptionPlan;
+      const plan = subscriptionData.plan as unknown as SubscriptionPlan;
       const features = plan?.features as SubscriptionFeatures | undefined;
 
       // Fetch usage for current period
       const currentPeriod = getCurrentPeriod();
-      const { data: usageData } = await supabase
+      const { data: usageData } = await (supabase as any)
         .from('subscription_usage')
         .select('*')
         .eq('user_id', user.id)
         .eq('period_month', currentPeriod);
 
+      const usageArr = (usageData || []) as SubscriptionUsage[];
+
       // Build usage status for each service type
       const usageMap: Record<UsageType, UsageStatus> = {
-        delivery: buildUsageStatus(usageData, 'delivery', features?.deliveries),
-        trash: buildUsageStatus(usageData, 'trash', features?.trash),
-        osha_viombo: buildUsageStatus(usageData, 'osha_viombo', features?.osha_viombo),
-        cleaning: buildUsageStatus(usageData, 'cleaning', features?.cleaning),
-        laundry: buildUsageStatus(usageData, 'laundry', features?.laundry),
-        meal_prep: buildUsageStatus(usageData, 'meal_prep', features?.meal_prep),
-        errand: buildUsageStatus(usageData, 'errand', features?.errands),
-        package_collection: buildUsageStatus(usageData, 'package_collection', null), // Bonus service
+        delivery: buildUsageStatus(usageArr, 'delivery', features?.deliveries),
+        trash: buildUsageStatus(usageArr, 'trash', features?.trash),
+        osha_viombo: buildUsageStatus(usageArr, 'osha_viombo', features?.osha_viombo),
+        cleaning: buildUsageStatus(usageArr, 'cleaning', features?.cleaning),
+        laundry: buildUsageStatus(usageArr, 'laundry', features?.laundry),
+        meal_prep: buildUsageStatus(usageArr, 'meal_prep', features?.meal_prep),
+        errand: buildUsageStatus(usageArr, 'errand', features?.errands),
+        package_collection: buildUsageStatus(usageArr, 'package_collection', null),
       };
 
       const benefits: SubscriptionBenefits = {
@@ -134,7 +135,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       setState({
         isSubscribed: true,
         plan,
-        subscription: subscriptionData as UserSubscription,
+        subscription: subscriptionData as unknown as UserSubscription,
         usage: usageMap,
         benefits,
         expiresAt: new Date(subscriptionData.current_period_end),
