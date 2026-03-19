@@ -52,7 +52,7 @@ export interface VendorProfile {
   open_hours: string | null;
   years_in_business: number | null;
   certifications: any;
-  operational_category: 'inventory' | 'service' | 'booking' | 'pharmacy' | null;
+  operational_category: string | null;
   created_at: string;
   updated_at: string;
 }
