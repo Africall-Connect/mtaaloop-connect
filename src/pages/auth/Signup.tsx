@@ -50,12 +50,10 @@ const Signup = () => {
       const first_name = nameParts[0] || '';
       const last_name = nameParts.slice(1).join(' ') || '';
 
-      const { error: profileError } = await supabase.from('profiles').upsert({
-        id: data.user.id,
-        first_name,
-        last_name,
+      const { error: profileError } = await supabase.from('customer_profiles').upsert({
+        user_id: data.user.id,
+        full_name: formData.fullName,
         phone: formData.phone,
-        email: formData.email,
       });
 
       if (profileError) {

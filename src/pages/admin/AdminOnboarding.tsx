@@ -176,12 +176,10 @@ export default function AdminOnboarding() {
 
       const userId = authData.user.id;
       const nameParts = customerForm.fullName.trim().split(' ');
-      await supabase.from('profiles').upsert({
-        id: userId,
-        first_name: nameParts[0] || '',
-        last_name: nameParts.slice(1).join(' ') || '',
+      await supabase.from('customer_profiles').upsert({
+        user_id: userId,
+        full_name: customerForm.fullName,
         phone: customerForm.phone,
-        email: customerForm.email,
       });
 
       const { error: roleError } = await supabase.from('user_roles').insert({ user_id: userId, role: 'customer' });

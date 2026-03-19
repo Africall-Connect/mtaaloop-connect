@@ -775,9 +775,10 @@ const OrderTracking = () => {
       
       // Award loyalty points for review (optional)
       if (orderData?.customer_id) {
-        supabase.rpc('increment_loyalty_points', {
-          customer_id: orderData.customer_id,
-          points: 5
+        supabase.rpc('award_points', {
+          user_uuid: orderData.customer_id,
+          points_to_add: 5,
+          activity_type: 'review_submitted',
         }).then(() => {
           toast.success("You earned 5 bonus points! 💚");
         });

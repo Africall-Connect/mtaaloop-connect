@@ -51,7 +51,7 @@ export default function EstateApprovals() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setEstates(data || []);
+      setEstates((data as any) || []);
     } catch (error) {
       console.error('Error fetching estates:', error);
       toast.error('Failed to load estate applications');

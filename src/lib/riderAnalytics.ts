@@ -251,7 +251,7 @@ export async function getRiderEarnings(riderId: string, period: 'week' | 'month'
 export async function getRiderWalletTransactions(riderId: string): Promise<Transaction[]> {
   try {
     const { data: transactions, error } = await supabase
-      .from('rider_wallet_txn')
+      .from('rider_wallet_tx')
       .select('*')
       .eq('rider_id', riderId)
       .order('created_at', { ascending: false })
@@ -262,10 +262,10 @@ export async function getRiderWalletTransactions(riderId: string): Promise<Trans
     return transactions?.map(txn => ({
       id: txn.id,
       type: txn.type as 'credit' | 'debit',
-      amount: txn.amount_kes,
-      description: txn.ref || `${txn.type === 'credit' ? 'Deposit' : 'Withdrawal'}`,
+      amount: txn.amount,
+      description: txn.description || `${txn.type === 'credit' ? 'Deposit' : 'Withdrawal'}`,
       date: new Date(txn.created_at).toLocaleDateString(),
-      status: 'completed' as const, // Assuming all transactions are completed
+      status: 'completed' as const,
     })) || [];
   } catch (error) {
     console.error('Error fetching wallet transactions:', error);
