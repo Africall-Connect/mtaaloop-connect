@@ -11,7 +11,7 @@ export interface Product {
   is_available: boolean;
   stock_quantity: number;
   low_stock_threshold: number;
-  customizations: Record<string, unknown> | null;
+  customizations: any;
   is_popular: boolean;
   is_new: boolean;
   orders_this_week: number;
