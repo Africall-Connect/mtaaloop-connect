@@ -133,7 +133,7 @@ export default function ServiceFormDialog({
         if (error) throw error;
         toast.success('Service updated successfully');
       } else {
-        const { error } = await supabase.from('products').insert([serviceData]);
+        const { error } = await supabase.from('products').insert([serviceData as any]);
         if (error) throw error;
         toast.success('Service created successfully');
       }
