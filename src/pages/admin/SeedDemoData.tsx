@@ -28,25 +28,17 @@ export default function SeedDemoData() {
         .insert({
           business_name: "DukaMart Express",
           slug: "dukamart-express",
-          description: "Your neighborhood supermarket with everything you need",
-          operational_category: "product",
+          business_description: "Your neighborhood supermarket with everything you need",
+          operational_category: "inventory",
           tagline: "Fresh produce, groceries & daily essentials",
           rating: 4.5,
           delivery_time: "20-30 mins",
           delivery_fee: 50,
           is_open: true,
-          operating_hours: JSON.stringify({
-            monday: { open: "07:00", close: "22:00", isOpen: true },
-            tuesday: { open: "07:00", close: "22:00", isOpen: true },
-            wednesday: { open: "07:00", close: "22:00", isOpen: true },
-            thursday: { open: "07:00", close: "22:00", isOpen: true },
-            friday: { open: "07:00", close: "23:00", isOpen: true },
-            saturday: { open: "08:00", close: "23:00", isOpen: true },
-            sunday: { open: "08:00", close: "21:00", isOpen: true }
-          }),
-          latitude: -1.2864,
-          longitude: 36.8172
-        })
+          business_phone: "0700000000",
+          business_address: "Nairobi",
+          business_type: "living-essentials",
+        } as any)
         .select()
         .single();
 
