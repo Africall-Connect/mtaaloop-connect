@@ -25,14 +25,14 @@ export default function ResidentManagement({ estateId }: ResidentManagementProps
 
   const fetchResidents = useCallback(async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('estate_residents')
         .select('*')
         .eq('estate_id', estateId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setResidents(data || []);
+      setResidents((data as any) || []);
     } catch (error) {
       console.error('Error fetching residents:', error);
     } finally {
