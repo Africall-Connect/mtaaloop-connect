@@ -25,14 +25,14 @@ export default function RiderNotifications() {
 
   const fetchNotifications = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('rider_notifications')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(20);
 
       if (error) throw error;
-      setNotifications(data || []);
+      setNotifications((data as any) || []);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     } finally {
