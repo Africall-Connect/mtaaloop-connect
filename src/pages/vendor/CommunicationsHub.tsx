@@ -52,28 +52,23 @@ export default function CommunicationsHub() {
 
   const fetchConversations = useCallback(async () => {
     try {
-      const { data: messagesData } = await supabase
+      const { data: messagesData } = await (supabase as any)
         .from('messages')
-        .select(`
-          *,
-          customer:customers(first_name, last_name, email, phone)
-        `)
+        .select('*')
         .eq('vendor_id', user?.id)
         .order('created_at', { ascending: false });
 
       const conversationMap = new Map<string, Conversation>();
 
-      messagesData?.forEach(msg => {
+      messagesData?.forEach((msg: any) => {
         const customerId = msg.customer_id;
-        const customerName = msg.customer?.first_name
-          ? `${msg.customer.first_name} ${msg.customer.last_name || ''}`.trim()
-          : 'Customer';
+        const customerName = 'Customer';
 
         if (!conversationMap.has(customerId)) {
           conversationMap.set(customerId, {
             customer_id: customerId,
             customer_name: customerName,
-            customer_email: msg.customer?.email || '',
+            customer_email: '',
             last_message: msg.message,
             last_message_time: msg.created_at,
             unread_count: 0,
