@@ -442,6 +442,24 @@ export default function AdminDashboard() {
               </CardContent>
             </Link>
           </Card>
+
+          <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-950 dark:to-violet-900 border-violet-200 dark:border-violet-700 animate-fade-in animation-delay-1600">
+            <Link to="/admin/seed-products" className="block h-full">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-3 text-violet-900 dark:text-violet-100">
+                  <div className="p-3 bg-violet-500 rounded-xl group-hover:bg-violet-600 transition-colors">
+                    <Package className="h-6 w-6 text-white" />
+                  </div>
+                  <span className="text-lg font-semibold">Seed Vendor Products</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="text-sm text-violet-700 dark:text-violet-200 leading-relaxed">
+                  Add seed products with AI images for any vendor on the platform
+                </p>
+              </CardContent>
+            </Link>
+          </Card>
         </div>
       </main>
     </div>
