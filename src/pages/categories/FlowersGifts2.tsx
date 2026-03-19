@@ -104,7 +104,7 @@ const FlowersGifts2 = () => {
 
   const renderVendorCard = (vendor: Vendor) => (
     <Link key={vendor.id} to={`/vendor/${vendor.slug}`} className="block">
-      <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 border border-gray-200">
+      <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 border border-border">
         <div className="relative h-40">
           {vendor.cover_image_url ? (
             <img src={vendor.cover_image_url} alt={vendor.business_name} className="w-full h-full object-cover" />
