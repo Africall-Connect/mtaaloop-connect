@@ -90,19 +90,16 @@ export default function RiderCommunications() {
 
   const fetchMessages = useCallback(async (customerId: string) => {
     try {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('rider_messages')
-        .select(`
-          *,
-          customer:customers(first_name, last_name, email, phone)
-        `)
+        .select('*')
         .eq('rider_id', user?.id)
         .eq('customer_id', customerId)
         .order('created_at', { ascending: true });
 
-      setMessages(data || []);
+      setMessages((data as any) || []);
 
-      await supabase
+      await (supabase as any)
         .from('rider_messages')
         .update({ is_read: true })
         .eq('rider_id', user?.id)
