@@ -203,7 +203,7 @@ const FlowersGifts2 = () => {
             {subcategoryGroups.length === 0 && vendorsWithoutSub.length === 0 ? (
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">🎁</div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">No Vendors Available</h2>
+                <h2 className="text-2xl font-semibold text-foreground mb-2">No Vendors Available</h2>
                 <p className="text-muted-foreground">Check back soon for Flowers & Gifts vendors in your area.</p>
               </div>
             ) : (
