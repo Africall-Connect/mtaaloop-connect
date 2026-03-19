@@ -18,7 +18,8 @@ import {
   ShoppingCart,
   Activity,
   DollarSign,
-  UserPlus
+  UserPlus,
+  Flower2
 } from 'lucide-react';
 
 export default function AdminDashboard() {
