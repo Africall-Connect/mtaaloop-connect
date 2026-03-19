@@ -123,8 +123,8 @@ export default function AnalyticsDashboard() {
       const previousOrderCount = previousOrders?.length || 0;
       const orderGrowth = previousOrderCount > 0 ? ((currentOrderCount - previousOrderCount) / previousOrderCount) * 100 : 0;
 
-      const uniqueCustomers = new Set(currentOrders?.map(o => o.user_id)).size;
-      const previousUniqueCustomers = new Set(previousOrders?.map(o => o.user_id)).size;
+      const uniqueCustomers = new Set(currentOrders?.map((o: any) => o.customer_id || o.user_id)).size;
+      const previousUniqueCustomers = new Set(previousOrders?.map((o: any) => o.customer_id || o.user_id)).size;
       const customerGrowth = previousUniqueCustomers > 0 ? ((uniqueCustomers - previousUniqueCustomers) / previousUniqueCustomers) * 100 : 0;
 
       const avgOrder = currentOrderCount > 0 ? currentRevenue / currentOrderCount : 0;
