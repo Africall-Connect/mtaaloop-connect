@@ -55,6 +55,7 @@ export default function SeedDemoData() {
         .insert({
           vendor_id: vendor.id,
           name: "Shopping",
+          slug: "shopping",
           is_active: true
         })
         .select()
