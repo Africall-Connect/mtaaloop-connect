@@ -60,8 +60,8 @@ export default function VendorManagement({ estateId }: VendorManagementProps) {
 
   const approveVendor = async (vendorId: string) => {
     try {
-      const { error } = await supabase
-        .from('vendors')
+      const { error } = await (supabase as any)
+        .from('vendor_profiles')
         .update({ is_approved: true })
         .eq('id', vendorId);
 
