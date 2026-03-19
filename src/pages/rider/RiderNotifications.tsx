@@ -42,7 +42,7 @@ export default function RiderNotifications() {
 
   const markAsRead = async (notificationId: string) => {
     try {
-      await supabase
+      await (supabase as any)
         .from('rider_notifications')
         .update({ is_read: true, read_at: new Date().toISOString() })
         .eq('id', notificationId);
