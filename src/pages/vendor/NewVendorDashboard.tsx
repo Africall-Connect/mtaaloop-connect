@@ -61,7 +61,7 @@ export default function NewVendorDashboard() {
         .single();
 
       if (error) throw error;
-      setProfile(data);
+      setProfile(data as any);
 
       // store vendor_profile_id for other pages if you like
       if (typeof window !== 'undefined' && data?.id) {
