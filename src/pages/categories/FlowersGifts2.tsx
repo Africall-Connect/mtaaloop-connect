@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import FloatingFlowers from "@/components/FloatingFlowers";
 
 interface Vendor {
   id: string;
@@ -103,7 +104,7 @@ const FlowersGifts2 = () => {
 
   const renderVendorCard = (vendor: Vendor) => (
     <Link key={vendor.id} to={`/vendor/${vendor.slug}`} className="block">
-      <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 border border-gray-200">
+      <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 border border-border">
         <div className="relative h-40">
           {vendor.cover_image_url ? (
             <img src={vendor.cover_image_url} alt={vendor.business_name} className="w-full h-full object-cover" />
@@ -121,7 +122,7 @@ const FlowersGifts2 = () => {
         <div className="p-4">
           <div className="flex items-start gap-3 mb-2">
             {vendor.logo_url && (
-              <img src={vendor.logo_url} alt={`${vendor.business_name} logo`} className="w-12 h-12 rounded-full object-cover border-2 border-gray-200" />
+              <img src={vendor.logo_url} alt={`${vendor.business_name} logo`} className="w-12 h-12 rounded-full object-cover border-2 border-border" />
             )}
             <div className="flex-1 min-w-0">
               <h3 className="font-bold text-lg line-clamp-1">{vendor.business_name}</h3>
@@ -154,8 +155,9 @@ const FlowersGifts2 = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-background dark:from-rose-950/20 dark:via-pink-950/10 dark:to-background relative">
+      <FloatingFlowers />
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 relative z-10">
         <div className="mb-6">
           <Link to="/home">
             <Button variant="ghost" size="sm" className="mb-4">
@@ -168,7 +170,7 @@ const FlowersGifts2 = () => {
               <Gift className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Flowers & Gifts</h1>
+              <h1 className="text-3xl font-bold text-foreground">Flowers & Gifts</h1>
               <p className="text-muted-foreground">Flowers, Gift Baskets & More</p>
             </div>
           </div>
@@ -201,14 +203,14 @@ const FlowersGifts2 = () => {
             {subcategoryGroups.length === 0 && vendorsWithoutSub.length === 0 ? (
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">🎁</div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">No Vendors Available</h2>
+                <h2 className="text-2xl font-semibold text-foreground mb-2">No Vendors Available</h2>
                 <p className="text-muted-foreground">Check back soon for Flowers & Gifts vendors in your area.</p>
               </div>
             ) : (
               <div className="space-y-8">
                 {subcategoryGroups.map((group) => (
                   <div key={group.subcategory}>
-                    <h2 className="text-2xl font-bold mb-4 text-gray-900">{group.subcategory}</h2>
+                    <h2 className="text-2xl font-bold mb-4 text-foreground">{group.subcategory}</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {group.vendors.map(renderVendorCard)}
                     </div>
@@ -216,7 +218,7 @@ const FlowersGifts2 = () => {
                 ))}
                 {vendorsWithoutSub.length > 0 && (
                   <div>
-                    <h2 className="text-2xl font-bold mb-4 text-gray-900">
+                    <h2 className="text-2xl font-bold mb-4 text-foreground">
                       {subcategoryGroups.length > 0 ? 'Other Flowers & Gifts Vendors' : 'All Flowers & Gifts Vendors'}
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -247,6 +247,23 @@ All colors MUST be HSL.
     75% { transform: translateX(-8px); }
   }
 
+  @keyframes float-down {
+    0% {
+      transform: translateY(-40px) translateX(0) rotate(0deg);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    90% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(100vh) translateX(var(--sway, 30px)) rotate(360deg);
+      opacity: 0;
+    }
+  }
+
   @keyframes wave-settle {
     0% { transform: translateX(-80px); opacity: 0; }
     60% { transform: translateX(6px); opacity: 1; }

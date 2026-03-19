@@ -8,6 +8,7 @@ export const INVENTORY_CATEGORIES = [
   "Groceries & Food",
   "Restaurant",
   "Liquor Store",
+  "Flowers & Gifts",
 ] as const;
 
 // ============= Service Categories (2) =============
@@ -35,6 +36,7 @@ export const MAIN_CATEGORIES = [
   "Groceries & Food",
   "Restaurant",
   "Liquor Store",
+  "Flowers & Gifts",
   // Service
   "Utilities & Services",
   "Home Services",
@@ -99,6 +101,16 @@ export const SUBCATEGORY_OPTIONS: Record<string, string[]> = {
     "Champagne & Sparkling",
     "Ready-to-Drink (RTDs)",
     "Mixers & Soft Drinks",
+  ],
+
+  "Flowers & Gifts": [
+    "Fresh Flowers",
+    "Bouquets",
+    "Gift Baskets & Hampers",
+    "Indoor Plants",
+    "Cake & Pastries",
+    "Custom Arrangements",
+    "Event Decorations",
   ],
 
   // Service Subcategories
