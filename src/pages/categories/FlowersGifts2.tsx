@@ -210,7 +210,7 @@ const FlowersGifts2 = () => {
               <div className="space-y-8">
                 {subcategoryGroups.map((group) => (
                   <div key={group.subcategory}>
-                    <h2 className="text-2xl font-bold mb-4 text-gray-900">{group.subcategory}</h2>
+                    <h2 className="text-2xl font-bold mb-4 text-foreground">{group.subcategory}</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {group.vendors.map(renderVendorCard)}
                     </div>
