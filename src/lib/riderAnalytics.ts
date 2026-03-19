@@ -214,33 +214,26 @@ export async function getRiderEarnings(riderId: string, period: 'week' | 'month'
         break;
     }
 
-    const { data: earnings, error } = await supabase
-      .from('rider_earnings')
-      .select(`
-        total_kes,
-        tip_kes,
-        created_at,
-        delivery_order:order_id (
-          id
-        )
-      `)
+    // rider_earnings table doesn't exist; derive from rider_wallet_tx
+    const { data: txns, error } = await supabase
+      .from('rider_wallet_tx')
+      .select('amount, created_at')
       .eq('rider_id', riderId)
+      .eq('type', 'credit')
       .gte('created_at', startDate.toISOString())
       .order('created_at', { ascending: true });
 
     if (error) throw error;
 
-    // Group by date
     const earningsByDate: { [key: string]: { earnings: number; deliveries: number; tips: number } } = {};
 
-    earnings?.forEach(earning => {
-      const date = new Date(earning.created_at).toISOString().split('T')[0];
+    txns?.forEach(txn => {
+      const date = new Date(txn.created_at).toISOString().split('T')[0];
       if (!earningsByDate[date]) {
         earningsByDate[date] = { earnings: 0, deliveries: 0, tips: 0 };
       }
-      earningsByDate[date].earnings += earning.total_kes || 0;
+      earningsByDate[date].earnings += txn.amount || 0;
       earningsByDate[date].deliveries += 1;
-      earningsByDate[date].tips += earning.tip_kes || 0;
     });
 
     return Object.entries(earningsByDate).map(([date, data]) => ({
