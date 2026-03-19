@@ -9,6 +9,7 @@ export const MAIN_CATEGORIES = [
   { value: "Groceries & Food", label: "Groceries & Food" },
   { value: "Restaurant", label: "Restaurant" },
   { value: "Liquor Store", label: "Liquor Store" },
+  { value: "Flowers & Gifts", label: "Flowers & Gifts" },
   // Service
   { value: "Utilities & Services", label: "Utilities & Services" },
   { value: "Home Services", label: "Home Services" },
@@ -73,6 +74,16 @@ export const SUBCATEGORY_OPTIONS: Record<string, string[]> = {
     "Champagne & Sparkling",
     "Ready-to-Drink (RTDs)",
     "Mixers & Soft Drinks",
+  ],
+
+  "Flowers & Gifts": [
+    "Fresh Flowers",
+    "Bouquets",
+    "Gift Baskets & Hampers",
+    "Indoor Plants",
+    "Cake & Pastries",
+    "Custom Arrangements",
+    "Event Decorations",
   ],
 
   // Service Subcategories
