@@ -142,7 +142,7 @@ export default function AdvancedProductManagement() {
   } finally {
     setLoading(false);
   }
-  }, [sortBy]);
+  }, [sortBy, resolveVendorProfileId]);
 
   useEffect(() => {
     if (user) {
