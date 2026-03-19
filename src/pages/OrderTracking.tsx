@@ -506,10 +506,9 @@ const OrderTracking = () => {
   setIsCreatingOrder(true);
   console.log("[createOrder] incoming orderDetails =", orderDetails);
   try {
-    const { data: newOrder, error: orderError } = await supabase
+    const { data: newOrder, error: orderError } = await (supabase as any)
       .from("orders")
-      .insert({
-        id: orderId, // you’re controlling the id
+      .insert([{
         customer_id: user!.id,
         vendor_id: orderDetails.vendorId,
         estate_id: orderDetails.estateId || null,
@@ -517,7 +516,7 @@ const OrderTracking = () => {
         status: "pending",
         delivery_address: orderDetails.deliveryAddress,
         customer_notes: orderDetails.customerNotes || null,
-      })
+      }])
       .select()
       .single();
 
