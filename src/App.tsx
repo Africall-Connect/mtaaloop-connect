@@ -42,6 +42,7 @@ const AdminVendorPayouts = lazy(() => import("./pages/admin/AdminVendorPayouts")
 const AdminOnboarding = lazy(() => import("./pages/admin/AdminOnboarding"));
 const SeedIloraFlowers = lazy(() => import("./pages/admin/SeedIloraFlowers"));
 const SeedVendorProducts = lazy(() => import("./pages/admin/SeedVendorProducts"));
+const AdminVendorManagement = lazy(() => import("./pages/admin/AdminVendorManagement"));
 
 // Role-specific
 const RiderDashboard = lazy(() => import("./pages/rider/RiderDashboard"));
@@ -578,6 +579,11 @@ const App = () => (
               <Route path="/admin/vendor-approvals" element={
                 <ProtectedRoute requiredRole="admin">
                   <VendorApprovals />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/vendor-management" element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminVendorManagement />
                 </ProtectedRoute>
               } />
               <Route path="/admin/estate-approvals" element={

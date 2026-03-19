@@ -272,6 +272,24 @@ export default function AdminDashboard() {
             </Link>
           </Card>
 
+          <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-950 dark:to-yellow-900 border-yellow-200 dark:border-yellow-700 animate-fade-in animation-delay-650">
+            <Link to="/admin/vendor-management" className="block h-full">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-3 text-yellow-900 dark:text-yellow-100">
+                  <div className="p-3 bg-yellow-500 rounded-xl group-hover:bg-yellow-600 transition-colors">
+                    <Store className="h-6 w-6 text-white" />
+                  </div>
+                  <span className="text-lg font-semibold">Vendor Management</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="text-sm text-yellow-700 dark:text-yellow-200 leading-relaxed">
+                  View and edit all vendor business details and settings
+                </p>
+              </CardContent>
+            </Link>
+          </Card>
+
           <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-700 animate-fade-in animation-delay-700">
             <Link to="/admin/estate-approvals" className="block h-full">
               <CardHeader className="pb-3">
