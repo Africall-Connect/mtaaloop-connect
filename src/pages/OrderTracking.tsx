@@ -561,10 +561,10 @@ const OrderTracking = () => {
     // Insert order items
     const orderItems = (orderDetails.items as Record<string, unknown>[]).map((item: Record<string, unknown>) => ({
       order_id: newOrder.id,
-      product_id: item.product_id,
-      product_name: item.name,
-      quantity: item.quantity,
-      price: item.price,
+      product_id: item.product_id as string,
+      product_name: item.name as string,
+      quantity: item.quantity as number,
+      price: item.price as number,
     }));
 
     const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
