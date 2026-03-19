@@ -424,6 +424,24 @@ export default function AdminDashboard() {
               </CardContent>
             </Link>
           </Card>
+
+          <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-950 dark:to-pink-900 border-pink-200 dark:border-pink-700 animate-fade-in animation-delay-1500">
+            <Link to="/admin/seed-ilora" className="block h-full">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-3 text-pink-900 dark:text-pink-100">
+                  <div className="p-3 bg-pink-500 rounded-xl group-hover:bg-pink-600 transition-colors">
+                    <Flower2 className="h-6 w-6 text-white" />
+                  </div>
+                  <span className="text-lg font-semibold">Seed Ilora Flowers</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="text-sm text-pink-700 dark:text-pink-200 leading-relaxed">
+                  Bulk seed 140 products with AI-generated images for Ilora Flowers
+                </p>
+              </CardContent>
+            </Link>
+          </Card>
         </div>
       </main>
     </div>
