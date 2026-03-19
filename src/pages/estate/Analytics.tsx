@@ -129,11 +129,11 @@ export default function Analytics({ estateId: propEstateId }: AnalyticsProps) {
 
       // Get revenue by category
       const categoryStats = ordersData?.reduce((acc, order) => {
-        const category = order.vendor?.business_type || 'Other';
+        const category = (order as any).vendor?.business_type || 'Other';
         if (!acc[category]) {
           acc[category] = { category, revenue: 0, orders: 0 };
         }
-        acc[category].revenue += order.final_amount || 0;
+        acc[category].revenue += (order as any).final_amount || (order as any).total_amount || 0;
         acc[category].orders += 1;
         return acc;
       }, {} as Record<string, RevenueByCategory>);
