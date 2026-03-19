@@ -84,34 +84,29 @@ export default function Analytics({ estateId: propEstateId }: AnalyticsProps) {
         .from('orders')
         .select(`
           *,
-          vendor:vendors(business_name, business_type),
-          resident:estate_residents(apartment_number)
+          vendor:vendor_profiles!orders_vendor_id_fkey(business_name, business_type)
         `)
         .eq('estate_id', estateId)
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
-        .eq('status', 'completed')
+        .eq('status', 'delivered')
         .order('created_at', { ascending: false });
 
       if (ordersError) throw ordersError;
 
       // Calculate metrics
-      const totalRevenue = ordersData?.reduce((sum, order) => sum + (order.final_amount || 0), 0) || 0;
+      const totalRevenue = ordersData?.reduce((sum, order) => sum + ((order as any).final_amount || (order as any).total_amount || 0), 0) || 0;
       const totalOrders = ordersData?.length || 0;
       const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-      // Get active vendors and residents
+      // Get active vendors and residents counts
       const { count: activeVendors } = await supabase
-        .from('vendors')
+        .from('vendor_profiles')
         .select('*', { count: 'exact', head: true })
         .eq('estate_id', estateId)
         .eq('is_approved', true);
 
-      const { count: activeResidents } = await supabase
-        .from('estate_residents')
-        .select('*', { count: 'exact', head: true })
-        .eq('estate_id', estateId)
-        .eq('is_approved', true);
+      const activeResidents = 0; // estate_residents table doesn't exist
 
       // Get top vendors
       const vendorStats = ordersData?.reduce((acc, order) => {
