@@ -15,7 +15,7 @@ export interface Product {
   is_popular: boolean;
   is_new: boolean;
   orders_this_week: number;
-  item_type: 'inventory' | 'service' | 'booking' | null;
+  item_type: string | null;
   created_at: string;
   updated_at: string;
   // Storage path for uploaded images
