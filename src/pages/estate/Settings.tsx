@@ -115,7 +115,7 @@ export default function Settings() {
 
     setSaving(true);
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('estates')
         .update({
           notifications_settings: formData.notifications_settings,

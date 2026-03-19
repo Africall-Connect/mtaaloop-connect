@@ -150,7 +150,7 @@ export default function RiderCommunications() {
     if (!newMessage.trim() || !selectedConversation) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('rider_messages')
         .insert([{
           rider_id: user?.id,

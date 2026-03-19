@@ -79,8 +79,8 @@ export default function VendorManagement({ estateId }: VendorManagementProps) {
     if (!confirm('Are you sure you want to reject this vendor?')) return;
 
     try {
-      const { error } = await supabase
-        .from('vendors')
+      const { error } = await (supabase as any)
+        .from('vendor_profiles')
         .update({ is_approved: false })
         .eq('id', vendorId);
 
