@@ -176,15 +176,14 @@ export default function EstateApprovals() {
                         <p className="text-sm text-muted-foreground">{estate.address}</p>
                       </div>
                       <div className="space-y-2">
-                        <h4 className="font-semibold text-sm">Manager Information</h4>
-                        <p className="text-sm font-medium">{estate.manager_name}</p>
+                        <h4 className="font-semibold text-sm">Contact Information</h4>
                         <div className="flex items-center gap-2 text-sm">
                           <Phone className="h-4 w-4 text-muted-foreground" />
-                          <span>{estate.manager_phone}</span>
+                          <span>{estate.contact_phone || 'N/A'}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
                           <Mail className="h-4 w-4 text-muted-foreground" />
-                          <span>{estate.manager_email}</span>
+                          <span>{estate.contact_email || 'N/A'}</span>
                         </div>
                       </div>
                     </div>

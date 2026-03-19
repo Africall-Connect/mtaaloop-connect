@@ -167,12 +167,12 @@ export default function Analytics({ estateId: propEstateId }: AnalyticsProps) {
       }
 
       // Map recent orders to RecentOrder interface
-      const recentOrders: RecentOrder[] = (ordersData?.slice(0, 10) || []).map(order => ({
+      const recentOrders: RecentOrder[] = (ordersData?.slice(0, 10) || []).map((order: any) => ({
         id: order.id,
         created_at: order.created_at,
-        vendor: order.vendor,
-        resident: order.resident,
-        final_amount: order.final_amount,
+        vendor: order.vendor || { business_name: 'Unknown' },
+        resident: { apartment_number: 'N/A' },
+        final_amount: order.final_amount || order.total_amount || 0,
         status: order.status
       }));
 

@@ -79,6 +79,7 @@ export default function SeedDemoData() {
         category_id: category.id,
         vendor_id: vendor.id,
         name: sub.name,
+        slug: sub.name.toLowerCase().replace(/\s+/g, '-'),
         is_active: true
       }));
 
