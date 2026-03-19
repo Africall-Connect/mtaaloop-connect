@@ -46,7 +46,7 @@ export default function ResidentManagement({ estateId }: ResidentManagementProps
 
   const approveResident = async (residentId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('estate_residents')
         .update({ is_approved: true })
         .eq('id', residentId);
