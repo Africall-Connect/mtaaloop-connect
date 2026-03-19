@@ -41,6 +41,7 @@ const ManageMtaaLoopMart = lazy(() => import("./pages/admin/ManageMtaaLoopMart")
 const AdminVendorPayouts = lazy(() => import("./pages/admin/AdminVendorPayouts"));
 const AdminOnboarding = lazy(() => import("./pages/admin/AdminOnboarding"));
 const SeedIloraFlowers = lazy(() => import("./pages/admin/SeedIloraFlowers"));
+const SeedVendorProducts = lazy(() => import("./pages/admin/SeedVendorProducts"));
 
 // Role-specific
 const RiderDashboard = lazy(() => import("./pages/rider/RiderDashboard"));
@@ -629,6 +630,11 @@ const App = () => (
               <Route path="/admin/seed-ilora" element={
                 <ProtectedRoute requiredRole="admin">
                   <SeedIloraFlowers />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/seed-products" element={
+                <ProtectedRoute requiredRole="admin">
+                  <SeedVendorProducts />
                 </ProtectedRoute>
               } />
 
