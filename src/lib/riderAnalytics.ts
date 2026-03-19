@@ -116,13 +116,13 @@ export async function getRiderStats(riderId: string): Promise<RiderStats> {
     // Get wallet balance
     const { data: wallet, error: walletError } = await supabase
       .from('rider_wallet')
-      .select('balance_kes')
+      .select('balance')
       .eq('rider_id', riderId)
-      .single();
+      .maybeSingle();
 
-    if (walletError && walletError.code !== 'PGRST116') throw walletError;
+    if (walletError) throw walletError;
 
-    const walletBalance = wallet?.balance_kes || 0;
+    const walletBalance = wallet?.balance || 0;
 
     // Get active deliveries count
     const { data: activeDeliveries, error: activeError } = await supabase
