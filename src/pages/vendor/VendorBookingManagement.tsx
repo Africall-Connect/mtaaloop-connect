@@ -259,10 +259,10 @@ export default function VendorBookingManagement() {
     try {
       // Upsert all availability records
       for (const item of data) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('booking_availability')
           .upsert(
-            { ...item, vendor_id: vendorId },
+            [{ ...item, vendor_id: vendorId }],
             { onConflict: 'vendor_id,day_of_week' }
           );
 

@@ -118,7 +118,7 @@ export default function RiderProfile() {
           .single();
 
         if (!createError && created) {
-          setProfile(created);
+          setProfile(created as any);
           setFormData({
             full_name: created.full_name,
             phone: created.phone || '',

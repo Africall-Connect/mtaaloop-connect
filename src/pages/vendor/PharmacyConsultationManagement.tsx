@@ -160,9 +160,9 @@ export default function PharmacyConsultationManagement() {
     // Delete existing and insert new
     await supabase.from('consultation_availability').delete().eq('vendor_id', vendorId);
     
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('consultation_availability')
-      .insert(data.map(d => ({ ...d, vendor_id: vendorId })));
+      .insert(data.map((d: any) => ({ ...d, vendor_id: vendorId })));
 
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });

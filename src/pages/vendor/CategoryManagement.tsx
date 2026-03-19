@@ -103,7 +103,7 @@ export default function CategoryManagement({ vendorId, operationalCategory }: Ca
 
       if (error) throw error;
 
-      setFetchedOperationalCategory(data?.operational_category || null);
+      setFetchedOperationalCategory((data?.operational_category as any) || null);
       setVendorBusinessType(data?.business_type || null);
       fetchCategoriesAndSubcategories();
     } catch (error) {

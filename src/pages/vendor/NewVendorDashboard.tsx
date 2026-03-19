@@ -121,32 +121,30 @@ export default function NewVendorDashboard() {
         .select('stock_quantity, low_stock_threshold')
         .eq('vendor_id', vendorProfileId);
 
-      const { data: reviewsData } = await supabase
-        .from('reviews')
-        .select('rating, created_at')
-        .eq('vendor_id', vendorProfileId);
+      const { data: reviewsData } = await (supabase as any)
+        .from('order_reviews')
+        .select('food_rating, created_at')
+        .eq('order_id', vendorProfileId);
 
-      const todayOrders = ordersData?.filter(o =>
+      const todayOrders = ordersData?.filter((o: any) =>
         o.created_at.startsWith(today)
       ) || [];
 
-      const completedToday = todayOrders.filter(o => o.status === 'delivered');
-      const activeOrders = ordersData?.filter(o =>
+      const completedToday = todayOrders.filter((o: any) => o.status === 'delivered');
+      const activeOrders = ordersData?.filter((o: any) =>
         ['pending', 'accepted', 'preparing', 'ready', 'out_for_delivery'].includes(o.status)
       ) || [];
 
-      const todayRevenue = completedToday.reduce((sum, o) => sum + Number(o.total_amount), 0);
+      const todayRevenue = completedToday.reduce((sum: number, o: any) => sum + Number(o.total_amount), 0);
 
-      // some rows may not track inventory, but you didn't add that col to products here,
-      // so we just do a simple low stock calc
-      const lowStockItems = productsData?.filter(p =>
+      const lowStockItems = productsData?.filter((p: any) =>
         p.stock_quantity !== null &&
         p.low_stock_threshold !== null &&
         p.stock_quantity <= p.low_stock_threshold
       ).length || 0;
 
       const avgRating = reviewsData && reviewsData.length > 0
-        ? reviewsData.reduce((sum, r) => sum + r.rating, 0) / reviewsData.length
+        ? reviewsData.reduce((sum: number, r: any) => sum + (r.food_rating || 0), 0) / reviewsData.length
         : 0;
 
       setStats({

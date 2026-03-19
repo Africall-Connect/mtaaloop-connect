@@ -166,9 +166,9 @@ export default function VendorPOS() {
     try {
       const saleNumber = `POS-${Date.now().toString(36).toUpperCase()}`;
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('pos_sales')
-        .insert({
+        .insert([{
           vendor_id: vendorId,
           sale_number: saleNumber,
           items: cart as unknown as Record<string, unknown>[],
@@ -179,7 +179,7 @@ export default function VendorPOS() {
           customer_name: customerName || null,
           customer_phone: customerPhone || null,
           notes: notes || null,
-        })
+        }])
         .select()
         .single();
 

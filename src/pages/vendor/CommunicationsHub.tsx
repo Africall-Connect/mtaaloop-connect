@@ -152,7 +152,7 @@ export default function CommunicationsHub() {
     if (!newMessage.trim() || !selectedConversation) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('messages')
         .insert([{
           vendor_id: user?.id,
@@ -160,6 +160,7 @@ export default function CommunicationsHub() {
           message: newMessage,
           sender_type: 'vendor',
           is_read: false
+        }]);
         }]);
 
       if (error) throw error;
