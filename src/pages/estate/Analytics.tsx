@@ -110,16 +110,16 @@ export default function Analytics({ estateId: propEstateId }: AnalyticsProps) {
 
       // Get top vendors
       const vendorStats = ordersData?.reduce((acc, order) => {
-        const vendorId = order.vendor_id;
+        const vendorId = (order as any).vendor_id;
         if (!acc[vendorId]) {
           acc[vendorId] = {
-            vendor: order.vendor,
+            vendor: (order as any).vendor || { business_name: 'Unknown', business_type: 'other' },
             orders: 0,
             revenue: 0
           };
         }
         acc[vendorId].orders += 1;
-        acc[vendorId].revenue += order.final_amount || 0;
+        acc[vendorId].revenue += (order as any).final_amount || (order as any).total_amount || 0;
         return acc;
       }, {} as Record<string, TopVendor>);
 
