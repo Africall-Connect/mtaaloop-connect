@@ -76,6 +76,16 @@ export const SUBCATEGORY_OPTIONS: Record<string, string[]> = {
     "Mixers & Soft Drinks",
   ],
 
+  "Flowers & Gifts": [
+    "Fresh Flowers",
+    "Bouquets",
+    "Gift Baskets & Hampers",
+    "Indoor Plants",
+    "Cake & Pastries",
+    "Custom Arrangements",
+    "Event Decorations",
+  ],
+
   // Service Subcategories
   "Utilities & Services": [
     "Gas Delivery",
