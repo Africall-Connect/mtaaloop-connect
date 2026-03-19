@@ -157,7 +157,7 @@ export default function Analytics({ estateId: propEstateId }: AnalyticsProps) {
           return orderDate >= monthStart && orderDate <= monthEnd;
         }) || [];
 
-        const monthRevenue = monthOrders.reduce((sum, order) => sum + (order.final_amount || 0), 0);
+        const monthRevenue = monthOrders.reduce((sum, order) => sum + ((order as any).final_amount || (order as any).total_amount || 0), 0);
 
         monthlyStats.push({
           month: monthStart.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
