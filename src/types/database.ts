@@ -11,11 +11,11 @@ export interface Product {
   is_available: boolean;
   stock_quantity: number;
   low_stock_threshold: number;
-  customizations: Record<string, unknown> | null;
+  customizations: any;
   is_popular: boolean;
   is_new: boolean;
   orders_this_week: number;
-  item_type: 'inventory' | 'service' | 'booking' | null;
+  item_type: string | null;
   created_at: string;
   updated_at: string;
   // Storage path for uploaded images
@@ -51,8 +51,8 @@ export interface VendorProfile {
   delivery_fee: number | null;
   open_hours: string | null;
   years_in_business: number | null;
-  certifications: Record<string, unknown> | null;
-  operational_category: 'inventory' | 'service' | 'booking' | 'pharmacy' | null;
+  certifications: any;
+  operational_category: string | null;
   created_at: string;
   updated_at: string;
 }

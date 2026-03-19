@@ -5,14 +5,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
-interface Estate {
-  id: string;
-  name: string;
-  location: string;
-  status: string;
-  created_at: string;
-}
-
 export const EstateList: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -22,17 +14,16 @@ export const EstateList: React.FC = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('estates')
-        .select('*')
+        .select('id, name, location, is_active, created_at')
         .eq('is_approved', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Estate[];
+      return data;
     },
   });
 
   useEffect(() => {
-    // subscribe to estate changes and invalidate cache when any change happens
     const channel = supabase
       .channel('public:estates')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'estates' }, () => {
@@ -58,13 +49,12 @@ export const EstateList: React.FC = () => {
         >
           <CardContent className="p-4">
             <h3 className="text-lg font-semibold">{estate.name}</h3>
-            <p className="text-sm text-gray-600">{estate.location}</p>
+            <p className="text-sm text-muted-foreground">{estate.location}</p>
             <div className="mt-2 flex justify-between items-center">
               <span className={`px-2 py-1 rounded-full text-xs ${
-                estate.status === 'active' ? 'bg-green-100 text-green-800' :
-                'bg-gray-100 text-gray-800'
+                estate.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
               }`}>
-                {estate.status}
+                {estate.is_active ? 'active' : 'inactive'}
               </span>
             </div>
           </CardContent>

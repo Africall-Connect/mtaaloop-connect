@@ -70,7 +70,7 @@ export async function updateDeliveryStatus(
 
   if (error) throw error;
 
-  await supabase.from("delivery_events").insert({
+  await (supabase as any).from("delivery_events").insert({
     delivery_id: deliveryId,
     rider_id: (await supabase.auth.getUser()).data.user?.id,
     event_type: nextStatus,

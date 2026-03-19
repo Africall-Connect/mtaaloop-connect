@@ -78,7 +78,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       setState(prev => ({ ...prev, loading: true }));
 
       // Try to fetch from database
-      const { data: subscriptionData, error: subError } = await supabase
+      const { data: subscriptionData, error: subError } = await (supabase as any)
         .from('user_subscriptions')
         .select(`
           *,
@@ -90,7 +90,6 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         .maybeSingle();
 
       if (subError && subError.code !== 'PGRST116') {
-        // Table might not exist yet, use mock data
         console.log('Using mock subscription data (tables not yet created)');
         setState({ ...defaultState, loading: false });
         return;
@@ -101,27 +100,29 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      const plan = subscriptionData.plan as SubscriptionPlan;
+      const plan = subscriptionData.plan as unknown as SubscriptionPlan;
       const features = plan?.features as SubscriptionFeatures | undefined;
 
       // Fetch usage for current period
       const currentPeriod = getCurrentPeriod();
-      const { data: usageData } = await supabase
+      const { data: usageData } = await (supabase as any)
         .from('subscription_usage')
         .select('*')
         .eq('user_id', user.id)
         .eq('period_month', currentPeriod);
 
+      const usageArr = (usageData || []) as SubscriptionUsage[];
+
       // Build usage status for each service type
       const usageMap: Record<UsageType, UsageStatus> = {
-        delivery: buildUsageStatus(usageData, 'delivery', features?.deliveries),
-        trash: buildUsageStatus(usageData, 'trash', features?.trash),
-        osha_viombo: buildUsageStatus(usageData, 'osha_viombo', features?.osha_viombo),
-        cleaning: buildUsageStatus(usageData, 'cleaning', features?.cleaning),
-        laundry: buildUsageStatus(usageData, 'laundry', features?.laundry),
-        meal_prep: buildUsageStatus(usageData, 'meal_prep', features?.meal_prep),
-        errand: buildUsageStatus(usageData, 'errand', features?.errands),
-        package_collection: buildUsageStatus(usageData, 'package_collection', null), // Bonus service
+        delivery: buildUsageStatus(usageArr, 'delivery', features?.deliveries),
+        trash: buildUsageStatus(usageArr, 'trash', features?.trash),
+        osha_viombo: buildUsageStatus(usageArr, 'osha_viombo', features?.osha_viombo),
+        cleaning: buildUsageStatus(usageArr, 'cleaning', features?.cleaning),
+        laundry: buildUsageStatus(usageArr, 'laundry', features?.laundry),
+        meal_prep: buildUsageStatus(usageArr, 'meal_prep', features?.meal_prep),
+        errand: buildUsageStatus(usageArr, 'errand', features?.errands),
+        package_collection: buildUsageStatus(usageArr, 'package_collection', null),
       };
 
       const benefits: SubscriptionBenefits = {
@@ -134,7 +135,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       setState({
         isSubscribed: true,
         plan,
-        subscription: subscriptionData as UserSubscription,
+        subscription: subscriptionData as unknown as UserSubscription,
         usage: usageMap,
         benefits,
         expiresAt: new Date(subscriptionData.current_period_end),
@@ -194,7 +195,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       // Upsert usage record
-      const { error } = await supabase.rpc('increment_subscription_usage', {
+      const { error } = await (supabase as any).rpc('increment_subscription_usage', {
         p_user_id: user.id,
         p_usage_type: serviceType,
         p_period_month: currentPeriod,
@@ -202,7 +203,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         // RPC might not exist, try direct update
-        const { data: existing } = await supabase
+        const { data: existing } = await (supabase as any)
           .from('subscription_usage')
           .select('id, used_amount')
           .eq('user_id', user.id)
@@ -211,12 +212,12 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
           .maybeSingle();
 
         if (existing) {
-          await supabase
+          await (supabase as any)
             .from('subscription_usage')
-            .update({ used_amount: existing.used_amount + 1 })
-            .eq('id', existing.id);
+            .update({ used_amount: (existing as any).used_amount + 1 })
+            .eq('id', (existing as any).id);
         } else {
-          await supabase.from('subscription_usage').insert({
+          await (supabase as any).from('subscription_usage').insert({
             user_id: user.id,
             usage_type: serviceType,
             period_month: currentPeriod,

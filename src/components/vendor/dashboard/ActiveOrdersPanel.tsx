@@ -15,11 +15,7 @@ interface Order {
   customer_notes: string | null;
   created_at: string;
   customer_id: string;
-  customers: {
-    first_name: string | null;
-    last_name: string | null;
-    phone: string;
-  };
+  full_name: string | null;
   order_items: Array<{
     product_name: string;
     quantity: number;
@@ -40,7 +36,6 @@ export default function ActiveOrdersPanel({ vendorId }: ActiveOrdersPanelProps) 
         .from('orders')
         .select(`
           *,
-          customers (first_name, last_name, phone),
           order_items (product_name, quantity)
         `)
         .eq('vendor_id', vendorId)
@@ -48,7 +43,7 @@ export default function ActiveOrdersPanel({ vendorId }: ActiveOrdersPanelProps) 
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setOrders(data || []);
+      setOrders((data as any) || []);
     } catch (error) {
       console.error('Error fetching orders:', error);
     } finally {
@@ -61,48 +56,19 @@ export default function ActiveOrdersPanel({ vendorId }: ActiveOrdersPanelProps) 
 
     const channel = supabase
       .channel('active-orders')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'orders',
-          filter: `vendor_id=eq.${vendorId}`
-        },
-        () => {
-          fetchActiveOrders();
-        }
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `vendor_id=eq.${vendorId}` }, () => {
+        fetchActiveOrders();
+      })
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [vendorId, fetchActiveOrders]);
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
-      const statusField = `${newStatus}_at`;
       const updates: Record<string, string | Date> = { status: newStatus };
-      if (['accepted', 'preparing', 'ready', 'out_for_delivery', 'delivered'].includes(newStatus)) {
-        updates[statusField] = new Date().toISOString();
-      }
-
-      const { error } = await supabase
-        .from('orders')
-        .update(updates)
-        .eq('id', orderId);
-
+      const { error } = await supabase.from('orders').update(updates).eq('id', orderId);
       if (error) throw error;
-
-      await supabase
-        .from('order_status_history')
-        .insert({
-          order_id: orderId,
-          status: newStatus,
-          created_by: vendorId
-        });
-
       toast.success(`Order ${newStatus}`);
       fetchActiveOrders();
     } catch (error) {
@@ -131,13 +97,7 @@ export default function ActiveOrdersPanel({ vendorId }: ActiveOrdersPanelProps) 
   };
 
   if (loading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center">Loading orders...</div>
-        </CardContent>
-      </Card>
-    );
+    return <Card><CardContent className="p-6"><div className="text-center">Loading orders...</div></CardContent></Card>;
   }
 
   return (
@@ -148,25 +108,16 @@ export default function ActiveOrdersPanel({ vendorId }: ActiveOrdersPanelProps) 
             <div className="h-3 w-3 bg-red-500 rounded-full animate-pulse" />
             ACTIVE ORDERS ({orders.length})
           </CardTitle>
-          <Button variant="link" size="sm">
-            View All →
-          </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {orders.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            No active orders right now
-          </div>
+          <div className="text-center py-8 text-muted-foreground">No active orders right now</div>
         ) : (
           orders.map((order) => {
             const statusInfo = getStatusInfo(order.status);
-            const customerName = order.customers?.first_name
-              ? `${order.customers.first_name} ${order.customers.last_name || ''}`.trim()
-              : 'Customer';
-            const itemsText = order.order_items.map(item =>
-              `${item.product_name} x${item.quantity}`
-            ).join(', ');
+            const customerName = order.full_name || 'Customer';
+            const itemsText = order.order_items?.map(item => `${item.product_name} x${item.quantity}`).join(', ') || '';
 
             return (
               <Card key={order.id} className="border-2 hover:shadow-md transition-shadow">
@@ -174,41 +125,25 @@ export default function ActiveOrdersPanel({ vendorId }: ActiveOrdersPanelProps) 
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <Badge className={statusInfo.color}>
-                          {statusInfo.icon} {statusInfo.label}
-                        </Badge>
+                        <Badge className={statusInfo.color}>{statusInfo.icon} {statusInfo.label}</Badge>
                         <span className="text-sm font-medium">#{order.order_number}</span>
-                        <span className="text-xs text-gray-500 flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {getTimeAgo(order.created_at)}
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3" />{getTimeAgo(order.created_at)}
                         </span>
                       </div>
-
                       <div className="space-y-1 text-sm">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">Customer:</span>
                           <span>{customerName}</span>
-                          <Button variant="ghost" size="icon" className="h-6 w-6">
-                            <Phone className="h-3 w-3" />
-                          </Button>
                         </div>
-
-                        <div className="flex items-start gap-2">
-                          <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
-                          <span className="text-gray-600">{order.delivery_address}</span>
-                        </div>
-
-                        <div className="text-gray-600">
-                          <span className="font-medium">Items:</span> {itemsText}
-                        </div>
-
-                        <div className="font-semibold text-base">
-                          Total: KES {Number(order.total_amount).toLocaleString()}
-                          <Badge variant="outline" className="ml-2 bg-green-50 text-green-700">
-                            ✓ Paid
-                          </Badge>
-                        </div>
-
+                        {order.delivery_address && (
+                          <div className="flex items-start gap-2">
+                            <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                            <span className="text-muted-foreground">{order.delivery_address}</span>
+                          </div>
+                        )}
+                        {itemsText && <div className="text-muted-foreground"><span className="font-medium">Items:</span> {itemsText}</div>}
+                        <div className="font-semibold text-base">Total: KES {Number(order.total_amount).toLocaleString()}</div>
                         {order.customer_notes && (
                           <div className="bg-amber-50 border border-amber-200 rounded p-2 text-xs">
                             <span className="font-medium">Special:</span> "{order.customer_notes}"
@@ -221,63 +156,18 @@ export default function ActiveOrdersPanel({ vendorId }: ActiveOrdersPanelProps) 
                   <div className="flex gap-2 flex-wrap pt-2 border-t">
                     {order.status === 'pending' && (
                       <>
-                        <Button
-                          size="sm"
-                          className="gap-1"
-                          onClick={() => updateOrderStatus(order.id, 'accepted')}
-                        >
-                          <Check className="h-4 w-4" />
-                          Accept & Prepare
+                        <Button size="sm" className="gap-1" onClick={() => updateOrderStatus(order.id, 'accepted')}>
+                          <Check className="h-4 w-4" />Accept
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          className="gap-1"
-                          onClick={() => updateOrderStatus(order.id, 'cancelled')}
-                        >
-                          <X className="h-4 w-4" />
-                          Reject Order
+                        <Button size="sm" variant="destructive" className="gap-1" onClick={() => updateOrderStatus(order.id, 'cancelled')}>
+                          <X className="h-4 w-4" />Reject
                         </Button>
                       </>
                     )}
-
-                    {order.status === 'accepted' && (
-                      <Button
-                        size="sm"
-                        onClick={() => updateOrderStatus(order.id, 'preparing')}
-                      >
-                        Start Preparing
-                      </Button>
-                    )}
-
-                    {order.status === 'preparing' && (
-                      <Button
-                        size="sm"
-                        onClick={() => updateOrderStatus(order.id, 'ready')}
-                      >
-                        <Check className="h-4 w-4 mr-1" />
-                        Mark as Ready
-                      </Button>
-                    )}
-
-                    {order.status === 'ready' && (
-                      <Button
-                        size="sm"
-                        onClick={() => updateOrderStatus(order.id, 'out_for_delivery')}
-                      >
-                        Confirm Pickup
-                      </Button>
-                    )}
-
-                    <Button size="sm" variant="outline" className="gap-1">
-                      <MessageSquare className="h-4 w-4" />
-                      Message
-                    </Button>
-
-                    <Button size="sm" variant="outline" className="gap-1">
-                      <Eye className="h-4 w-4" />
-                      View Details
-                    </Button>
+                    {order.status === 'accepted' && <Button size="sm" onClick={() => updateOrderStatus(order.id, 'preparing')}>Start Preparing</Button>}
+                    {order.status === 'preparing' && <Button size="sm" onClick={() => updateOrderStatus(order.id, 'ready')}><Check className="h-4 w-4 mr-1" />Mark Ready</Button>}
+                    {order.status === 'ready' && <Button size="sm" onClick={() => updateOrderStatus(order.id, 'out_for_delivery')}>Confirm Pickup</Button>}
+                    <Button size="sm" variant="outline" className="gap-1"><Eye className="h-4 w-4" />Details</Button>
                   </div>
                 </CardContent>
               </Card>

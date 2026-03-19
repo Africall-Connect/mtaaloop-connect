@@ -80,7 +80,7 @@ export const useBusinessTypes = () => {
   return useQuery({
     queryKey: ['business-types'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('business_types')
         .select('*')
         .order('display_name');
@@ -95,7 +95,7 @@ export const useBusinessType = (businessTypeName: string) => {
   return useQuery({
     queryKey: ['business-type', businessTypeName],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('business_types')
         .select('*')
         .eq('name', businessTypeName)

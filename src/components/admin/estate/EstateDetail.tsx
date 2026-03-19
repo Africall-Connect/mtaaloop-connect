@@ -20,15 +20,15 @@ interface Estate {
   id: string;
   name: string;
   location: string;
-  status: string;
+  is_active: boolean | null;
   created_at: string;
-  estate_type?: string;
-  total_units?: number;
-  county?: string;
+  estate_type?: string | null;
+  total_units?: number | null;
+  county?: string | null;
   address?: string;
-  postal_code?: string;
-  description?: string;
-  amenities?: string[];
+  postal_code?: string | null;
+  description?: string | null;
+  amenities?: any;
 }
 
 const KENYA_COUNTIES = ["Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret", "Thika", "Malindi", "Kitale", "Garissa", "Kakamega", "Naivasha", "Nyeri", "Machakos", "Meru"];
@@ -55,31 +55,30 @@ export const EstateDetail: React.FC = () => {
       const { data, error } = await supabase
         .from('estates')
         .select('*')
-        .eq('id', id)
+        .eq('id', id!)
         .single();
 
       if (error) throw error;
-      return data as Estate;
+      return data as unknown as Estate;
     },
   });
 
-  const handleStatusChange = async (newStatus: string) => {
+  const handleStatusChange = async (newActive: boolean) => {
     setUpdatingStatus(true);
     try {
       const { error } = await supabase
         .from('estates')
-        .update({ status: newStatus })
-        .eq('id', id);
+        .update({ is_active: newActive })
+        .eq('id', id!);
 
       if (error) throw error;
 
-      // refresh queries
       queryClient.invalidateQueries({ queryKey: ['estate', id] });
       queryClient.invalidateQueries({ queryKey: ['estates'] });
 
       toast({
         title: "Status Updated",
-        description: `Estate status has been updated to ${newStatus}`,
+        description: `Estate has been ${newActive ? 'activated' : 'deactivated'}`,
       });
     } catch (error) {
       toast({
@@ -96,8 +95,8 @@ export const EstateDetail: React.FC = () => {
     try {
       const { error } = await supabase
         .from('estates')
-        .update(editedEstate)
-        .eq('id', id);
+        .update(editedEstate as any)
+        .eq('id', id!);
 
       if (error) throw error;
 
@@ -144,18 +143,20 @@ export const EstateDetail: React.FC = () => {
   if (isLoading) return <div>Loading estate details...</div>;
   if (!estate) return <div>Estate not found</div>;
 
+  const statusLabel = estate.is_active ? 'active' : 'inactive';
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">{estate.name}</h1>
-          <p className="text-gray-600">{estate.location}</p>
+          <p className="text-muted-foreground">{estate.location}</p>
         </div>
         <div className="flex gap-2">
-          {estate.status === 'active' ? (
+          {estate.is_active ? (
             <Button
               variant="destructive"
-              onClick={() => handleStatusChange('inactive')}
+              onClick={() => handleStatusChange(false)}
               disabled={updatingStatus}
             >
               {updatingStatus ? 'Updating...' : 'Deactivate Estate'}
@@ -163,7 +164,7 @@ export const EstateDetail: React.FC = () => {
           ) : (
             <Button
               variant="default"
-              onClick={() => handleStatusChange('active')}
+              onClick={() => handleStatusChange(true)}
               disabled={updatingStatus}
             >
               {updatingStatus ? 'Updating...' : 'Activate Estate'}
@@ -173,18 +174,15 @@ export const EstateDetail: React.FC = () => {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-{/* Make tablist horizontally scrollable on small screens */}
-<TabsList className="overflow-x-auto no-scrollbar flex gap-2 border-b border-gray-200 dark:border-gray-700">
-  <TabsTrigger value="overview" className="whitespace-nowrap">Overview</TabsTrigger>
-  <TabsTrigger value="residents" className="whitespace-nowrap">Residents</TabsTrigger>
-  <TabsTrigger value="vendors" className="whitespace-nowrap">Vendors</TabsTrigger>
-  <TabsTrigger value="analytics" className="whitespace-nowrap">Analytics</TabsTrigger>
-  <TabsTrigger value="settings" className="whitespace-nowrap">Settings</TabsTrigger>
-</TabsList>
+        <TabsList className="overflow-x-auto no-scrollbar flex gap-2 border-b">
+          <TabsTrigger value="overview" className="whitespace-nowrap">Overview</TabsTrigger>
+          <TabsTrigger value="vendors" className="whitespace-nowrap">Vendors</TabsTrigger>
+          <TabsTrigger value="analytics" className="whitespace-nowrap">Analytics</TabsTrigger>
+          <TabsTrigger value="settings" className="whitespace-nowrap">Settings</TabsTrigger>
+        </TabsList>
 
         <TabsContent value="overview">
           <div className="space-y-6">
-            {/* Estate Information */}
             <div className="grid gap-4 md:grid-cols-2">
               <div className="p-4 border rounded-lg">
                 <div className="flex justify-between items-center mb-3">
@@ -195,12 +193,8 @@ export const EstateDetail: React.FC = () => {
                     </Button>
                   ) : (
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={handleCancelEdit}>
-                        Cancel
-                      </Button>
-                      <Button size="sm" onClick={handleSaveDetails}>
-                        Save
-                      </Button>
+                      <Button variant="outline" size="sm" onClick={handleCancelEdit}>Cancel</Button>
+                      <Button size="sm" onClick={handleSaveDetails}>Save</Button>
                     </div>
                   )}
                 </div>
@@ -208,11 +202,7 @@ export const EstateDetail: React.FC = () => {
                   <div>
                     <Label htmlFor="name">Name</Label>
                     {isEditing ? (
-                      <Input
-                        id="name"
-                        value={editedEstate.name ?? estate.name}
-                        onChange={(e) => setEditedEstate(prev => ({ ...prev, name: e.target.value }))}
-                      />
+                      <Input id="name" value={editedEstate.name ?? estate.name} onChange={(e) => setEditedEstate(prev => ({ ...prev, name: e.target.value }))} />
                     ) : (
                       <p className="text-sm">{estate.name}</p>
                     )}
@@ -220,13 +210,8 @@ export const EstateDetail: React.FC = () => {
                   <div>
                     <Label htmlFor="type">Type</Label>
                     {isEditing ? (
-                      <Select
-                        value={editedEstate.estate_type ?? estate.estate_type ?? ""}
-                        onValueChange={(value) => setEditedEstate(prev => ({ ...prev, estate_type: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
+                      <Select value={editedEstate.estate_type ?? estate.estate_type ?? ""} onValueChange={(value) => setEditedEstate(prev => ({ ...prev, estate_type: value }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {ESTATE_TYPES.map(type => (
                             <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
@@ -240,12 +225,7 @@ export const EstateDetail: React.FC = () => {
                   <div>
                     <Label htmlFor="units">Total Units</Label>
                     {isEditing ? (
-                      <Input
-                        id="units"
-                        type="number"
-                        value={editedEstate.total_units ?? estate.total_units ?? ""}
-                        onChange={(e) => setEditedEstate(prev => ({ ...prev, total_units: Number(e.target.value) }))}
-                      />
+                      <Input id="units" type="number" value={editedEstate.total_units ?? estate.total_units ?? ""} onChange={(e) => setEditedEstate(prev => ({ ...prev, total_units: Number(e.target.value) }))} />
                     ) : (
                       <p className="text-sm">{estate.total_units || 'Not specified'}</p>
                     )}
@@ -253,11 +233,7 @@ export const EstateDetail: React.FC = () => {
                   <div>
                     <Label htmlFor="location">Location</Label>
                     {isEditing ? (
-                      <Input
-                        id="location"
-                        value={editedEstate.location ?? estate.location}
-                        onChange={(e) => setEditedEstate(prev => ({ ...prev, location: e.target.value }))}
-                      />
+                      <Input id="location" value={editedEstate.location ?? estate.location} onChange={(e) => setEditedEstate(prev => ({ ...prev, location: e.target.value }))} />
                     ) : (
                       <p className="text-sm">{estate.location}</p>
                     )}
@@ -265,13 +241,8 @@ export const EstateDetail: React.FC = () => {
                   <div>
                     <Label htmlFor="county">County</Label>
                     {isEditing ? (
-                      <Select
-                        value={editedEstate.county ?? estate.county ?? ""}
-                        onValueChange={(value) => setEditedEstate(prev => ({ ...prev, county: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
+                      <Select value={editedEstate.county ?? estate.county ?? ""} onValueChange={(value) => setEditedEstate(prev => ({ ...prev, county: value }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {KENYA_COUNTIES.map(county => (
                             <SelectItem key={county} value={county}>{county}</SelectItem>
@@ -285,36 +256,15 @@ export const EstateDetail: React.FC = () => {
                   <div>
                     <Label htmlFor="address">Address</Label>
                     {isEditing ? (
-                      <Input
-                        id="address"
-                        value={editedEstate.address ?? estate.address ?? ""}
-                        onChange={(e) => setEditedEstate(prev => ({ ...prev, address: e.target.value }))}
-                      />
+                      <Input id="address" value={editedEstate.address ?? estate.address ?? ""} onChange={(e) => setEditedEstate(prev => ({ ...prev, address: e.target.value }))} />
                     ) : (
                       <p className="text-sm">{estate.address || 'Not specified'}</p>
                     )}
                   </div>
                   <div>
-                    <Label htmlFor="postal">Postal Code</Label>
-                    {isEditing ? (
-                      <Input
-                        id="postal"
-                        value={editedEstate.postal_code ?? estate.postal_code ?? ""}
-                        onChange={(e) => setEditedEstate(prev => ({ ...prev, postal_code: e.target.value }))}
-                      />
-                    ) : (
-                      <p className="text-sm">{estate.postal_code || 'Not specified'}</p>
-                    )}
-                  </div>
-                  <div>
                     <Label htmlFor="description">Description</Label>
                     {isEditing ? (
-                      <Textarea
-                        id="description"
-                        value={editedEstate.description ?? estate.description ?? ""}
-                        onChange={(e) => setEditedEstate(prev => ({ ...prev, description: e.target.value }))}
-                        rows={2}
-                      />
+                      <Textarea id="description" value={editedEstate.description ?? estate.description ?? ""} onChange={(e) => setEditedEstate(prev => ({ ...prev, description: e.target.value }))} rows={2} />
                     ) : (
                       <p className="text-sm">{estate.description || 'Not specified'}</p>
                     )}
@@ -325,28 +275,12 @@ export const EstateDetail: React.FC = () => {
               <div className="p-4 border rounded-lg">
                 <h3 className="font-semibold mb-3">Estate Status</h3>
                 <div className="space-y-2">
-                  <p><span className="font-medium">Status:</span> <Badge variant={estate.status === 'active' ? 'default' : 'secondary'}>{estate.status}</Badge></p>
+                  <p><span className="font-medium">Status:</span> <Badge variant={estate.is_active ? 'default' : 'secondary'}>{statusLabel}</Badge></p>
                   <p><span className="font-medium">Created:</span> {new Date(estate.created_at).toLocaleDateString()}</p>
                 </div>
               </div>
             </div>
-
-            {/* Amenities */}
-            {estate.amenities && estate.amenities.length > 0 && (
-              <div className="p-4 border rounded-lg">
-                <h3 className="font-semibold mb-3">Amenities</h3>
-                <div className="flex flex-wrap gap-1">
-                  {estate.amenities.map((amenity, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">{amenity}</Badge>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
-        </TabsContent>
-
-        <TabsContent value="residents">
-          <ResidentsList estateId={id} />
         </TabsContent>
 
         <TabsContent value="vendors">

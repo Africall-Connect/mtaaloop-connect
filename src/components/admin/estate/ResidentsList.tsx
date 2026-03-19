@@ -1,73 +1,40 @@
 import React from 'react';
-import { useParams } from 'react-router-dom';
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-
-interface Resident {
-  id: string;
-  name: string;
-  email?: string;
-  apartment?: string;
-  created_at?: string;
-}
 
 interface ResidentsListProps {
   estateId: string | undefined;
 }
 
 const ResidentsList: React.FC<ResidentsListProps> = ({ estateId }) => {
-  const queryClient = useQueryClient();
-
-  const { data: residents, isLoading } = useQuery({
-    queryKey: ['residents', estateId],
+  const { data: users, isLoading } = useQuery({
+    queryKey: ['estate-users', estateId],
     queryFn: async () => {
+      // Use delivery_addresses to find users linked to this estate
       const { data, error } = await supabase
-        .from('residents')
-        .select('*')
-        .eq('estate_id', estateId)
-        .order('created_at', { ascending: false });
+        .from('delivery_addresses')
+        .select('user_id, label, building_name, unit_number')
+        .eq('estate_id', estateId!)
+        .eq('is_active', true);
 
       if (error) throw error;
-      return data as Resident[];
+      return data || [];
     },
     enabled: !!estateId,
   });
 
-const removeMutation = useMutation({
-    mutationFn: async (residentId: string) => {
-      const { error } = await supabase
-        .from('residents')
-        .delete()
-        .eq('id', residentId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['residents', estateId] });
-      queryClient.invalidateQueries({ queryKey: ['estate', estateId] });
-    },
-  });
-
   if (isLoading) return <div>Loading residents...</div>;
-  if (!residents || residents.length === 0) return <div>No residents found.</div>;
+  if (!users || users.length === 0) return <div>No residents found.</div>;
 
   return (
     <div className="space-y-3">
-      {residents.map((r) => (
-        <div key={r.id} className="p-3 border rounded flex items-center justify-between">
+      {users.map((u, i) => (
+        <div key={i} className="p-3 border rounded flex items-center justify-between">
           <div>
-            <div className="font-semibold">{r.name}</div>
-            <div className="text-sm text-muted-foreground">{r.email || r.apartment}</div>
-          </div>
-          <div className="flex gap-2">
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => removeMutation.mutate(r.id)}
-                disabled={removeMutation.isPending}
-              >
-              Remove
-            </Button>
+            <div className="font-semibold">{u.label}</div>
+            <div className="text-sm text-muted-foreground">
+              {[u.building_name, u.unit_number].filter(Boolean).join(', ')}
+            </div>
           </div>
         </div>
       ))}

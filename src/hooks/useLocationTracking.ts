@@ -47,7 +47,7 @@ export const useLocationTracking = () => {
     if (!user?.id) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('rider_location_log')
         .insert({
           rider_id: user.id,

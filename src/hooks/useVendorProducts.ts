@@ -34,7 +34,7 @@ export const useVendorProducts = (vendorId?: string): UseVendorProductsReturn =>
 
       if (fetchError) throw fetchError;
 
-      setProducts(data || []);
+      setProducts((data as any) || []);
     } catch (err: unknown) {
       console.error('Error fetching products:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');

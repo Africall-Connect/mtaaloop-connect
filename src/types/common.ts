@@ -34,16 +34,20 @@ export interface MaintenanceSchedule {
 }
 
 export interface ServiceData {
+  vendor_id?: string;
   name: string;
   description: string;
   price: number;
   duration?: number;
   category?: string;
+  subcategory?: string;
   is_available?: boolean;
+  item_type?: string;
   [key: string]: unknown;
 }
 
 export interface ProductData {
+  vendor_id?: string;
   name: string;
   description: string;
   price: number;
@@ -51,7 +55,8 @@ export interface ProductData {
   subcategory?: string;
   is_available?: boolean;
   stock_quantity?: number;
-  image_url?: string;
+  low_stock_threshold?: number;
+  image_url?: string | null;
   image_storage_path?: string | null;
   [key: string]: unknown;
 }
