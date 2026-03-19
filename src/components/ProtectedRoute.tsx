@@ -35,8 +35,8 @@ export function ProtectedRoute({
         const { data } = await supabase
           .from('estates')
           .select('is_approved')
-          .eq('manager_id', user.id)
-          .single();
+          .eq('approved_by', user.id)
+          .maybeSingle();
         approved = data?.is_approved || false;
       } else if (requiredRole === 'rider') {
         const { data } = await supabase
