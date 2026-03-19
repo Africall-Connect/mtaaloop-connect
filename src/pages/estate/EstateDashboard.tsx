@@ -48,22 +48,22 @@ export default function EstateDashboard() {
   const fetchStats = useCallback(async (estateId: string) => {
     try {
       // Get active residents count
-      const { count: residentsCount } = await supabase
+      const { count: residentsCount } = await (supabase as any)
         .from('estate_residents')
         .select('*', { count: 'exact', head: true })
         .eq('estate_id', estateId)
         .eq('is_approved', true);
 
       // Get pending approvals count
-      const { count: pendingCount } = await supabase
+      const { count: pendingCount } = await (supabase as any)
         .from('estate_residents')
         .select('*', { count: 'exact', head: true })
         .eq('estate_id', estateId)
         .eq('is_approved', false);
 
-      // Get active vendors count (assuming vendors table exists)
-      const { count: vendorsCount } = await supabase
-        .from('vendors')
+      // Get active vendors count
+      const { count: vendorsCount } = await (supabase as any)
+        .from('vendor_profiles')
         .select('*', { count: 'exact', head: true })
         .eq('estate_id', estateId)
         .eq('is_approved', true);
