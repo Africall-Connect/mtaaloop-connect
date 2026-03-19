@@ -161,7 +161,6 @@ export default function CommunicationsHub() {
           sender_type: 'vendor',
           is_read: false
         }]);
-        }]);
 
       if (error) throw error;
 
