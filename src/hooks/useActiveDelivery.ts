@@ -23,7 +23,7 @@ export function useActiveDelivery() {
     setLoading(true);
     try {
       const data = await getActiveDelivery();
-      setDelivery(data);
+      setDelivery(data as any);
       setError(null);
     } catch (err: unknown) {
       console.error(err);
