@@ -92,19 +92,16 @@ export default function CommunicationsHub() {
 
   const fetchMessages = useCallback(async (customerId: string) => {
     try {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('messages')
-        .select(`
-          *,
-          customer:customers(first_name, last_name, email, phone)
-        `)
+        .select('*')
         .eq('vendor_id', user?.id)
         .eq('customer_id', customerId)
         .order('created_at', { ascending: true });
 
-      setMessages(data || []);
+      setMessages((data as any) || []);
 
-      await supabase
+      await (supabase as any)
         .from('messages')
         .update({ is_read: true })
         .eq('vendor_id', user?.id)
