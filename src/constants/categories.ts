@@ -9,6 +9,7 @@ export const MAIN_CATEGORIES = [
   { value: "Groceries & Food", label: "Groceries & Food" },
   { value: "Restaurant", label: "Restaurant" },
   { value: "Liquor Store", label: "Liquor Store" },
+  { value: "Flowers & Gifts", label: "Flowers & Gifts" },
   // Service
   { value: "Utilities & Services", label: "Utilities & Services" },
   { value: "Home Services", label: "Home Services" },
