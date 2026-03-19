@@ -200,7 +200,7 @@ export default function CategoryPage() {
       // Method 2: Query by business_type (fallback for vendors without categories table entries)
       const { data: businessTypeVendors, error: btError } = await supabase
         .from('vendor_profiles')
-        .select('id, business_name, slug, logo_url, cover_image_url, tagline, rating, delivery_time, delivery_fee, is_open, latitude, longitude, total_orders, business_description, operational_category')
+        .select('id, business_name, slug, logo_url, cover_image_url, tagline, rating, delivery_time, delivery_fee, is_open, total_orders, business_description, operational_category')
         .eq('business_type', businessTypeSlug)
         .eq('is_approved', true)
         .eq('is_active', true);
