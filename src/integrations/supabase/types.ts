@@ -3160,9 +3160,13 @@ export type Database = {
       service_requests: {
         Row: {
           agent_name: string | null
+          agent_notes: string | null
           agent_phone: string | null
           amount: number
+          assigned_at: string | null
+          assigned_to: string | null
           channel_preference: string | null
+          completed_at: string | null
           contact_number: string | null
           created_at: string | null
           customer_id: string
@@ -3185,9 +3189,13 @@ export type Database = {
         }
         Insert: {
           agent_name?: string | null
+          agent_notes?: string | null
           agent_phone?: string | null
           amount?: number
+          assigned_at?: string | null
+          assigned_to?: string | null
           channel_preference?: string | null
+          completed_at?: string | null
           contact_number?: string | null
           created_at?: string | null
           customer_id: string
@@ -3210,9 +3218,13 @@ export type Database = {
         }
         Update: {
           agent_name?: string | null
+          agent_notes?: string | null
           agent_phone?: string | null
           amount?: number
+          assigned_at?: string | null
+          assigned_to?: string | null
           channel_preference?: string | null
+          completed_at?: string | null
           contact_number?: string | null
           created_at?: string | null
           customer_id?: string
@@ -3234,6 +3246,13 @@ export type Database = {
           urgency?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "service_requests_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "service_requests_customer_id_fkey"
             columns: ["customer_id"]
@@ -4612,6 +4631,7 @@ export type Database = {
         | "admin"
         | "compliance"
         | "customer_care"
+        | "agent"
       estate_registration_status: "pending" | "approved" | "rejected"
       estate_type:
         | "apartment_complex"
@@ -4756,6 +4776,7 @@ export const Constants = {
         "admin",
         "compliance",
         "customer_care",
+        "agent",
       ],
       estate_registration_status: ["pending", "approved", "rejected"],
       estate_type: [
