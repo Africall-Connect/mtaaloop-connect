@@ -305,7 +305,7 @@ export default function AdminOnboarding() {
 
       <main className="container mx-auto px-4 py-8 max-w-2xl">
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setErrors({}); }}>
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="vendor" className="flex items-center gap-2">
               <Store className="h-4 w-4" /> Vendor
             </TabsTrigger>
@@ -313,7 +313,10 @@ export default function AdminOnboarding() {
               <User className="h-4 w-4" /> Customer
             </TabsTrigger>
             <TabsTrigger value="rider" className="flex items-center gap-2">
-              <Bike className="h-4 w-4" /> Delivery Agent
+              <Bike className="h-4 w-4" /> Rider
+            </TabsTrigger>
+            <TabsTrigger value="agent" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" /> Agent
             </TabsTrigger>
           </TabsList>
 
