@@ -16,6 +16,8 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const formLoadTime = useRef(Date.now());
+  const [honeypot, setHoneypot] = useState(""); // Bot trap
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
