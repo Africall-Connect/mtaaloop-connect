@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { MtaaLoopPin } from "@/components/MtaaLoopLogo";
 import { useNavigate } from "react-router-dom";
 import { Search, LogIn, Plus, X, Store, CalendarCheck, Clock, Sparkles, ShoppingCart, Home, Pill } from "lucide-react";
 import { getServiceImage } from "@/lib/serviceImages";
@@ -561,10 +562,8 @@ const Index = () => {
           {/* Mobile Layout */}
           <div className="flex flex-col gap-3 md:hidden">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-primary/10 rounded-full">
-                  <img src="/logo.png" alt="Mtaaloop" className="h-7 w-7" />
-                </div>
+              <div className="flex items-center gap-1">
+                <MtaaLoopPin size={32} />
                 <span className="font-bold text-lg text-primary">Mtaaloop</span>
               </div>
               <Button
@@ -590,10 +589,8 @@ const Index = () => {
 
           {/* Desktop Layout */}
           <div className="hidden md:flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-primary/10 rounded-full">
-                <img src="/logo.png" alt="Mtaaloop" className="h-9 w-9" />
-              </div>
+            <div className="flex items-center gap-1">
+              <MtaaLoopPin size={40} />
               <span className="font-bold text-xl text-primary">Mtaaloop</span>
             </div>
             <div className="flex-1 max-w-xl relative">
