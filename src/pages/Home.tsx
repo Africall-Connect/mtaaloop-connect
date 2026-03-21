@@ -158,56 +158,45 @@ const Home = () => {
     loadUserApartment();
   }, [setCurrentApartment]);
 
-  // Fetch products with vendor info
+  // Fetch all approved vendors with product counts
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchVendors = async () => {
       try {
-        setLoadingProducts(true);
+        setLoadingVendors(true);
         const { data, error } = await supabase
-          .from("products")
-          .select(`
-            id, name, description, category, subcategory, price, image_url, 
-            is_available, vendor_id,
-            vendor_profiles!inner (
-              id, business_name, slug, is_approved, is_active
-            )
-          `)
-          .eq("is_available", true)
-          .eq("vendor_profiles.is_approved", true)
-          .eq("vendor_profiles.is_active", true)
-          .order("category", { ascending: true })
-          .order("name", { ascending: true });
+          .from("vendor_profiles")
+          .select("*")
+          .eq("is_approved", true)
+          .eq("is_active", true)
+          .order("rating", { ascending: false });
 
         if (error) throw error;
 
-        const transformedProducts: ProductWithVendor[] = (data || []).map(
-          (p: any) => ({
-            id: p.id,
-            name: p.name,
-            description: p.description,
-            category: p.category,
-            subcategory: p.subcategory,
-            price: p.price,
-            image_url: p.image_url,
-            is_available: p.is_available,
-            vendor_id: p.vendor_id,
-            vendor: {
-              id: p.vendor_profiles.id,
-              business_name: p.vendor_profiles.business_name,
-              slug: p.vendor_profiles.slug,
-            },
-          })
-        );
+        const vendorIds = (data || []).map(v => v.id);
+        const { data: counts } = await supabase
+          .from("products")
+          .select("vendor_id")
+          .eq("is_available", true)
+          .in("vendor_id", vendorIds);
 
-        setProducts(transformedProducts);
+        const countMap: Record<string, number> = {};
+        (counts || []).forEach(c => {
+          countMap[c.vendor_id] = (countMap[c.vendor_id] || 0) + 1;
+        });
+
+        const vendorsWithCounts: VendorWithCount[] = (data || []).map(v => ({
+          ...v,
+          product_count: countMap[v.id] || 0,
+        }));
+
+        setVendors(vendorsWithCounts);
       } catch (error) {
-        console.error("Error fetching products:", error);
+        console.error("Error fetching vendors:", error);
       } finally {
-        setLoadingProducts(false);
+        setLoadingVendors(false);
       }
     };
-
-    fetchProducts();
+    fetchVendors();
   }, []);
 
   // Fetch minimarts
@@ -220,11 +209,9 @@ const Home = () => {
           .eq('is_approved', true)
           .eq('is_active', true)
           .eq('operational_category', 'minimart');
-
         if (currentApartment && currentApartment.id !== 'general-location') {
           query = query.eq('estate_id', currentApartment.id);
         }
-
         const { data, error } = await query.limit(3);
         if (error) throw error;
         setMinimarts(data || []);
@@ -232,13 +219,10 @@ const Home = () => {
         console.error('Failed to load minimarts:', error);
       }
     };
-
-    if (!loadingPref) {
-      fetchMinimarts();
-    }
+    if (!loadingPref) fetchMinimarts();
   }, [currentApartment, loadingPref]);
 
-  // Fetch pharmacies for consultation section
+  // Fetch pharmacies
   useEffect(() => {
     const fetchPharmacies = async () => {
       try {
@@ -249,186 +233,75 @@ const Home = () => {
           .eq('is_approved', true)
           .eq('is_active', true)
           .limit(4);
-        
         if (error) throw error;
         setPharmacies(data || []);
       } catch (error) {
         console.error('Failed to load pharmacies:', error);
       }
     };
-
     fetchPharmacies();
   }, []);
 
-  // Fetch booking vendors (Beauty, Spa, Accommodation, etc.)
+  // Fetch booking vendors
   useEffect(() => {
     const fetchBookingVendors = async () => {
       try {
-        // First fetch vendors with booking operational category
-        const { data: vendors, error: vendorsError } = await supabase
+        const { data: bVendors, error: vendorsError } = await supabase
           .from('vendor_profiles')
           .select('*')
           .eq('operational_category', 'booking')
           .eq('is_approved', true)
           .eq('is_active', true)
           .limit(4);
-        
         if (vendorsError) throw vendorsError;
-        
-        if (vendors && vendors.length > 0) {
-          // Fetch services for each vendor
-          const vendorIds = vendors.map(v => v.id);
+        if (bVendors && bVendors.length > 0) {
+          const vendorIds = bVendors.map(v => v.id);
           const { data: services } = await supabase
             .from('booking_service_types')
             .select('id, name, price, duration_minutes, category, vendor_id')
             .in('vendor_id', vendorIds)
             .eq('is_active', true)
             .order('price', { ascending: true });
-          
-          // Attach services to vendors
-          const vendorsWithServices = vendors.map(vendor => ({
+          const vendorsWithServices = bVendors.map(vendor => ({
             ...vendor,
             services: services?.filter(s => s.vendor_id === vendor.id) || []
           }));
-          
           setBookingVendors(vendorsWithServices);
         }
       } catch (error) {
         console.error('Failed to load booking vendors:', error);
       }
     };
-
     fetchBookingVendors();
   }, []);
 
-  // Extract unique categories from products
-  const categories = useMemo(() => {
+  // Vendor category filter
+  const vendorCategories = useMemo(() => {
     const cats = new Set<string>();
-    products.forEach((p) => cats.add(p.category));
+    vendors.forEach((v) => { if (v.business_type) cats.add(v.business_type); });
     return Array.from(cats).sort();
-  }, [products]);
+  }, [vendors]);
 
-  // Extract unique subcategories for the selected category
-  const subcategories = useMemo(() => {
-    if (!selectedCategory) return [];
-    const subs = new Set<string>();
-    products
-      .filter((p) => p.category === selectedCategory && p.subcategory)
-      .forEach((p) => subs.add(p.subcategory as string));
-    return Array.from(subs).sort();
-  }, [products, selectedCategory]);
-
-  // Handle category selection (reset subcategory when category changes)
-  const handleSelectCategory = useCallback((category: string | null) => {
-    setSelectedCategory(category);
-    setSelectedSubcategory(null); // Reset subcategory when category changes
-  }, []);
-
-  // Filter products by search, category, and subcategory
-  const filteredProducts = useMemo(() => {
-    let filtered = products;
-
-    // Filter by search query
+  // Filter vendors
+  const filteredVendors = useMemo(() => {
+    let filtered = vendors;
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (p) =>
-          p.name.toLowerCase().includes(query) ||
-          p.description?.toLowerCase().includes(query) ||
-          p.category.toLowerCase().includes(query) ||
-          p.vendor.business_name.toLowerCase().includes(query)
+      filtered = filtered.filter(v =>
+        v.business_name.toLowerCase().includes(query) ||
+        v.tagline?.toLowerCase().includes(query) ||
+        v.business_type?.toLowerCase().includes(query)
       );
     }
-
-    // Filter by selected category
     if (selectedCategory) {
-      filtered = filtered.filter((p) => p.category === selectedCategory);
+      filtered = filtered.filter(v => v.business_type === selectedCategory);
     }
-
-    // Filter by selected subcategory
-    if (selectedSubcategory) {
-      filtered = filtered.filter((p) => p.subcategory === selectedSubcategory);
-    }
-
     return filtered;
-  }, [products, searchQuery, selectedCategory, selectedSubcategory]);
+  }, [vendors, searchQuery, selectedCategory]);
 
-  // Handle add to cart
-  const handleAddToCart = useCallback((e: React.MouseEvent, product: ProductWithVendor) => {
-    e.stopPropagation();
-
-    if (!user) {
-      toast({
-        title: "Login Required",
-        description: "Please login to add items to your cart",
-        variant: "destructive",
-      });
-      navigate("/auth/login", { state: { returnTo: "/home" } });
-      return;
-    }
-
-    addItem({
-      id: product.id,
-      vendorId: product.vendor_id,
-      vendorName: product.vendor.business_name,
-      name: product.name,
-      price: product.price,
-      quantity: 1,
-      image: product.image_url || undefined,
-      category: product.category,
-    });
-
-    toast({
-      title: "Added to cart",
-      description: `1x ${product.name}`,
-    });
-  }, [user, toast, navigate, addItem]);
-
-  // Handle featured banner add to cart
-  const handleBannerAddToCart = useCallback((product: ProductWithVendor) => {
-    if (!user) {
-      toast({
-        title: "Login Required",
-        description: "Please login to add items to your cart",
-        variant: "destructive",
-      });
-      navigate("/auth/login", { state: { returnTo: "/home" } });
-      return;
-    }
-
-    addItem({
-      id: product.id,
-      vendorId: product.vendor_id,
-      vendorName: product.vendor.business_name,
-      name: product.name,
-      price: product.price,
-      quantity: 1,
-      image: product.image_url || undefined,
-      category: product.category,
-    });
-
-    toast({
-      title: "Added to cart",
-      description: `1x ${product.name}`,
-    });
-  }, [user, toast, navigate, addItem]);
-
-  // Handle product click
-  const handleProductClick = useCallback((product: ProductWithVendor) => {
-    if (!user) {
-      toast({
-        title: "Login Required",
-        description: "Please login to view product details",
-        variant: "destructive",
-      });
-      navigate("/auth/login", { state: { returnTo: "/home" } });
-      return;
-    }
-
-    if (product.vendor?.slug) {
-      navigate(`/vendor/${product.vendor.slug}`);
-    }
-  }, [user, toast, navigate]);
+  const handleVendorClick = useCallback((vendor: VendorWithCount) => {
+    navigate(`/vendor/${vendor.slug}`);
+  }, [navigate]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
