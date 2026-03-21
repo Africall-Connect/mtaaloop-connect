@@ -84,9 +84,9 @@ export const HeroSection = () => {
       <motion.nav {...waveFromLeft(0)}
         className="absolute top-0 w-full py-4 px-6 flex justify-between items-center z-20"
       >
-        <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="Mtaaloop Logo" className="h-14 w-14 object-contain" />
-          <span className="text-2xl font-black text-gray-900 tracking-tight">Mtaaloop</span>
+        <div className="flex items-center gap-1">
+          <MtaaLoopPin size={48} />
+          <span className="text-2xl font-black text-foreground tracking-tight">Mtaaloop</span>
         </div>
         <div className="flex gap-2">
           <Button variant="ghost" onClick={handleTryConnect} className="gap-1 rounded-xl">

@@ -316,10 +316,7 @@ const Home = () => {
             {/* Logo & Location */}
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="relative flex-shrink-0">
-                <div className="h-9 w-9 md:h-10 md:w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <img src="/logo.png" alt="Mtaaloop" className="h-6 w-6 md:h-7 md:w-7 object-contain" 
-                    onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                </div>
+                <MtaaLoopPin size={36} />
               </div>
               <div className="min-w-0">
                 <span className="text-lg md:text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
