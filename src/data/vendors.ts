@@ -745,9 +745,9 @@ export const vendors: Vendor[] = [
     yearsInBusiness: 4,
     inEstate: false,
     menu: [
-      { id: "mani-pedi", name: "Manicure & Pedicure", description: "Full service", price: 1200, category: "Nails", rating: 4.9, ordersThisWeek: 45, isPopular: true },
-      { id: "gel", name: "Gel Nails", description: "Long-lasting shine", price: 1500, category: "Nails", rating: 4.8, ordersThisWeek: 34 },
-      { id: "nail-art", name: "Nail Art", description: "Custom designs", price: 800, category: "Nails", rating: 4.7, ordersThisWeek: 23 },
+      { id: "mani-pedi", name: "Manicure & Pedicure", description: "Full hand & foot treatment", price: 1200, image: "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=400&fit=crop", category: "Nails", rating: 4.9, ordersThisWeek: 45, isPopular: true },
+      { id: "gel", name: "Gel Nails", description: "Long-lasting gel polish", price: 1500, image: "https://images.unsplash.com/photo-1607779097040-26e80aa78e66?w=400&fit=crop", category: "Nails", rating: 4.8, ordersThisWeek: 34 },
+      { id: "nail-art", name: "Nail Art Design", description: "Custom nail art & rhinestones", price: 800, image: "https://images.unsplash.com/photo-1519014816548-bf5fe059798b?w=400&fit=crop", category: "Nails", rating: 4.7, ordersThisWeek: 23 },
     ],
   },
   {
