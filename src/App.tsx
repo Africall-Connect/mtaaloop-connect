@@ -28,6 +28,8 @@ const EstateSignup = lazy(() => import("./pages/auth/EstateSignup"));
 const RiderSignup = lazy(() => import("./pages/auth/RiderSignup"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const StaffInvite = lazy(() => import("./pages/auth/StaffInvite"));
+const ForgotPassword = lazy(() => import("./pages/auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
 
 // Admin pages
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
@@ -235,6 +237,8 @@ const App = () => (
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/auth/signup" element={<Signup />} />
               <Route path="/auth/login" element={<Login />} />
+              <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+              <Route path="/auth/reset-password" element={<ResetPassword />} />
               <Route path="/auth/role-selection" element={<RoleSelection />} />
               <Route path="/auth/vendor-signup" element={<VendorSignup />} />
               <Route path="/auth/estate-signup" element={<EstateSignup />} />

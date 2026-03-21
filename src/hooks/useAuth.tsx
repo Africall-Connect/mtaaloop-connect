@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -16,43 +16,50 @@ export function useAuth() {
     roles: [],
     loading: true,
   });
+  const rolesFetchedForUser = useRef<string | null>(null);
+
+  const fetchUserRoles = useCallback(async (userId: string) => {
+    // Prevent redundant fetches for the same user
+    if (rolesFetchedForUser.current === userId) return;
+    rolesFetchedForUser.current = userId;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
+      
+      if (error) throw error;
+      
+      const roles = data?.map(r => r.role) || [];
+      setState(prev => ({ ...prev, roles, loading: false }));
+    } catch (error) {
+      console.error('Error fetching user roles:', error);
+      rolesFetchedForUser.current = null; // Allow retry on error
+      setState(prev => ({ ...prev, roles: [], loading: false }));
+    }
+  }, []);
 
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Auth event:', event, session?.user?.id);
-
-        // Only clear user state on explicit sign out
         if (event === 'SIGNED_OUT') {
-          setState(prev => ({
-            ...prev,
+          rolesFetchedForUser.current = null;
+          setState({
             session: null,
             user: null,
             roles: [],
             loading: false,
-          }));
-        } else if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
-          // Update session but don't trigger role fetch again unnecessarily
-          setState(prev => ({
-            ...prev,
-            session,
-            user: session?.user ?? null,
-          }));
-
-          if (session?.user && !state.roles.length) {
-            fetchUserRoles(session.user.id);
-          }
+          });
         } else if (session?.user) {
           setState(prev => ({
             ...prev,
             session,
             user: session.user,
           }));
-
-          if (!state.roles.length) {
-            fetchUserRoles(session.user.id);
-          }
+          // Defer role fetch to avoid Supabase deadlock
+          setTimeout(() => fetchUserRoles(session.user.id), 0);
         }
       }
     );
@@ -79,24 +86,7 @@ export function useAuth() {
     });
 
     return () => subscription.unsubscribe();
-  }, [state.roles.length]);
-
-  const fetchUserRoles = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId);
-      
-      if (error) throw error;
-      
-      const roles = data?.map(r => r.role) || [];
-      setState(prev => ({ ...prev, roles, loading: false }));
-    } catch (error) {
-      console.error('Error fetching user roles:', error);
-      setState(prev => ({ ...prev, roles: [], loading: false }));
-    }
-  };
+  }, [fetchUserRoles]);
 
   const hasRole = (role: string) => state.roles.includes(role);
   
