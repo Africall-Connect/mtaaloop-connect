@@ -625,6 +625,20 @@ const App = () => (
                 </ProtectedRoute>
               } />
 
+              {/* Admin service requests management */}
+              <Route path="/admin/service-requests" element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminServiceRequests />
+                </ProtectedRoute>
+              } />
+
+              {/* Agent dashboard */}
+              <Route path="/agent/dashboard" element={
+                <ProtectedRoute requiredRole="agent">
+                  <AgentDashboard />
+                </ProtectedRoute>
+              } />
+
               {/* Admin compliance dashboard route */}
               <Route path="/admin/compliance" element={
                 <ProtectedRoute requiredRole="admin">
