@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Eye, EyeOff, Lock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { logSecurityEvent } from "@/lib/securityLogger";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
