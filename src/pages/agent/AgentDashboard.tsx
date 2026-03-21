@@ -236,7 +236,7 @@ export default function AgentDashboard() {
                         )}
 
                         {req.status === 'completed' && (
-                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                          <Badge variant="secondary">
                             <CheckCircle2 className="w-3 h-3 mr-1" /> Completed
                           </Badge>
                         )}
