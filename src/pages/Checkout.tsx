@@ -434,9 +434,10 @@ const Checkout = () => {
                   <div
                     key={opt.value}
                     className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      opt.disabled ? "opacity-50 cursor-not-allowed" :
                       paymentMethod === opt.value ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/30"
                     }`}
-                    onClick={() => setPaymentMethod(opt.value)}
+                    onClick={() => !opt.disabled && setPaymentMethod(opt.value)}
                   >
                     <div className="flex items-center gap-3">
                       <RadioGroupItem value={opt.value} id={opt.value} />
