@@ -500,8 +500,9 @@ export const vendors: Vendor[] = [
     yearsInBusiness: 4,
     inEstate: false,
     menu: [
-      { id: "mtura", name: "Mtura (Portion)", description: "Traditional Kenyan sausage", price: 150, category: "Street Food", rating: 4.5, ordersThisWeek: 89, isPopular: true },
-      { id: "mtura-kachumbari", name: "Mtura with Kachumbari", description: "With fresh salsa", price: 180, category: "Street Food", rating: 4.6, ordersThisWeek: 67 },
+      { id: "mtura", name: "Mtura (Portion)", description: "Traditional Kenyan intestine sausage", price: 150, image: "https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=400&fit=crop", category: "Street Food", rating: 4.5, ordersThisWeek: 89, isPopular: true },
+      { id: "mtura-kachumbari", name: "Mtura with Kachumbari", description: "With fresh tomato & onion salsa", price: 180, image: "https://images.unsplash.com/photo-1529006557810-274b9b2fc783?w=400&fit=crop", category: "Street Food", rating: 4.6, ordersThisWeek: 67 },
+      { id: "mtura-ugali", name: "Mtura Combo (with Ugali)", description: "Mtura, kachumbari & ugali", price: 250, image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&fit=crop", category: "Street Food", rating: 4.7, ordersThisWeek: 45, isNew: true },
     ],
   },
   {
