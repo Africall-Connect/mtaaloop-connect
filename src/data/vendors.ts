@@ -841,9 +841,9 @@ export const vendors: Vendor[] = [
     yearsInBusiness: 5,
     inEstate: false,
     menu: [
-      { id: "wash-fold", name: "Wash & Fold (per kg)", description: "Clean and folded", price: 150, category: "Laundry", rating: 4.7, ordersThisWeek: 178, isPopular: true },
-      { id: "wash-iron", name: "Wash & Iron (per kg)", description: "Cleaned and pressed", price: 200, category: "Laundry", rating: 4.8, ordersThisWeek: 145 },
-      { id: "dry-clean", name: "Dry Cleaning (per item)", description: "Delicate fabrics", price: 300, category: "Laundry", rating: 4.6, ordersThisWeek: 67 },
+      { id: "wash-fold", name: "Wash & Fold (per kg)", description: "Cleaned, dried & neatly folded", price: 150, image: "https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?w=400&fit=crop", category: "Laundry", rating: 4.7, ordersThisWeek: 178, isPopular: true },
+      { id: "wash-iron", name: "Wash & Iron (per kg)", description: "Cleaned, dried & pressed", price: 200, image: "https://images.unsplash.com/photo-1545173168-9f1947eebb7f?w=400&fit=crop", category: "Laundry", rating: 4.8, ordersThisWeek: 145 },
+      { id: "dry-clean", name: "Dry Cleaning (per item)", description: "For delicate & formal wear", price: 300, image: "https://images.unsplash.com/photo-1558171013-2e5c55e74ec4?w=400&fit=crop", category: "Laundry", rating: 4.6, ordersThisWeek: 67 },
     ],
   },
   {
