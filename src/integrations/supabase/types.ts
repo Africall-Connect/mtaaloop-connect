@@ -3162,55 +3162,76 @@ export type Database = {
           agent_name: string | null
           agent_phone: string | null
           amount: number
+          channel_preference: string | null
+          contact_number: string | null
           created_at: string | null
           customer_id: string
           customer_notes: string | null
+          description: string | null
+          errand_type: string | null
           estate_id: string | null
           house_number: string
           id: string
           is_subscription_usage: boolean | null
+          location_scope: string | null
           payment_status: string | null
           scheduled_for: string | null
           service_id: string
           service_name: string
+          service_type: string | null
           status: string | null
           updated_at: string | null
+          urgency: string | null
         }
         Insert: {
           agent_name?: string | null
           agent_phone?: string | null
           amount?: number
+          channel_preference?: string | null
+          contact_number?: string | null
           created_at?: string | null
           customer_id: string
           customer_notes?: string | null
+          description?: string | null
+          errand_type?: string | null
           estate_id?: string | null
           house_number: string
           id?: string
           is_subscription_usage?: boolean | null
+          location_scope?: string | null
           payment_status?: string | null
           scheduled_for?: string | null
           service_id: string
           service_name?: string
+          service_type?: string | null
           status?: string | null
           updated_at?: string | null
+          urgency?: string | null
         }
         Update: {
           agent_name?: string | null
           agent_phone?: string | null
           amount?: number
+          channel_preference?: string | null
+          contact_number?: string | null
           created_at?: string | null
           customer_id?: string
           customer_notes?: string | null
+          description?: string | null
+          errand_type?: string | null
           estate_id?: string | null
           house_number?: string
           id?: string
           is_subscription_usage?: boolean | null
+          location_scope?: string | null
           payment_status?: string | null
           scheduled_for?: string | null
           service_id?: string
           service_name?: string
+          service_type?: string | null
           status?: string | null
           updated_at?: string | null
+          urgency?: string | null
         }
         Relationships: [
           {
