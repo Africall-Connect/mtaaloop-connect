@@ -489,9 +489,37 @@ const Home = () => {
             action="View All"
             onAction={() => navigate('/quick-services')}
           />
+
+          {/* Service category tabs */}
+          <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide -mx-1 px-1 mb-4">
+            {SERVICE_TABS.map((tab) => {
+              const TabIcon = tab.icon;
+              const isActive = selectedServiceTab === tab.key;
+              return (
+                <Button
+                  key={tab.key}
+                  size="sm"
+                  variant={isActive ? "default" : "outline"}
+                  className={`rounded-full text-xs whitespace-nowrap flex-shrink-0 h-8 px-3.5 font-medium gap-1.5 transition-all duration-200 ${
+                    isActive ? "shadow-md shadow-primary/25" : ""
+                  }`}
+                  onClick={() => setSelectedServiceTab(tab.key)}
+                >
+                  <TabIcon className="h-3.5 w-3.5" />
+                  {tab.label}
+                </Button>
+              );
+            })}
+          </div>
+
+          {/* Service count */}
+          <p className="text-xs text-muted-foreground mb-4">
+            <span className="font-semibold text-foreground">{filteredServices.length}</span> service{filteredServices.length !== 1 ? 's' : ''} available
+          </p>
+
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {HOME_SERVICES_SHOWCASE.map((svc, i) => (
-              <ParallaxServiceCard key={svc.title} svc={svc} onClick={() => navigate(svc.route)} index={i} />
+            {filteredServices.map((svc, i) => (
+              <ServiceCard key={svc.title} svc={svc} onClick={() => navigate(svc.route)} index={i} />
             ))}
           </div>
           <Button
