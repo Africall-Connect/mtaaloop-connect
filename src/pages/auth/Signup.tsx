@@ -37,6 +37,28 @@ const Signup = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // 🛡️ Honeypot: bots fill hidden fields
+    if (honeypot) {
+      console.warn("[signup] Honeypot triggered - likely bot");
+      // Fake success to not alert the bot
+      setEmailSent(true);
+      return;
+    }
+
+    // 🛡️ Timing: humans take >2 seconds to fill a form
+    if (Date.now() - formLoadTime.current < 2000) {
+      console.warn("[signup] Form submitted too fast - likely bot");
+      toast.error("Please slow down and try again.");
+      return;
+    }
+
+    // 🛡️ Rate limit
+    const rateCheck = checkClientRateLimit("signup", RATE_LIMITS.signup);
+    if (!rateCheck.allowed) {
+      toast.error(`Too many signup attempts. Try again in ${Math.ceil(rateCheck.lockoutRemainingMs / 1000)}s`);
+      return;
+    }
+
     if (!formData.agreeToTerms) {
       toast.error("Please agree to Terms & Conditions");
       return;
