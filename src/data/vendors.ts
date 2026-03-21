@@ -793,9 +793,9 @@ export const vendors: Vendor[] = [
     yearsInBusiness: 6,
     inEstate: false,
     menu: [
-      { id: "bridal", name: "Bridal Makeup", description: "Full glam with trial", price: 5000, category: "Makeup", rating: 5.0, ordersThisWeek: 12, isPopular: true },
-      { id: "party", name: "Party Makeup", description: "Evening glam", price: 2000, category: "Makeup", rating: 4.9, ordersThisWeek: 34 },
-      { id: "casual", name: "Casual Makeup", description: "Natural everyday look", price: 1000, category: "Makeup", rating: 4.8, ordersThisWeek: 45 },
+      { id: "bridal", name: "Bridal Makeup Package", description: "Full glam with trial session", price: 5000, image: "https://images.unsplash.com/photo-1457972729786-0411a3b2b626?w=400&fit=crop", category: "Makeup", rating: 5.0, ordersThisWeek: 12, isPopular: true },
+      { id: "party", name: "Party/Evening Makeup", description: "Glamorous evening look", price: 2000, image: "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=400&fit=crop", category: "Makeup", rating: 4.9, ordersThisWeek: 34 },
+      { id: "casual", name: "Natural/Casual Makeup", description: "Everyday natural look", price: 1000, image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&fit=crop", category: "Makeup", rating: 4.8, ordersThisWeek: 45 },
     ],
   },
   {
