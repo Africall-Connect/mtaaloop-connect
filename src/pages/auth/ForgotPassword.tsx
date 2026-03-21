@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft, Mail, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { logSecurityEvent } from "@/lib/securityLogger";
+import { checkClientRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
