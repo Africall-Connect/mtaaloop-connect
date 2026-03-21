@@ -753,12 +753,14 @@ const OrderTracking = () => {
     try {
       setSubmittingReview(true);
 
+      const sanitizedComment = (reviewComment || "").replace(/<[^>]*>/g, "").trim().slice(0, 1000);
+
       const { error } = await supabase.from("order_reviews").insert({
         order_id: orderId,
         customer_id: user.id,
-        food_rating: foodRating,
-        delivery_rating: deliveryRating,
-        comment: reviewComment || null,
+        food_rating: Math.max(1, Math.min(5, Math.floor(foodRating))),
+        delivery_rating: Math.max(1, Math.min(5, Math.floor(deliveryRating))),
+        comment: sanitizedComment || null,
         created_at: new Date().toISOString(),
       });
 

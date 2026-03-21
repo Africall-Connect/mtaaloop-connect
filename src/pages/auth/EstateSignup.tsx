@@ -62,13 +62,30 @@ export default function EstateSignup() {
 
   const handleSubmit = async () => {
     if (!validateStep(3)) return;
+
+    // Validate with Zod schema
+    const parsed = estateSchema.safeParse(estateInfo);
+    if (!parsed.success) {
+      const firstError = parsed.error.errors[0];
+      toast.error(firstError.message);
+      return;
+    }
+
     setLoading(true);
     try {
-      const slug = estateInfo.estateName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      const slug = sanitizeSlug(estateInfo.estateName);
       const { error: estateError } = await supabase.from("estates").insert({
-        name: estateInfo.estateName, slug, estate_type: estateInfo.estateType, location: estateInfo.location, county: estateInfo.county, address: estateInfo.address,
-        postal_code: estateInfo.postalCode, total_units: estateInfo.totalUnits, description: estateInfo.description,
-        amenities: selectedAmenities, is_approved: false
+        name: sanitizeText(estateInfo.estateName, 100),
+        slug,
+        estate_type: estateInfo.estateType,
+        location: sanitizeText(estateInfo.location, 200),
+        county: estateInfo.county,
+        address: sanitizeText(estateInfo.address, 300),
+        postal_code: sanitizeText(estateInfo.postalCode || "", 20),
+        total_units: estateInfo.totalUnits,
+        description: sanitizeText(estateInfo.description || "", 2000),
+        amenities: selectedAmenities,
+        is_approved: false
       });
       if (estateError) throw estateError;
       toast.success("Estate registration submitted successfully!");
