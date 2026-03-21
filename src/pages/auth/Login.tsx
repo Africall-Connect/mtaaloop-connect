@@ -61,8 +61,10 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (isLockedOut) {
-      toast.error(`Account temporarily locked. Try again in ${remainingLockout}s`);
+    const rateCheck = checkClientRateLimit("login", RATE_LIMITS.login);
+    if (!rateCheck.allowed) {
+      setLockoutMs(rateCheck.lockoutRemainingMs);
+      toast.error(`Too many attempts. Try again in ${Math.ceil(rateCheck.lockoutRemainingMs / 1000)}s`);
       return;
     }
 
