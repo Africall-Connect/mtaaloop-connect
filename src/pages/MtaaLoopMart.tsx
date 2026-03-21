@@ -24,6 +24,16 @@ interface SupermarketItem {
 
 const PLACEHOLDER_IMG = "https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&h=300&fit=crop";
 
+const getProductImage = (item: SupermarketItem): string => {
+  const url = item.image_url;
+  if (!url || url.includes('via.placeholder.com')) {
+    // Generate a deterministic Unsplash image based on product name
+    const query = encodeURIComponent(item.clean_name || item.product_name || 'grocery');
+    return `https://source.unsplash.com/300x300/?${query},food`;
+  }
+  return url;
+};
+
 const MtaaLoopMart = () => {
   const { addItem } = useCart();
   const [items, setItems] = useState<SupermarketItem[]>([]);
@@ -168,7 +178,7 @@ const MtaaLoopMart = () => {
               <Card key={item.id} className="group overflow-hidden flex flex-col">
                 <div className="relative h-48 bg-white p-4">
                   <img
-                    src={item.image_url || PLACEHOLDER_IMG}
+                    src={getProductImage(item)}
                     alt={item.product_name}
                     className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                     onError={(e) => { e.currentTarget.src = PLACEHOLDER_IMG; }}

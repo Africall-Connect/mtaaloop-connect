@@ -3,6 +3,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
+const FALLBACK_IMG = "https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&h=300&fit=crop";
+
 interface ProductWithVendor {
   id: string;
   name: string;
@@ -33,17 +35,12 @@ export const HomeProductCard = ({
     onClick={() => onProductClick(product)}
   >
     <div className="aspect-[4/3] relative overflow-hidden bg-muted">
-      {product.image_url ? (
-        <img
-          src={product.image_url}
-          alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
-          <Store className="w-8 h-8 text-muted-foreground" />
-        </div>
-      )}
+      <img
+        src={product.image_url && !product.image_url.includes('via.placeholder.com') ? product.image_url : FALLBACK_IMG}
+        alt={product.name}
+        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        onError={(e) => { e.currentTarget.src = FALLBACK_IMG; }}
+      />
       
       {/* Category Badge */}
       <Badge 

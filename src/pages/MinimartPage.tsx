@@ -156,10 +156,10 @@ const MinimartPage = () => {
                   <Card key={item.id} className="group overflow-hidden flex flex-col rounded-lg shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
                     <div className="relative h-48 bg-white p-4">
                       <img
-                        src={item.image_url || ''}
+                        src={item.image_url || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&h=300&fit=crop'}
                         alt={item.name}
                         className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                        onError={(e) => e.currentTarget.src = `https://via.placeholder.com/300x300/6B46C1/FFFFFF?text=${encodeURIComponent(item.name)}`}
+                        onError={(e) => e.currentTarget.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&h=300&fit=crop'}
                       />
                     </div>
                     <CardContent className="p-4 flex-grow">
