@@ -397,44 +397,79 @@ const Home = () => {
           </div>
         </form>
 
-        {/* Featured Product Banner */}
-        {!loadingProducts && products.length > 0 && (
-          <FeaturedProductBanner 
-            products={products} 
-            onAddToCart={handleBannerAddToCart}
-          />
+        {/* Vendor Spotlight Banner */}
+        {!loadingVendors && vendors.length > 0 && (
+          <VendorSpotlightBanner vendors={vendors as any} />
         )}
 
-        {/* Category Tabs */}
-        {!loadingProducts && categories.length > 0 && (
-          <CategoryTabsNav
-            categories={categories}
-            subcategories={subcategories}
-            selectedCategory={selectedCategory}
-            selectedSubcategory={selectedSubcategory}
-            onSelectCategory={handleSelectCategory}
-            onSelectSubcategory={setSelectedSubcategory}
-          />
+        {/* Category Filter Chips */}
+        {!loadingVendors && vendorCategories.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
+            <Button
+              size="sm"
+              variant={selectedCategory === null ? "default" : "outline"}
+              className="rounded-full text-xs whitespace-nowrap flex-shrink-0"
+              onClick={() => setSelectedCategory(null)}
+            >
+              All Stores
+            </Button>
+            {vendorCategories.map((cat) => (
+              <Button
+                key={cat}
+                size="sm"
+                variant={selectedCategory === cat ? "default" : "outline"}
+                className="rounded-full text-xs whitespace-nowrap flex-shrink-0 capitalize"
+                onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
+              >
+                {cat.replace(/-/g, " ")}
+              </Button>
+            ))}
+          </div>
         )}
 
-        {/* Products Count */}
-        {!loadingProducts && (
-          <p className="text-sm text-muted-foreground mb-4">
-            {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""} 
-            {selectedCategory ? ` in ${selectedCategory}` : ""}
-            {selectedSubcategory ? ` › ${selectedSubcategory}` : ""}
-          </p>
+        {/* Vendor Count */}
+        {!loadingVendors && (
+          <div className="flex items-center gap-2 mb-4">
+            <Store className="h-4 w-4 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              {filteredVendors.length} store{filteredVendors.length !== 1 ? "s" : ""} 
+              {selectedCategory ? ` in ${selectedCategory.replace(/-/g, " ")}` : " available"}
+            </p>
+          </div>
         )}
 
-        {/* Product Grid */}
-        <HomeProductGrid
-          products={filteredProducts}
-          loading={loadingProducts}
-          selectedCategory={selectedCategory}
-          onAddToCart={handleAddToCart}
-          onProductClick={handleProductClick}
-        />
-
+        {/* Vendor Grid */}
+        {loadingVendors ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Card key={i} className="overflow-hidden">
+                <div className="h-32 sm:h-40 bg-muted animate-pulse" />
+                <div className="p-3 space-y-2">
+                  <div className="h-4 w-3/4 bg-muted animate-pulse rounded" />
+                  <div className="h-3 w-1/2 bg-muted animate-pulse rounded" />
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : filteredVendors.length === 0 ? (
+          <div className="text-center py-12 mb-8">
+            <Store className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+            <h3 className="font-medium text-foreground mb-1">No stores found</h3>
+            <p className="text-sm text-muted-foreground">
+              {selectedCategory ? `No stores in "${selectedCategory.replace(/-/g, " ")}". Try another category!` : "Check back soon for new stores!"}
+            </p>
+          </div>
+        ) : (
+          <ScrollAnimatedGrid className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
+            {filteredVendors.map((vendor) => (
+              <VendorShowcaseCard
+                key={vendor.id}
+                vendor={vendor}
+                onClick={() => handleVendorClick(vendor)}
+              />
+            ))}
+          </ScrollAnimatedGrid>
+        )}
 
         {/* ===== Services at Your Fingertips ===== */}
         <ScrollAnimatedSection direction="left" className="mb-8 mt-8 relative">
