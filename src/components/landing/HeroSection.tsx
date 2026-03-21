@@ -85,7 +85,7 @@ export const HeroSection = () => {
         className="absolute top-0 w-full py-4 px-6 flex justify-between items-center z-20"
       >
         <div className="flex items-center gap-1">
-          <MtaaLoopPin size={48} />
+          <MtaaLoopOrbit size={48} />
           <span className="text-2xl font-black text-foreground tracking-tight">Mtaaloop</span>
         </div>
         <div className="flex gap-2">

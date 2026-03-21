@@ -317,7 +317,7 @@ const Home = () => {
             {/* Logo & Location */}
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="relative flex-shrink-0">
-                <MtaaLoopPin size={36} />
+                <MtaaLoopOrbit size={36} />
               </div>
               <div className="min-w-0">
                 <span className="text-lg md:text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
