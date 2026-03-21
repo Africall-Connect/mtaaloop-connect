@@ -563,7 +563,7 @@ const Index = () => {
           <div className="flex flex-col gap-3 md:hidden">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
-                <MtaaLoopPin size={32} />
+                <MtaaLoopOrbit size={32} />
                 <span className="font-bold text-lg text-primary">Mtaaloop</span>
               </div>
               <Button
