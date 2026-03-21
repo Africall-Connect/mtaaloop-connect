@@ -5,6 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { isValidUUID, sanitizeText } from "@/lib/inputValidation";
+
 const OrderDetailsPage = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const [searchParams] = useSearchParams();
@@ -19,7 +21,11 @@ const OrderDetailsPage = () => {
 
   const handleCreateDispute = async () => {
     if (!user || !order) return;
-    if (!reason.trim()) {
+
+    const cleanReason = sanitizeText(reason, 500);
+    const cleanDetails = sanitizeText(details, 2000);
+
+    if (!cleanReason) {
       toast.error("Please enter a reason for the dispute.");
       return;
     }
@@ -30,8 +36,8 @@ const OrderDetailsPage = () => {
         order_id: order.id,
         raised_by: user.id,
         role: "customer",
-        reason,
-        details: details || null,
+        reason: cleanReason,
+        details: cleanDetails || null,
       });
 
       if (error) {
@@ -51,7 +57,10 @@ const OrderDetailsPage = () => {
 
   useEffect(() => {
     const fetchOrder = async () => {
-      if (!orderId) return;
+      if (!orderId || !isValidUUID(orderId)) {
+        setStatus("loaded");
+        return;
+      }
       setStatus("loading");
       const { data: orderData } = await supabase.from("orders").select("*").eq("id", orderId).single();
 

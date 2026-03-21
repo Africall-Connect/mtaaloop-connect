@@ -159,8 +159,10 @@ export default function CategoryManagement({ vendorId, operationalCategory }: Ca
   const generateSlug = (name: string) => {
     return name
       .toLowerCase()
+      .replace(/<[^>]*>/g, '') // strip HTML
       .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
+      .replace(/^-|-$/g, '')
+      .slice(0, 100);
   };
 
   const handleCategorySubmit = async (e: React.FormEvent) => {

@@ -753,12 +753,14 @@ const OrderTracking = () => {
     try {
       setSubmittingReview(true);
 
+      const sanitizedComment = (reviewComment || "").replace(/<[^>]*>/g, "").trim().slice(0, 1000);
+
       const { error } = await supabase.from("order_reviews").insert({
         order_id: orderId,
         customer_id: user.id,
-        food_rating: foodRating,
-        delivery_rating: deliveryRating,
-        comment: reviewComment || null,
+        food_rating: Math.max(1, Math.min(5, Math.floor(foodRating))),
+        delivery_rating: Math.max(1, Math.min(5, Math.floor(deliveryRating))),
+        comment: sanitizedComment || null,
         created_at: new Date().toISOString(),
       });
 
@@ -1124,11 +1126,15 @@ const OrderTracking = () => {
                       return;
                     }
 
+                    const escHtml = (s: string | number | null | undefined): string => {
+                      const str = String(s ?? "");
+                      return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#x27;");
+                    };
                     const items = (orderData?.order_items || orderData?.items || []) as OrderItem[];
                     const itemsHtml = items
                       .map(
                         (it) =>
-                          `<tr><td style="padding:6px 8px">${it.quantity} x ${it.product_name}</td><td style="padding:6px 8px;text-align:right">KSh ${it.price}</td></tr>`
+                          `<tr><td style="padding:6px 8px">${escHtml(it.quantity)} x ${escHtml(it.product_name)}</td><td style="padding:6px 8px;text-align:right">KSh ${escHtml(it.price)}</td></tr>`
                       )
                       .join("");
 
@@ -1156,13 +1162,13 @@ const OrderTracking = () => {
                           <div class="header">
                             <div>
                               <h1>Receipt</h1>
-                              <div>Order #: ${orderId}</div>
-                              <div>${new Date().toLocaleString()}</div>
+                              <div>Order #: ${escHtml(orderId)}</div>
+                              <div>${escHtml(new Date().toLocaleString())}</div>
                             </div>
                             <div style="text-align:right">
-                              <div>${orderData?.vendor_name ?? ''}</div>
+                              <div>${escHtml(orderData?.vendor_name)}</div>
                               <div style="font-size:12px;color:#666">Delivery Address</div>
-                              <div style="font-size:12px;color:#666">${orderData?.delivery_address ?? ''}</div>
+                              <div style="font-size:12px;color:#666">${escHtml(orderData?.delivery_address)}</div>
                             </div>
                           </div>
 
