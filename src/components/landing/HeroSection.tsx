@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { LogIn, ChevronDown, Sparkles, Video } from "lucide-react";
-import { MtaaLoopPin } from "@/components/MtaaLoopLogo";
+import { MtaaLoopOrbit } from "@/components/MtaaLoopLogo";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { FloatingIcons } from "./FloatingIcons";
