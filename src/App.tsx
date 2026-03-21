@@ -28,6 +28,8 @@ const EstateSignup = lazy(() => import("./pages/auth/EstateSignup"));
 const RiderSignup = lazy(() => import("./pages/auth/RiderSignup"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const StaffInvite = lazy(() => import("./pages/auth/StaffInvite"));
+const ForgotPassword = lazy(() => import("./pages/auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
 
 // Admin pages
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
