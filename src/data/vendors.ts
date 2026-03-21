@@ -698,7 +698,7 @@ export const vendors: Vendor[] = [
     yearsInBusiness: 3,
     inEstate: false,
     menu: [
-      { id: "fresh-miraa", name: "Fresh Khat", description: "Premium quality khat", price: 300, category: "Miraa", rating: 4.5, ordersThisWeek: 67, isPopular: true },
+      { id: "fresh-miraa", name: "Fresh Khat (Meru Quality)", description: "Premium Meru miraa, freshly harvested", price: 300, image: "https://images.unsplash.com/photo-1516594915697-87eb3b1c14ea?w=400&fit=crop", category: "Miraa", rating: 4.5, ordersThisWeek: 67, isPopular: true },
     ],
   },
   {
