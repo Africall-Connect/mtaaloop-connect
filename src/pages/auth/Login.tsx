@@ -8,6 +8,7 @@ import { ArrowLeft, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { checkClientRateLimit, resetClientRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
+import { logSecurityEvent } from "@/lib/securityLogger";
 
 const Login = () => {
   const navigate = useNavigate();
