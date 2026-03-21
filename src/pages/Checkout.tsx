@@ -494,21 +494,25 @@ const Checkout = () => {
       </div>
 
       {/* ── Sticky Bottom Bar ──────────────────────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border p-4 z-50">
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t-2 border-primary/20 p-4 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
         <div className="max-w-2xl mx-auto flex gap-3">
-          {step > 1 && (
-            <Button variant="outline" onClick={() => setStep((step - 1) as Step)} className="px-6">
-              <ArrowLeft className="h-4 w-4 mr-1" /> Back
+          {step > 1 ? (
+            <Button variant="outline" onClick={() => setStep((step - 1) as Step)} className="px-6 h-12 text-base border-2 border-primary/30 text-primary hover:bg-primary/5 font-semibold">
+              <ArrowLeft className="h-5 w-5 mr-2" /> Back
+            </Button>
+          ) : (
+            <Button variant="outline" onClick={() => navigate(-1)} className="px-6 h-12 text-base border-2 border-primary/30 text-primary hover:bg-primary/5 font-semibold">
+              <ArrowLeft className="h-5 w-5 mr-2" /> Cart
             </Button>
           )}
 
           {step < 3 ? (
-            <Button className="flex-1" size="lg" onClick={() => goToStep((step + 1) as Step)}>
-              Continue <ArrowRight className="h-4 w-4 ml-1" />
+            <Button className="flex-1 h-12 text-base font-bold shadow-lg" size="lg" onClick={() => goToStep((step + 1) as Step)}>
+              Continue <ArrowRight className="h-5 w-5 ml-2" />
             </Button>
           ) : (
             <Button
-              className="flex-1"
+              className="flex-1 h-12 text-base font-bold shadow-lg"
               size="lg"
               onClick={handlePlaceOrder}
               disabled={isProcessing || !agreedToTerms}
