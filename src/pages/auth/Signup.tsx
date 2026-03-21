@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Eye, EyeOff, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ErrorResponse } from "@/types/common";
+import { checkClientRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
 
 const Signup = () => {
   const navigate = useNavigate();
