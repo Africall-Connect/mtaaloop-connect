@@ -617,9 +617,9 @@ export const vendors: Vendor[] = [
     yearsInBusiness: 2,
     inEstate: false,
     menu: [
-      { id: "tshirt", name: "T-Shirts", description: "Quality mitumba tees", price: 200, category: "Clothing", rating: 4.5, ordersThisWeek: 78 },
-      { id: "jeans", name: "Jeans", description: "Good condition denim", price: 500, category: "Clothing", rating: 4.6, ordersThisWeek: 56 },
-      { id: "shoes", name: "Sneakers", description: "Brand name sneakers", price: 800, category: "Shoes", rating: 4.4, ordersThisWeek: 34 },
+      { id: "tshirt", name: "T-Shirts (Mitumba)", description: "Quality second-hand tees", price: 200, image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&fit=crop", category: "Clothing", rating: 4.5, ordersThisWeek: 78 },
+      { id: "jeans", name: "Jeans (Mitumba)", description: "Good condition branded denim", price: 500, image: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&fit=crop", category: "Clothing", rating: 4.6, ordersThisWeek: 56 },
+      { id: "shoes", name: "Sneakers (Mitumba)", description: "Branded sneakers in great condition", price: 800, image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&fit=crop", category: "Shoes", rating: 4.4, ordersThisWeek: 34 },
     ],
   },
   {
