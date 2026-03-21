@@ -427,6 +427,24 @@ export default function AdminDashboard() {
             </Link>
           </Card>
 
+          <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-sky-50 to-sky-100 dark:from-sky-950 dark:to-sky-900 border-sky-200 dark:border-sky-700 animate-fade-in animation-delay-1350">
+            <Link to="/admin/service-requests" className="block h-full">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-3 text-sky-900 dark:text-sky-100">
+                  <div className="p-3 bg-sky-500 rounded-xl group-hover:bg-sky-600 transition-colors">
+                    <ClipboardList className="h-6 w-6 text-white" />
+                  </div>
+                  <span className="text-lg font-semibold">Service Requests</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="text-sm text-sky-700 dark:text-sky-200 leading-relaxed">
+                  View, assign, and manage all service requests (errands, cleaning, trash, etc.)
+                </p>
+              </CardContent>
+            </Link>
+          </Card>
+
           <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-950 dark:to-teal-900 border-teal-200 dark:border-teal-700 animate-fade-in animation-delay-1400">
             <Link to="/admin/compliance" className="block h-full">
               <CardHeader className="pb-3">
