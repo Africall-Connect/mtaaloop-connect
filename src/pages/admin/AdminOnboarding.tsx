@@ -38,6 +38,10 @@ const vendorSchema = baseSchema.extend({
 
 const customerSchema = baseSchema;
 
+const agentSchema = baseSchema.extend({
+  estateId: z.string().optional(),
+});
+
 const riderSchema = baseSchema.extend({
   idNumber: z.string().trim().min(1, 'ID number is required'),
   vehicleType: z.string().min(1, 'Select a vehicle type'),
