@@ -491,7 +491,7 @@ const OrderTracking = () => {
     setOrderData({
       ...order,
       isPremium: true,
-      vendor_name: 'MtaaLoopMart',
+      vendor_name: 'MtaaLoop Mart',
       items: order.premium_order_items.map(item => ({
         ...item,
         name: item.product_name,
