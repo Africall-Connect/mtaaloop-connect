@@ -91,6 +91,10 @@ const Login = () => {
       resetClientRateLimit("login");
 
       if (data.user) {
+        logSecurityEvent({
+          event_type: "login_success",
+          user_id: data.user.id,
+        });
         const { data: rolesRows } = await supabase
           .from("user_roles")
           .select("role")
