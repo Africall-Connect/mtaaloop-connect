@@ -21,6 +21,7 @@ import { BookingServicesSection } from "@/components/home/BookingServicesSection
 
 interface VendorWithCount extends VendorProfile {
   product_count?: number;
+  featured_products?: { id: string; name: string; image_url: string | null; price: number }[];
 }
 
 // Parallax service card component
