@@ -17,6 +17,13 @@ export default function ForgotPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const rateCheck = checkClientRateLimit("password-reset", RATE_LIMITS.passwordReset);
+    if (!rateCheck.allowed) {
+      toast.error(`Too many requests. Try again in ${Math.ceil(rateCheck.lockoutRemainingMs / 1000)}s`);
+      return;
+    }
+
     setSubmitting(true);
 
     try {
