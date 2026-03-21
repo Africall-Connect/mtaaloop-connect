@@ -247,6 +247,7 @@ const Checkout = () => {
         setLastOrderId(orderId);
         setShowAnimation(true);
         toast.success("Order placed successfully!");
+        return orderId;
 
       } else {
         const orderId = crypto.randomUUID();
