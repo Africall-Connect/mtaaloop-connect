@@ -476,8 +476,9 @@ export const vendors: Vendor[] = [
     yearsInBusiness: 1,
     inEstate: true,
     menu: [
-      { id: "small", name: "Njugu Karanga (Small)", description: "100g roasted peanuts", price: 50, category: "Snacks", rating: 4.5, ordersThisWeek: 45 },
-      { id: "large", name: "Njugu Karanga (Large)", description: "250g roasted peanuts", price: 120, category: "Snacks", rating: 4.6, ordersThisWeek: 67, isPopular: true },
+      { id: "small", name: "Njugu Karanga (100g)", description: "Crunchy roasted groundnuts", price: 50, image: "https://images.unsplash.com/photo-1608797178974-15b35a64ede9?w=400&fit=crop", category: "Snacks", rating: 4.5, ordersThisWeek: 45 },
+      { id: "large", name: "Njugu Karanga (250g)", description: "Large bag of roasted peanuts", price: 120, image: "https://images.unsplash.com/photo-1567892320421-1c657571ea4a?w=400&fit=crop", category: "Snacks", rating: 4.6, ordersThisWeek: 67, isPopular: true },
+      { id: "spiced", name: "Spiced Njugu Karanga (250g)", description: "Chili & lime seasoned peanuts", price: 150, image: "https://images.unsplash.com/photo-1599599810694-b5b37304c041?w=400&fit=crop", category: "Snacks", rating: 4.7, ordersThisWeek: 34, isNew: true },
     ],
   },
   {
