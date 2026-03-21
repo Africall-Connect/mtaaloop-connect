@@ -427,9 +427,9 @@ const Checkout = () => {
 
               <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-3">
                 {[
-                  { value: "wallet", icon: Wallet, title: "MtaaLoop Wallet", desc: "Pay from your wallet balance", badge: "Instant" },
-                  { value: "mpesa", icon: Smartphone, title: "M-Pesa", desc: "Pay via M-Pesa STK push", badge: "Popular" },
-                  { value: "pay_on_delivery", icon: Truck, title: "Pay on Delivery", desc: "Cash or M-Pesa when delivered", badge: null },
+                  { value: "wallet", icon: Wallet, title: "MtaaLoop Wallet", desc: walletLoading ? "Loading balance..." : `Balance: KSh ${walletBalance?.toLocaleString() ?? 0}`, badge: "Instant", disabled: false },
+                  { value: "mpesa", icon: Smartphone, title: "M-Pesa", desc: "Pay via M-Pesa STK push", badge: "Coming Soon", disabled: true },
+                  { value: "pay_on_delivery", icon: Truck, title: "Pay on Delivery", desc: "Cash or M-Pesa when delivered", badge: null, disabled: false },
                 ].map(opt => (
                   <div
                     key={opt.value}
