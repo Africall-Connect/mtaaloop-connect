@@ -769,9 +769,9 @@ export const vendors: Vendor[] = [
     yearsInBusiness: 5,
     inEstate: false,
     menu: [
-      { id: "full-body", name: "Full Body Massage (60min)", description: "Deep relaxation", price: 2500, category: "Massage", rating: 5.0, ordersThisWeek: 56, isPopular: true },
-      { id: "back", name: "Back Massage (30min)", description: "Tension relief", price: 1200, category: "Massage", rating: 4.9, ordersThisWeek: 67 },
-      { id: "foot", name: "Foot Massage (30min)", description: "Relaxing foot therapy", price: 800, category: "Massage", rating: 4.8, ordersThisWeek: 45 },
+      { id: "full-body", name: "Full Body Massage (60min)", description: "Deep tissue relaxation therapy", price: 2500, image: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&fit=crop", category: "Massage", rating: 5.0, ordersThisWeek: 56, isPopular: true },
+      { id: "back", name: "Back & Shoulder Massage (30min)", description: "Targeted tension relief", price: 1200, image: "https://images.unsplash.com/photo-1600334129128-685c5582fd35?w=400&fit=crop", category: "Massage", rating: 4.9, ordersThisWeek: 67 },
+      { id: "foot", name: "Foot Reflexology (30min)", description: "Pressure point foot therapy", price: 800, image: "https://images.unsplash.com/photo-1519824145371-296894a0daa9?w=400&fit=crop", category: "Massage", rating: 4.8, ordersThisWeek: 45 },
     ],
   },
   {
