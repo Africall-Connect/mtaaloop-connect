@@ -15,6 +15,7 @@ import { Building2, FileText, CheckCircle2, ArrowRight, ArrowLeft, Loader2, Chec
 import { FileUploadZone } from "@/components/estate/FileUploadZone";
 import { AmenityPicker } from "@/components/estate/AmenityPicker";
 import { ErrorResponse } from "@/types/common";
+import { sanitizeText, sanitizeSlug, estateSchema } from "@/lib/inputValidation";
 
 const KENYA_COUNTIES = ["Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret", "Thika", "Malindi", "Kitale", "Garissa", "Kakamega", "Naivasha", "Nyeri", "Machakos", "Meru"];
 const ESTATE_TYPES = [
