@@ -641,9 +641,10 @@ export const vendors: Vendor[] = [
     yearsInBusiness: 4,
     inEstate: true,
     menu: [
-      { id: "tray", name: "Eggs (30pcs Tray)", description: "Fresh farm eggs", price: 450, category: "Eggs", rating: 4.8, ordersThisWeek: 123, isPopular: true },
-      { id: "half", name: "Eggs (15pcs)", description: "Half tray", price: 240, category: "Eggs", rating: 4.7, ordersThisWeek: 98 },
-      { id: "boiled", name: "Boiled Eggs (6pcs)", description: "Ready to eat", price: 100, category: "Eggs", rating: 4.6, ordersThisWeek: 67 },
+      { id: "tray", name: "Eggs (30pcs Tray)", description: "Farm-fresh free range eggs", price: 450, image: "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=400&fit=crop", category: "Eggs", rating: 4.8, ordersThisWeek: 123, isPopular: true },
+      { id: "half", name: "Eggs (15pcs)", description: "Half tray of fresh eggs", price: 240, image: "https://images.unsplash.com/photo-1598965675045-45c5e72c7d05?w=400&fit=crop", category: "Eggs", rating: 4.7, ordersThisWeek: 98 },
+      { id: "boiled", name: "Boiled Eggs (6pcs)", description: "Ready to eat, perfectly boiled", price: 100, image: "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=400&fit=crop", category: "Eggs", rating: 4.6, ordersThisWeek: 67 },
+      { id: "kienyeji", name: "Kienyeji Eggs (10pcs)", description: "Indigenous chicken eggs, richer flavor", price: 250, image: "https://images.unsplash.com/photo-1569288063643-5d29ad64df09?w=400&fit=crop", category: "Eggs", rating: 4.9, ordersThisWeek: 56, isNew: true },
     ],
   },
   {
