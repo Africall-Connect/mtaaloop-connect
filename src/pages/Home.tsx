@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { MtaaLoopPin } from "@/components/MtaaLoopLogo";
+import { MtaaLoopOrbit } from "@/components/MtaaLoopLogo";
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { Search, ShoppingBag, MapPin, Users, Stethoscope, ArrowRight, Calendar, CalendarCheck, Sparkles, Store, ChevronRight, Zap, Home as HomeIcon, Heart, Droplets, Check } from "lucide-react";
 import { ScrollAnimatedSection, ScrollAnimatedGrid } from "@/components/ScrollAnimations";
@@ -317,7 +317,7 @@ const Home = () => {
             {/* Logo & Location */}
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="relative flex-shrink-0">
-                <MtaaLoopPin size={36} />
+                <MtaaLoopOrbit size={36} />
               </div>
               <div className="min-w-0">
                 <span className="text-lg md:text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
