@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { Search, ShoppingBag, MapPin, Users, Stethoscope, ArrowRight, Calendar, CalendarCheck, Sparkles } from "lucide-react";
+import { Search, ShoppingBag, MapPin, Users, Stethoscope, ArrowRight, Calendar, CalendarCheck, Sparkles, Store } from "lucide-react";
 import { ScrollAnimatedSection, ScrollAnimatedGrid } from "@/components/ScrollAnimations";
 import { HOME_SERVICES_SHOWCASE } from "@/lib/serviceImages";
 import { motion, useScroll, useTransform } from "framer-motion";
@@ -15,26 +15,12 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { VendorProfile } from "@/types/database";
-import { FeaturedProductBanner } from "@/components/home/FeaturedProductBanner";
-import { CategoryTabsNav } from "@/components/home/CategoryTabsNav";
-import { HomeProductGrid } from "@/components/home/HomeProductGrid";
+import { VendorSpotlightBanner } from "@/components/home/VendorSpotlightBanner";
+import { VendorShowcaseCard } from "@/components/home/VendorShowcaseCard";
 import { BookingServicesSection } from "@/components/home/BookingServicesSection";
 
-interface ProductWithVendor {
-  id: string;
-  name: string;
-  description: string | null;
-  category: string;
-  subcategory: string | null;
-  price: number;
-  image_url: string | null;
-  is_available: boolean;
-  vendor_id: string;
-  vendor: {
-    id: string;
-    business_name: string;
-    slug: string;
-  };
+interface VendorWithCount extends VendorProfile {
+  product_count?: number;
 }
 
 // Parallax service card component
@@ -85,12 +71,11 @@ const Home = () => {
   const [bookingVendors, setBookingVendors] = useState<any[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
-  
-  // Products state
-  const [products, setProducts] = useState<ProductWithVendor[]>([]);
-  const [loadingProducts, setLoadingProducts] = useState(true);
+
+  // Vendors state (replacing products)
+  const [vendors, setVendors] = useState<VendorWithCount[]>([]);
+  const [loadingVendors, setLoadingVendors] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
 
   // Fetch user's apartment from DB on mount
   useEffect(() => {
