@@ -101,11 +101,19 @@ const Signup = () => {
         }
       }
 
-      // Show email verification screen instead of navigating directly
       setEmailSent(true);
+      logSecurityEvent({
+        event_type: "signup",
+        user_id: data.user?.id,
+      });
       toast.success("Account created! Please verify your email.");
     } catch (error) {
       const err = error as ErrorResponse;
+      logSecurityEvent({
+        event_type: "signup_failure",
+        metadata: { reason: err.message },
+        severity: "warn",
+      });
       toast.error(err.message || "An error occurred during signup");
     } finally {
       setSubmitting(false);
