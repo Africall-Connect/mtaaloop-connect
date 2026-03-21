@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { verifyAuth, createUnauthorizedResponse } from "../_shared/auth.ts";
+import { checkRateLimit, createRateLimitResponse, getClientIP } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,19 +8,45 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // 🔐 JWT Verification - require authenticated user
+    // 🔐 JWT Verification
     const authResult = await verifyAuth(req);
     if (!authResult.authenticated || !authResult.userId) {
       return createUnauthorizedResponse(
         authResult.error || "Authentication required",
         corsHeaders
       );
+    }
+
+    // 🛡️ Rate limit: 10 generations per 5 minutes per user
+    const rateCheck = await checkRateLimit({
+      action: "ai-image",
+      identifier: authResult.userId,
+      maxRequests: 10,
+      windowSeconds: 300,
+    });
+
+    if (!rateCheck.allowed) {
+      console.warn(`[generate-image] Rate limited user: ${authResult.userId}`);
+      return createRateLimitResponse(corsHeaders, rateCheck.retryAfterSeconds);
+    }
+
+    // Also rate limit by IP to prevent multi-account abuse
+    const clientIP = getClientIP(req);
+    const ipCheck = await checkRateLimit({
+      action: "ai-image-ip",
+      identifier: clientIP,
+      maxRequests: 20,
+      windowSeconds: 300,
+    });
+
+    if (!ipCheck.allowed) {
+      console.warn(`[generate-image] IP rate limited: ${clientIP}`);
+      return createRateLimitResponse(corsHeaders, ipCheck.retryAfterSeconds);
     }
 
     console.log(`[generate-image] Request from user: ${authResult.userId}`);
@@ -29,6 +56,14 @@ serve(async (req) => {
     if (!prompt || typeof prompt !== 'string') {
       return new Response(
         JSON.stringify({ error: "Prompt is required and must be a string" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Sanitize prompt length
+    if (prompt.length > 2000) {
+      return new Response(
+        JSON.stringify({ error: "Prompt must be under 2000 characters" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -62,7 +97,6 @@ serve(async (req) => {
       const errorText = await response.text();
       console.error(`AI gateway error: ${response.status}`, errorText);
       
-      // Handle rate limits
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),

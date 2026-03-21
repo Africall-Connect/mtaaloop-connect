@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,23 +7,26 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-
-const MAX_ATTEMPTS = 5;
-const LOCKOUT_DURATION_MS = 2 * 60 * 1000; // 2 minutes
+import { checkClientRateLimit, resetClientRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
 
 const Login = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [submitting, setSubmitting] = useState(false);
-  const [failedAttempts, setFailedAttempts] = useState(0);
-  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
-  const lockoutTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [lockoutMs, setLockoutMs] = useState(0);
 
-  const isLockedOut = lockedUntil !== null && Date.now() < lockedUntil;
-  const remainingLockout = isLockedOut
-    ? Math.ceil(((lockedUntil ?? 0) - Date.now()) / 1000)
-    : 0;
+  // Countdown timer for lockout display
+  useEffect(() => {
+    if (lockoutMs <= 0) return;
+    const id = setInterval(() => {
+      setLockoutMs((prev) => Math.max(0, prev - 1000));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [lockoutMs]);
+
+  const isLockedOut = lockoutMs > 0;
+  const remainingLockout = Math.ceil(lockoutMs / 1000);
 
   const routeByRole = async (
     roles: string[] | null | undefined,
@@ -58,8 +61,10 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (isLockedOut) {
-      toast.error(`Account temporarily locked. Try again in ${remainingLockout}s`);
+    const rateCheck = checkClientRateLimit("login", RATE_LIMITS.login);
+    if (!rateCheck.allowed) {
+      setLockoutMs(rateCheck.lockoutRemainingMs);
+      toast.error(`Too many attempts. Try again in ${Math.ceil(rateCheck.lockoutRemainingMs / 1000)}s`);
       return;
     }
 
@@ -72,28 +77,13 @@ const Login = () => {
       });
 
       if (error) {
-        const newAttempts = failedAttempts + 1;
-        setFailedAttempts(newAttempts);
-
-        if (newAttempts >= MAX_ATTEMPTS) {
-          const unlockTime = Date.now() + LOCKOUT_DURATION_MS;
-          setLockedUntil(unlockTime);
-          setFailedAttempts(0);
-
-          if (lockoutTimer.current) clearTimeout(lockoutTimer.current);
-          lockoutTimer.current = setTimeout(() => setLockedUntil(null), LOCKOUT_DURATION_MS);
-
-          toast.error("Too many failed attempts. Account locked for 2 minutes.");
-        } else {
-          // Generic error - don't reveal if email exists
-          toast.error("Invalid email or password");
-        }
+        // Generic error - don't reveal if email exists
+        toast.error("Invalid email or password");
         return;
       }
 
-      // Reset on success
-      setFailedAttempts(0);
-      setLockedUntil(null);
+      // Reset rate limit on success
+      resetClientRateLimit("login");
 
       if (data.user) {
         const { data: rolesRows } = await supabase

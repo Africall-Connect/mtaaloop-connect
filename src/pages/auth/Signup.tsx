@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,12 +9,15 @@ import { Eye, EyeOff, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ErrorResponse } from "@/types/common";
+import { checkClientRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
 
 const Signup = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const formLoadTime = useRef(Date.now());
+  const [honeypot, setHoneypot] = useState(""); // Bot trap
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -33,6 +36,28 @@ const Signup = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 🛡️ Honeypot: bots fill hidden fields
+    if (honeypot) {
+      console.warn("[signup] Honeypot triggered - likely bot");
+      // Fake success to not alert the bot
+      setEmailSent(true);
+      return;
+    }
+
+    // 🛡️ Timing: humans take >2 seconds to fill a form
+    if (Date.now() - formLoadTime.current < 2000) {
+      console.warn("[signup] Form submitted too fast - likely bot");
+      toast.error("Please slow down and try again.");
+      return;
+    }
+
+    // 🛡️ Rate limit
+    const rateCheck = checkClientRateLimit("signup", RATE_LIMITS.signup);
+    if (!rateCheck.allowed) {
+      toast.error(`Too many signup attempts. Try again in ${Math.ceil(rateCheck.lockoutRemainingMs / 1000)}s`);
+      return;
+    }
 
     if (!formData.agreeToTerms) {
       toast.error("Please agree to Terms & Conditions");
@@ -121,6 +146,19 @@ const Signup = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Honeypot field - hidden from humans, bots fill it */}
+          <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, overflow: 'hidden' }}>
+            <label htmlFor="website">Website</label>
+            <input
+              id="website"
+              name="website"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+            />
+          </div>
           <div>
             <Label htmlFor="fullName">Full Name</Label>
             <Input

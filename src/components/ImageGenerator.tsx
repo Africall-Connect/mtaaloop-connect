@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, ImageIcon, Download, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { checkClientRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 
 interface ImageGeneratorProps {
   onImageGenerated?: (imageUrl: string) => void;
@@ -25,6 +26,13 @@ export function ImageGenerator({
   const generateImage = async () => {
     if (!prompt.trim()) {
       toast.error('Please enter a prompt');
+      return;
+    }
+
+    // 🛡️ Client-side rate limit
+    const rateCheck = checkClientRateLimit('ai-gen', RATE_LIMITS.aiGeneration);
+    if (!rateCheck.allowed) {
+      toast.error(`Too many requests. Try again in ${Math.ceil(rateCheck.lockoutRemainingMs / 1000)}s`);
       return;
     }
 

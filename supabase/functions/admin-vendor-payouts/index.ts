@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { verifyAuth, requireRole, createUnauthorizedResponse, createForbiddenResponse } from "../_shared/auth.ts";
+import { checkRateLimit, createRateLimitResponse, getClientIP } from "../_shared/rateLimit.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -45,6 +46,20 @@ serve(async (req) => {
   // Handle preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  // 🛡️ Rate limit by IP: 20 requests per minute
+  const clientIP = getClientIP(req);
+  const rateCheck = await checkRateLimit({
+    action: "admin-payouts",
+    identifier: clientIP,
+    maxRequests: 20,
+    windowSeconds: 60,
+  });
+
+  if (!rateCheck.allowed) {
+    console.warn(`[admin-payouts] IP rate limited: ${clientIP}`);
+    return createRateLimitResponse(corsHeaders, rateCheck.retryAfterSeconds);
   }
 
   // 🔐 Authentication: JWT with admin role OR shared secret fallback
@@ -92,24 +107,11 @@ serve(async (req) => {
       // 🔎 List what vendors are owed (pending payouts)
       const { data, error } = await supabase
         .from("vendor_payouts")
-        .select(
-          `
-          id,
-          vendor_id,
-          order_id,
-          amount,
-          platform_fee,
-          status,
-          created_at,
-          paid_at,
-          paid_reference,
-          paid_by,
-          vendor_profiles:vendor_id (
-            business_name,
-            contact_phone
-          )
-        `
-        )
+        .select(`
+          id, vendor_id, order_id, amount, platform_fee, status,
+          created_at, paid_at, paid_reference, paid_by,
+          vendor_profiles:vendor_id ( business_name, contact_phone )
+        `)
         .in("status", ["pending", "scheduled", "processing"])
         .order("created_at", { ascending: true });
 

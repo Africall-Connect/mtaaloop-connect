@@ -3027,6 +3027,27 @@ export type Database = {
           },
         ]
       }
+      rate_limits: {
+        Row: {
+          id: string
+          key: string
+          request_count: number
+          window_start: string
+        }
+        Insert: {
+          id?: string
+          key: string
+          request_count?: number
+          window_start?: string
+        }
+        Update: {
+          id?: string
+          key?: string
+          request_count?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
       rider_profiles: {
         Row: {
           created_at: string
@@ -4501,6 +4522,15 @@ export type Database = {
         Returns: boolean
       }
       check_badge_awards: { Args: { user_uuid: string }; Returns: undefined }
+      check_rate_limit: {
+        Args: {
+          p_key: string
+          p_max_requests: number
+          p_window_seconds: number
+        }
+        Returns: boolean
+      }
+      cleanup_rate_limits: { Args: never; Returns: undefined }
       credit_customer_wallet: {
         Args: {
           p_amount: number
