@@ -553,10 +553,14 @@ export const vendors: Vendor[] = [
     yearsInBusiness: 3,
     inEstate: false,
     menu: [
-      { id: "sukuma", name: "Sukuma Wiki (Bunch)", description: "Fresh kale", price: 30, category: "Vegetables", rating: 4.9, ordersThisWeek: 234, isPopular: true },
-      { id: "spinach", name: "Spinach (Bunch)", description: "Fresh spinach", price: 30, category: "Vegetables", rating: 4.8, ordersThisWeek: 156 },
-      { id: "tomatoes", name: "Tomatoes (1kg)", description: "Ripe tomatoes", price: 80, category: "Vegetables", rating: 4.7, ordersThisWeek: 178 },
-      { id: "avocado", name: "Avocados (3pcs)", description: "Ripe avocados", price: 120, category: "Fruits", rating: 4.9, ordersThisWeek: 167, isPopular: true },
+      { id: "sukuma", name: "Sukuma Wiki (Bunch)", description: "Fresh kale, farm-picked daily", price: 30, image: "https://images.unsplash.com/photo-1524179091875-bf99a9a6af57?w=400&fit=crop", category: "Vegetables", rating: 4.9, ordersThisWeek: 234, isPopular: true },
+      { id: "spinach", name: "Spinach (Bunch)", description: "Fresh green spinach", price: 30, image: "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=400&fit=crop", category: "Vegetables", rating: 4.8, ordersThisWeek: 156 },
+      { id: "tomatoes", name: "Tomatoes (1kg)", description: "Vine-ripe red tomatoes", price: 80, image: "https://images.unsplash.com/photo-1546470427-e26264be0b11?w=400&fit=crop", category: "Vegetables", rating: 4.7, ordersThisWeek: 178 },
+      { id: "onions", name: "Red Onions (1kg)", description: "Fresh cooking onions", price: 100, image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400&fit=crop", category: "Vegetables", rating: 4.6, ordersThisWeek: 198 },
+      { id: "cabbage", name: "Cabbage (Whole)", description: "Fresh green cabbage", price: 60, image: "https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=400&fit=crop", category: "Vegetables", rating: 4.5, ordersThisWeek: 145 },
+      { id: "avocado", name: "Avocados (3pcs)", description: "Ripe Hass avocados", price: 120, image: "https://images.unsplash.com/photo-1523049673857-eb18f1d80f51?w=400&fit=crop", category: "Fruits", rating: 4.9, ordersThisWeek: 167, isPopular: true },
+      { id: "bananas", name: "Sweet Bananas (Bunch)", description: "Ripe cooking or eating bananas", price: 100, image: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&fit=crop", category: "Fruits", rating: 4.7, ordersThisWeek: 189 },
+      { id: "mangoes", name: "Mangoes (3pcs)", description: "Sweet ripe mangoes", price: 150, image: "https://images.unsplash.com/photo-1553279768-865429fa0078?w=400&fit=crop", category: "Fruits", rating: 4.8, ordersThisWeek: 134 },
     ],
   },
   {
