@@ -90,6 +90,11 @@ export default function AdminOnboarding() {
     idNumber: '', vehicleType: '', vehicleRegistration: '', licenseNumber: '', estateId: '',
   });
 
+  // Agent form
+  const [agentForm, setAgentForm] = useState({
+    fullName: '', email: '', phone: '', password: '', estateId: '',
+  });
+
   useEffect(() => { fetchEstates(); }, []);
 
   const fetchEstates = async () => {
