@@ -166,6 +166,14 @@ const Home = () => {
   const [vendors, setVendors] = useState<VendorWithCount[]>([]);
   const [loadingVendors, setLoadingVendors] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedServiceTab, setSelectedServiceTab] = useState('all');
+
+  const filteredServices = useMemo(() => {
+    if (selectedServiceTab === 'all') return HOME_SERVICES_SHOWCASE;
+    const allowed = SERVICE_TAB_MAP[selectedServiceTab];
+    if (!allowed) return HOME_SERVICES_SHOWCASE;
+    return HOME_SERVICES_SHOWCASE.filter(svc => allowed.includes(svc.title));
+  }, [selectedServiceTab]);
 
   // Fetch user's apartment from DB on mount
   useEffect(() => {
