@@ -77,28 +77,13 @@ const Login = () => {
       });
 
       if (error) {
-        const newAttempts = failedAttempts + 1;
-        setFailedAttempts(newAttempts);
-
-        if (newAttempts >= MAX_ATTEMPTS) {
-          const unlockTime = Date.now() + LOCKOUT_DURATION_MS;
-          setLockedUntil(unlockTime);
-          setFailedAttempts(0);
-
-          if (lockoutTimer.current) clearTimeout(lockoutTimer.current);
-          lockoutTimer.current = setTimeout(() => setLockedUntil(null), LOCKOUT_DURATION_MS);
-
-          toast.error("Too many failed attempts. Account locked for 2 minutes.");
-        } else {
-          // Generic error - don't reveal if email exists
-          toast.error("Invalid email or password");
-        }
+        // Generic error - don't reveal if email exists
+        toast.error("Invalid email or password");
         return;
       }
 
-      // Reset on success
-      setFailedAttempts(0);
-      setLockedUntil(null);
+      // Reset rate limit on success
+      resetClientRateLimit("login");
 
       if (data.user) {
         const { data: rolesRows } = await supabase
