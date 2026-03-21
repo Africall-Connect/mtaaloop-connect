@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { MTAALOOP_MART_VENDOR_ID } from "@/constants/mtaaloopMart";
 import {
   ArrowLeft, ArrowRight, MapPin, CreditCard, ClipboardCheck,
   Clock, Wallet, Truck, Smartphone, ShoppingBag, CheckCircle2,
@@ -122,10 +123,10 @@ const Checkout = () => {
     }
     setIsProcessing(true);
     try {
-      const mtaaLoopMartItems = items.filter(i => i.vendorId === "MtaaLoopMart");
+      const mtaaLoopMartItems = items.filter(i => i.vendorId === MTAALOOP_MART_VENDOR_ID);
       const minimartItems = items.filter(i => i.category === "Minimart");
-      const mtaaLoopManagedItems = items.filter(i => i.isMtaaLoopManaged && i.vendorId !== "MtaaLoopMart");
-      const otherItems = items.filter(i => i.vendorId !== "MtaaLoopMart" && i.category !== "Minimart" && !i.isMtaaLoopManaged);
+      const mtaaLoopManagedItems = items.filter(i => i.isMtaaLoopManaged && i.vendorId !== MTAALOOP_MART_VENDOR_ID);
+      const otherItems = items.filter(i => i.vendorId !== MTAALOOP_MART_VENDOR_ID && i.category !== "Minimart" && !i.isMtaaLoopManaged);
 
       if (mtaaLoopMartItems.length > 0) await placeOrder("premium", mtaaLoopMartItems);
       if (minimartItems.length > 0) await placeOrder("minimart", minimartItems);
