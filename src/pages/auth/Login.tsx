@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,9 +7,7 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-
-const MAX_ATTEMPTS = 5;
-const LOCKOUT_DURATION_MS = 2 * 60 * 1000; // 2 minutes
+import { checkClientRateLimit, resetClientRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
 
 const Login = () => {
   const navigate = useNavigate();
