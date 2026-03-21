@@ -58,13 +58,13 @@ export default function AgentDashboard() {
   const fetchMyRequests = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await (supabase
       .from('service_requests')
-      .select('*')
-      .eq('assigned_to' as any, userId)
+      .select('*') as any)
+      .eq('assigned_to', userId)
       .order('created_at', { ascending: false });
     
-    if (!error) setRequests((data as unknown as ServiceRequest[]) || []);
+    if (!error) setRequests((data as ServiceRequest[]) || []);
     setLoading(false);
   }, [userId]);
 
