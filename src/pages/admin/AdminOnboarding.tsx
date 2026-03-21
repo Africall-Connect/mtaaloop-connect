@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ArrowLeft, UserPlus, Store, User, Bike } from 'lucide-react';
+import { ArrowLeft, UserPlus, Store, User, Bike, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 
 // --- Zod Schemas ---
