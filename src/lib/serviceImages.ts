@@ -18,6 +18,12 @@ export const SERVICE_IMAGES: Record<string, string> = {
   'laundry-services': 'https://images.unsplash.com/photo-1545173168-9f1947eebb7f?w=600&h=400&fit=crop',
   'electrical': 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&h=400&fit=crop',
   'home-services': 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&h=400&fit=crop',
+  'plumbing': 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=600&h=400&fit=crop',
+  'carpentry': 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=600&h=400&fit=crop',
+  'painting': 'https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?w=600&h=400&fit=crop',
+  'pest-control': 'https://images.unsplash.com/photo-1632935190798-573dd7e12bcd?w=600&h=400&fit=crop',
+  'moving': 'https://images.unsplash.com/photo-1600518464441-9154a4dea21b?w=600&h=400&fit=crop',
+  'carpet-cleaning': 'https://images.unsplash.com/photo-1558317374-067fb5f30001?w=600&h=400&fit=crop',
 
   // ============= Utilities =============
   'gas-delivery': 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=600&h=400&fit=crop',
@@ -32,6 +38,9 @@ export const SERVICE_IMAGES: Record<string, string> = {
   'laundry-sorting': 'https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?w=600&h=400&fit=crop',
   'quick-meal-prep': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop',
   'errands': 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=600&h=400&fit=crop',
+  'car-wash': 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?w=600&h=400&fit=crop',
+  'gardening': 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&h=400&fit=crop',
+  'pet-care': 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=600&h=400&fit=crop',
 
   // ============= Food & Drinks =============
   'food-drinks': 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&h=400&fit=crop',
@@ -57,6 +66,18 @@ export const SERVICE_IMAGES: Record<string, string> = {
 
   // ============= Living Essentials =============
   'living-essentials': 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=600&h=400&fit=crop',
+
+  // ============= Events & Entertainment =============
+  'events': 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&h=400&fit=crop',
+  'photography': 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=600&h=400&fit=crop',
+  'dj-services': 'https://images.unsplash.com/photo-1571266028243-d220c6a3fcb7?w=600&h=400&fit=crop',
+
+  // ============= Fitness =============
+  'fitness': 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&h=400&fit=crop',
+  'yoga': 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600&h=400&fit=crop',
+
+  // ============= Tutoring =============
+  'tutoring': 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=600&h=400&fit=crop',
 };
 
 // Convert a name/category to a slug for lookup
@@ -70,73 +91,172 @@ export function toSlug(name: string): string {
 
 // Get image URL for a service/category by name or slug
 export function getServiceImage(nameOrSlug: string): string {
-  // Try direct slug lookup first
   if (SERVICE_IMAGES[nameOrSlug]) return SERVICE_IMAGES[nameOrSlug];
-  
-  // Try converting name to slug
   const slug = toSlug(nameOrSlug);
   if (SERVICE_IMAGES[slug]) return SERVICE_IMAGES[slug];
-
-  // Fallback
   return 'https://images.unsplash.com/photo-1521791136064-7986c2920216?w=600&h=400&fit=crop';
 }
 
-// Home page services showcase data
-export const HOME_SERVICES_SHOWCASE = [
-  {
-    title: 'Beauty & Spa',
-    description: 'Hair, nails, massage & more',
-    image: SERVICE_IMAGES['beauty-spa'],
-    route: '/categories/beauty-spa',
-    color: 'from-pink-500/20 to-rose-500/20',
-  },
-  {
-    title: 'House Cleaning',
-    description: 'Professional home cleaning',
-    image: SERVICE_IMAGES['house-cleaning'],
-    route: '/categories/home-services',
-    color: 'from-blue-500/20 to-cyan-500/20',
-  },
-  {
-    title: 'Laundry',
-    description: 'Wash, iron & fold',
-    image: SERVICE_IMAGES['laundry-services'],
-    route: '/categories/home-services',
-    color: 'from-indigo-500/20 to-violet-500/20',
-  },
-  {
-    title: 'Gas Delivery',
-    description: 'Quick gas cylinder refills',
-    image: SERVICE_IMAGES['gas-delivery'],
-    route: '/categories/utilities',
-    color: 'from-orange-500/20 to-amber-500/20',
-  },
+// ─── Expanded service showcase for Home page ───
+// Each service has rich metadata: badge, price hint, sub-services, icon emoji
+
+export interface ServiceShowcaseItem {
+  title: string;
+  description: string;
+  image: string;
+  route: string;
+  badge?: string;
+  priceHint?: string;
+  subServices?: string[];
+  emoji: string;
+}
+
+export const HOME_SERVICES_SHOWCASE: ServiceShowcaseItem[] = [
+  // ──── Quick Services (Task-Based) ────
   {
     title: 'Trash Collection',
-    description: 'Reliable waste pickup',
+    description: 'Reliable doorstep waste pickup — scheduled or on-demand',
     image: SERVICE_IMAGES['trash-collection'],
     route: '/services/trash-collection',
-    color: 'from-emerald-500/20 to-green-500/20',
+    badge: 'Most Popular',
+    priceHint: 'From KES 100',
+    subServices: ['Daily pickup', 'Bulky waste', 'Recycling'],
+    emoji: '🗑️',
   },
   {
-    title: 'Meal Prep',
-    description: 'Fresh meals prepared for you',
+    title: 'Osha Viombo',
+    description: 'Professional dish washing service — we handle the mess',
+    image: SERVICE_IMAGES['osha-viombo'],
+    route: '/services/osha-viombo',
+    priceHint: 'From KES 150',
+    subServices: ['After-party cleanup', 'Daily dishes', 'Kitchen deep clean'],
+    emoji: '🍽️',
+  },
+  {
+    title: 'Quick Cleaning',
+    description: 'Fast 1-2 hour home cleaning for busy schedules',
+    image: SERVICE_IMAGES['quick-cleaning'],
+    route: '/services/quick-cleaning',
+    priceHint: 'From KES 500',
+    subServices: ['Living room', 'Bathroom', 'Kitchen', 'Bedroom'],
+    emoji: '🧹',
+  },
+  {
+    title: 'Laundry Sorting',
+    description: 'Wash, dry, fold and iron — delivered back to your door',
+    image: SERVICE_IMAGES['laundry-sorting'],
+    route: '/services/laundry-sorting',
+    priceHint: 'From KES 300',
+    subServices: ['Wash & fold', 'Ironing only', 'Dry cleaning'],
+    emoji: '👕',
+  },
+  {
+    title: 'Quick Meal Prep',
+    description: 'Fresh home-cooked meals prepared in your kitchen',
     image: SERVICE_IMAGES['quick-meal-prep'],
     route: '/services/quick-meal-prep',
-    color: 'from-red-500/20 to-orange-500/20',
+    priceHint: 'From KES 800',
+    subServices: ['Lunch prep', 'Dinner prep', 'Weekly meal plan', 'Party cooking'],
+    emoji: '🍳',
+  },
+  {
+    title: 'Package Collection',
+    description: 'We pick up your parcels from post offices & drop-off points',
+    image: SERVICE_IMAGES['package-collection'],
+    route: '/services/package-collection',
+    priceHint: 'From KES 200',
+    subServices: ['Post office', 'Bus parcel', 'Courier pickup', 'Returns'],
+    emoji: '📦',
+  },
+  {
+    title: 'Errands',
+    description: 'Send someone to queue, pay bills, buy items or deliver anything',
+    image: SERVICE_IMAGES['errands'],
+    route: '/services/errands',
+    badge: 'New',
+    priceHint: 'From KES 100',
+    subServices: ['Buy something', 'Pay a bill', 'Queue for me', 'Deliver a document'],
+    emoji: '🏃',
+  },
+
+  // ──── Home Services (Professional) ────
+  {
+    title: 'House Cleaning',
+    description: 'Deep professional cleaning — move-in, move-out or routine',
+    image: SERVICE_IMAGES['house-cleaning'],
+    route: '/categories/home-services',
+    priceHint: 'From KES 1,500',
+    subServices: ['Studio', '1-bedroom', '2-bedroom', 'Full house'],
+    emoji: '🏠',
   },
   {
     title: 'Electrical Repairs',
-    description: 'Licensed electricians',
+    description: 'Licensed electricians for wiring, sockets, lighting & more',
     image: SERVICE_IMAGES['electrical'],
     route: '/categories/home-services',
-    color: 'from-yellow-500/20 to-amber-500/20',
+    priceHint: 'From KES 500',
+    subServices: ['Socket repair', 'Light installation', 'Wiring', 'Fuse box'],
+    emoji: '⚡',
   },
   {
+    title: 'Plumbing',
+    description: 'Fix leaks, blocked drains, taps, toilets & water heaters',
+    image: SERVICE_IMAGES['plumbing'],
+    route: '/categories/home-services',
+    priceHint: 'From KES 500',
+    subServices: ['Leaking tap', 'Blocked drain', 'Toilet repair', 'Water heater'],
+    emoji: '🔧',
+  },
+  {
+    title: 'Carpet Cleaning',
+    description: 'Deep steam cleaning for carpets, rugs & upholstery',
+    image: SERVICE_IMAGES['carpet-cleaning'],
+    route: '/categories/home-services',
+    priceHint: 'From KES 1,000',
+    subServices: ['Carpet', 'Rug', 'Sofa', 'Mattress'],
+    emoji: '🧽',
+  },
+
+  // ──── Beauty & Wellness ────
+  {
+    title: 'Beauty & Spa',
+    description: 'Hair, nails, facials, massage & bridal packages at your doorstep',
+    image: SERVICE_IMAGES['beauty-spa'],
+    route: '/categories/beauty-spa',
+    priceHint: 'From KES 500',
+    subServices: ['Hair styling', 'Manicure', 'Facial', 'Massage'],
+    emoji: '💅',
+  },
+
+  // ──── Utilities ────
+  {
+    title: 'Gas Delivery',
+    description: 'Quick cooking gas cylinder refills — 6kg & 13kg delivered',
+    image: SERVICE_IMAGES['gas-delivery'],
+    route: '/categories/utilities',
+    priceHint: 'From KES 1,050',
+    subServices: ['6kg refill', '13kg refill', 'New cylinder', 'Exchange'],
+    emoji: '🔥',
+  },
+  {
+    title: 'Water Delivery',
+    description: 'Clean drinking water & borehole refills delivered to your door',
+    image: SERVICE_IMAGES['water-delivery'],
+    route: '/categories/utilities',
+    priceHint: 'From KES 150',
+    subServices: ['20L refill', '5L bottles', 'Borehole water', 'Dispenser rental'],
+    emoji: '💧',
+  },
+
+  // ──── Health ────
+  {
     title: 'Pharmacy',
-    description: 'Medications & consultations',
+    description: 'Medications, supplements & pharmacist consultations',
     image: SERVICE_IMAGES['pharmacy'],
     route: '/categories/pharmacy',
-    color: 'from-teal-500/20 to-emerald-500/20',
+    badge: 'Consult Now',
+    priceHint: 'From KES 80',
+    subServices: ['OTC meds', 'Prescriptions', 'Vitamins', 'Consultations'],
+    emoji: '💊',
   },
 ];
