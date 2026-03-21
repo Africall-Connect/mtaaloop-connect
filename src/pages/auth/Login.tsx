@@ -78,7 +78,11 @@ const Login = () => {
       });
 
       if (error) {
-        // Generic error - don't reveal if email exists
+        logSecurityEvent({
+          event_type: "login_failure",
+          metadata: { email: formData.email.substring(0, 3) + "***" },
+          severity: "warn",
+        });
         toast.error("Invalid email or password");
         return;
       }
