@@ -83,8 +83,8 @@ const MtaaLoopMart = () => {
       price: item.markup_price ?? item.price ?? 0,
       quantity: 1,
       image: item.image_url || PLACEHOLDER_IMG,
-      vendorId: "MtaaLoopMart",
-      vendorName: "MtaaLoopMart",
+      vendorId: MTAALOOP_MART_VENDOR_ID,
+      vendorName: MTAALOOP_MART_VENDOR_NAME,
     });
     toast.success(`${item.product_name} added to cart`);
   };
