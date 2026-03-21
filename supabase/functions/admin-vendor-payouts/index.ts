@@ -172,6 +172,30 @@ serve(async (req) => {
       const body = await req.json().catch(() => ({}));
       const { payout_ids, vendor_id, mark_all_for_vendor, paid_by, note } = body;
 
+      // Input validation
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+      if (payout_ids && Array.isArray(payout_ids)) {
+        const allValid = payout_ids.every((id: unknown) => typeof id === "string" && UUID_RE.test(id));
+        if (!allValid || payout_ids.length > 500) {
+          return new Response(
+            JSON.stringify({ error: "Invalid payout_ids: must be valid UUIDs (max 500)" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+
+      if (vendor_id && (typeof vendor_id !== "string" || !UUID_RE.test(vendor_id))) {
+        return new Response(
+          JSON.stringify({ error: "Invalid vendor_id format" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Sanitize text inputs
+      const safePaidBy = typeof paid_by === "string" ? paid_by.replace(/<[^>]*>/g, "").slice(0, 100) : undefined;
+      const safeNote = typeof note === "string" ? note.replace(/<[^>]*>/g, "").slice(0, 500) : undefined;
+
       if ((!payout_ids || payout_ids.length === 0) && !mark_all_for_vendor) {
         return new Response(
           JSON.stringify({
@@ -192,9 +216,9 @@ serve(async (req) => {
           status: "paid",
           paid_at: new Date().toISOString(),
           paid_reference:
-            note ||
+            safeNote ||
             `MANUAL-PAYOUT-${new Date().toISOString().replace(/[:.]/g, "")}`,
-          paid_by: paid_by || `admin-${authMethod}`,
+          paid_by: safePaidBy || `admin-${authMethod}`,
         })
         .in("status", ["pending", "scheduled", "processing"]);
 

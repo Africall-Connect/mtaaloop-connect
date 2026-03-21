@@ -26,11 +26,22 @@ serve(async (req) => {
       return createRateLimitResponse(corsHeaders, rateCheck.retryAfterSeconds);
     }
 
-    const { event_type, user_id, metadata, severity } = await req.json();
+    const body = await req.json();
+    const { event_type, user_id, metadata, severity } = body;
 
-    if (!event_type || typeof event_type !== "string") {
+    // Validate event_type
+    if (!event_type || typeof event_type !== "string" || event_type.length > 100) {
       return new Response(
-        JSON.stringify({ error: "event_type is required" }),
+        JSON.stringify({ error: "event_type is required and must be under 100 chars" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate user_id if provided
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (user_id && (typeof user_id !== "string" || !UUID_RE.test(user_id))) {
+      return new Response(
+        JSON.stringify({ error: "Invalid user_id format" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
