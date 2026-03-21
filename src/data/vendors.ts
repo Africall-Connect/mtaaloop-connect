@@ -1376,10 +1376,10 @@ export const vendors: Vendor[] = [
     yearsInBusiness: 15,
     inEstate: false,
     menu: [
-      { id: "wiring", name: "Wiring Repairs", description: "Faulty wiring fixes", price: 2000, category: "Electrical Repairs", rating: 4.9, ordersThisWeek: 23, isPopular: true },
-      { id: "outlet-install", name: "Outlet Installation", description: "New socket installation", price: 500, category: "Electrical Repairs", rating: 4.7, ordersThisWeek: 34 },
-      { id: "switch-repair", name: "Switch/Light Repair", description: "Faulty switches/lights", price: 800, category: "Electrical Repairs", rating: 4.8, ordersThisWeek: 28 },
-      { id: "lighting", name: "Lighting Installation", description: "New lighting fixtures", price: 1500, category: "Electrical Repairs", rating: 4.6, ordersThisWeek: 19 },
+      { id: "wiring", name: "Wiring Repairs", description: "Faulty wiring diagnostics & fixes", price: 2000, image: "https://images.unsplash.com/photo-1621905252472-943afaa4e6c6?w=400&fit=crop", category: "Electrical Repairs", rating: 4.9, ordersThisWeek: 23, isPopular: true },
+      { id: "outlet-install", name: "Outlet Installation", description: "New socket & outlet fitting", price: 500, image: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&fit=crop", category: "Electrical Repairs", rating: 4.7, ordersThisWeek: 34 },
+      { id: "switch-repair", name: "Switch/Light Repair", description: "Faulty switch & light fixes", price: 800, image: "https://images.unsplash.com/photo-1565538810643-b5bdb714032a?w=400&fit=crop", category: "Electrical Repairs", rating: 4.8, ordersThisWeek: 28 },
+      { id: "lighting", name: "Lighting Installation", description: "New fixture installation & wiring", price: 1500, image: "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=400&fit=crop", category: "Electrical Repairs", rating: 4.6, ordersThisWeek: 19 },
     ],
   },
 ];
