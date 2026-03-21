@@ -178,7 +178,7 @@ const MtaaLoopMart = () => {
               <Card key={item.id} className="group overflow-hidden flex flex-col">
                 <div className="relative h-48 bg-white p-4">
                   <img
-                    src={item.image_url || PLACEHOLDER_IMG}
+                    src={getProductImage(item)}
                     alt={item.product_name}
                     className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                     onError={(e) => { e.currentTarget.src = PLACEHOLDER_IMG; }}
