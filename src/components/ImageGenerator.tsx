@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, ImageIcon, Download, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { checkClientRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 
 interface ImageGeneratorProps {
   onImageGenerated?: (imageUrl: string) => void;
