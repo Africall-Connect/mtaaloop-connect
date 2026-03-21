@@ -252,8 +252,8 @@ const Checkout = () => {
   }, {} as Record<string, { name: string; items: CartItem[] }>);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background">
-      <div className="max-w-2xl mx-auto px-4 py-4 pb-32">
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10">
+      <div className="max-w-2xl mx-auto px-4 py-4 pb-40">
 
         {/* ── Header ─────────────────────────────────────────────── */}
         <div className="flex items-center gap-3 mb-6">
