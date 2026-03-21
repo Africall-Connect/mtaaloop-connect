@@ -29,6 +29,13 @@ export function ImageGenerator({
       return;
     }
 
+    // 🛡️ Client-side rate limit
+    const rateCheck = checkClientRateLimit('ai-gen', RATE_LIMITS.aiGeneration);
+    if (!rateCheck.allowed) {
+      toast.error(`Too many requests. Try again in ${Math.ceil(rateCheck.lockoutRemainingMs / 1000)}s`);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 

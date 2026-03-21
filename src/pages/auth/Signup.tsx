@@ -146,6 +146,19 @@ const Signup = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Honeypot field - hidden from humans, bots fill it */}
+          <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, overflow: 'hidden' }}>
+            <label htmlFor="website">Website</label>
+            <input
+              id="website"
+              name="website"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+            />
+          </div>
           <div>
             <Label htmlFor="fullName">Full Name</Label>
             <Input
