@@ -64,7 +64,7 @@ const Checkout = () => {
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [walletLoading, setWalletLoading] = useState(true);
 
-  // ── Fetch user preferences ───────────────────────────────────────
+  // ── Fetch user preferences & wallet ─────────────────────────────
   useEffect(() => {
     (async () => {
       try {
@@ -87,6 +87,21 @@ const Checkout = () => {
         }
       } catch (e) {
         console.error("Error fetching user data:", e);
+      }
+    })();
+  }, []);
+
+  // ── Fetch wallet balance ─────────────────────────────────────────
+  useEffect(() => {
+    (async () => {
+      try {
+        const balance = await getWalletBalance();
+        setWalletBalance(balance);
+      } catch (e) {
+        console.error("Error fetching wallet:", e);
+        setWalletBalance(0);
+      } finally {
+        setWalletLoading(false);
       }
     })();
   }, []);
