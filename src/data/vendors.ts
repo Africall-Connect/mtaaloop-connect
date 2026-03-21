@@ -817,9 +817,9 @@ export const vendors: Vendor[] = [
     yearsInBusiness: 8,
     inEstate: false,
     menu: [
-      { id: "general", name: "General Cleaning (2BR)", description: "Regular house cleaning", price: 2000, category: "Cleaning", rating: 4.8, ordersThisWeek: 134, isPopular: true },
-      { id: "deep", name: "Deep Cleaning (2BR)", description: "Thorough cleaning", price: 3500, category: "Cleaning", rating: 4.9, ordersThisWeek: 89 },
-      { id: "movein", name: "Move-in/out Cleaning", description: "Complete cleaning", price: 5000, category: "Cleaning", rating: 4.8, ordersThisWeek: 45 },
+      { id: "general", name: "General Cleaning (2BR)", description: "Full house regular cleaning", price: 2000, image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&fit=crop", category: "Cleaning", rating: 4.8, ordersThisWeek: 134, isPopular: true },
+      { id: "deep", name: "Deep Cleaning (2BR)", description: "Thorough scrub & sanitize", price: 3500, image: "https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=400&fit=crop", category: "Cleaning", rating: 4.9, ordersThisWeek: 89 },
+      { id: "movein", name: "Move-in/out Cleaning", description: "Complete move cleaning", price: 5000, image: "https://images.unsplash.com/photo-1600585152220-90363fe7e115?w=400&fit=crop", category: "Cleaning", rating: 4.8, ordersThisWeek: 45 },
     ],
   },
   {
