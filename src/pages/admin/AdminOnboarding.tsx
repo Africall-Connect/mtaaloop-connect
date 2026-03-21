@@ -247,10 +247,41 @@ export default function AdminOnboarding() {
     }
   };
 
+  // --- Agent submit ---
+  const handleAgentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsed = parseZod(agentSchema, agentForm);
+    if (!parsed.success) return;
+    setLoading(true);
+
+    try {
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: agentForm.email,
+        password: agentForm.password,
+        options: { data: { full_name: agentForm.fullName, phone: agentForm.phone } },
+      });
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('User creation failed');
+
+      const userId = authData.user.id;
+
+      const { error: roleError } = await supabase.from('user_roles').insert({ user_id: userId, role: 'agent' });
+      if (roleError) throw roleError;
+
+      toast.success(`Agent "${agentForm.fullName}" onboarded successfully! They can login at /agent/dashboard`);
+      setAgentForm({ fullName: '', email: '', phone: '', password: '', estateId: '' });
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to onboard agent');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // --- Helper to update form and clear error ---
   const updateVendor = (field: string, value: string) => { clearFieldError(field); setVendorForm((p) => ({ ...p, [field]: value })); };
   const updateCustomer = (field: string, value: string) => { clearFieldError(field); setCustomerForm((p) => ({ ...p, [field]: value })); };
   const updateRider = (field: string, value: string) => { clearFieldError(field); setRiderForm((p) => ({ ...p, [field]: value })); };
+  const updateAgent = (field: string, value: string) => { clearFieldError(field); setAgentForm((p) => ({ ...p, [field]: value })); };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
