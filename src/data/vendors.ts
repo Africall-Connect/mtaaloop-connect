@@ -720,9 +720,10 @@ export const vendors: Vendor[] = [
     yearsInBusiness: 7,
     inEstate: false,
     menu: [
-      { id: "box-braids", name: "Box Braids", description: "Full head, 4-6 hours", price: 2500, category: "Hair", rating: 5.0, ordersThisWeek: 23, isPopular: true },
-      { id: "ghana", name: "Ghana Weaving", description: "Stylish cornrows", price: 1500, category: "Hair", rating: 4.9, ordersThisWeek: 34 },
-      { id: "dreads", name: "Dreadlocks Retouch", description: "Maintenance service", price: 1800, category: "Hair", rating: 4.8, ordersThisWeek: 12 },
+      { id: "box-braids", name: "Box Braids (Full Head)", description: "Classic box braids, 4-6 hours", price: 2500, image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&fit=crop", category: "Hair", rating: 5.0, ordersThisWeek: 23, isPopular: true },
+      { id: "ghana", name: "Ghana Weaving", description: "Stylish Ghana cornrows", price: 1500, image: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400&fit=crop", category: "Hair", rating: 4.9, ordersThisWeek: 34 },
+      { id: "dreads", name: "Dreadlocks Retouch", description: "Professional dread maintenance", price: 1800, image: "https://images.unsplash.com/photo-1605497788044-5a32c7078486?w=400&fit=crop", category: "Hair", rating: 4.8, ordersThisWeek: 12 },
+      { id: "cornrows", name: "Cornrows (Straight Back)", description: "Classic cornrow styling", price: 800, image: "https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?w=400&fit=crop", category: "Hair", rating: 4.7, ordersThisWeek: 45, isNew: true },
     ],
   },
   {
