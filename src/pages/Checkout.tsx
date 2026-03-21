@@ -220,6 +220,7 @@ const Checkout = () => {
         setLastOrderId(newOrder.id);
         setShowAnimation(true);
         toast.success(`${type === "premium" ? "Premium" : "Minimart"} order placed!`);
+        return newOrder.id;
 
       } else if (type === "mtaaloop") {
         const orderId = crypto.randomUUID();
