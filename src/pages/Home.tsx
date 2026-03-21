@@ -158,7 +158,7 @@ const Home = () => {
     loadUserApartment();
   }, [setCurrentApartment]);
 
-  // Fetch all approved vendors with product counts
+  // Fetch all approved vendors with product counts and featured products
   useEffect(() => {
     const fetchVendors = async () => {
       try {
@@ -173,20 +173,37 @@ const Home = () => {
         if (error) throw error;
 
         const vendorIds = (data || []).map(v => v.id);
-        const { data: counts } = await supabase
+
+        // Fetch products for counts + featured images (grab up to 8 per vendor)
+        const { data: allProducts } = await supabase
           .from("products")
-          .select("vendor_id")
+          .select("id, vendor_id, name, image_url, price, is_available")
           .eq("is_available", true)
-          .in("vendor_id", vendorIds);
+          .in("vendor_id", vendorIds)
+          .order("created_at", { ascending: false })
+          .limit(1000);
 
         const countMap: Record<string, number> = {};
-        (counts || []).forEach(c => {
-          countMap[c.vendor_id] = (countMap[c.vendor_id] || 0) + 1;
+        const featuredMap: Record<string, { id: string; name: string; image_url: string | null; price: number }[]> = {};
+
+        (allProducts || []).forEach(p => {
+          countMap[p.vendor_id] = (countMap[p.vendor_id] || 0) + 1;
+          if (!featuredMap[p.vendor_id]) featuredMap[p.vendor_id] = [];
+          // Only take products with images, up to 8
+          if (featuredMap[p.vendor_id].length < 8 && p.image_url) {
+            featuredMap[p.vendor_id].push({
+              id: p.id,
+              name: p.name,
+              image_url: p.image_url,
+              price: p.price,
+            });
+          }
         });
 
         const vendorsWithCounts: VendorWithCount[] = (data || []).map(v => ({
           ...v,
           product_count: countMap[v.id] || 0,
+          featured_products: featuredMap[v.id] || [],
         }));
 
         setVendors(vendorsWithCounts);
