@@ -61,8 +61,8 @@ export default function ResetPassword() {
 
       if (error) throw error;
 
+      logSecurityEvent({ event_type: "password_reset_complete" });
       toast.success("Password updated successfully!");
-      // Sign out to force fresh login with new password
       await supabase.auth.signOut();
       navigate("/auth/login");
     } catch (error: unknown) {
