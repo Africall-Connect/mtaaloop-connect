@@ -275,6 +275,7 @@ const Checkout = () => {
       }
     } catch (error: unknown) {
       toast.error(`Failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      return null;
     }
   };
 
