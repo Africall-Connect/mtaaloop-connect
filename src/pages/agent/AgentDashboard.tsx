@@ -126,7 +126,7 @@ export default function AgentDashboard() {
           <div className="text-xs text-muted-foreground">Active</div>
         </Card>
         <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-green-600">{completedCount}</div>
+          <div className="text-2xl font-bold text-primary">{completedCount}</div>
           <div className="text-xs text-muted-foreground">Completed</div>
         </Card>
         <Card className="p-4 text-center">
