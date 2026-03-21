@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft, Mail, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { logSecurityEvent } from "@/lib/securityLogger";
+import { checkClientRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -15,6 +17,13 @@ export default function ForgotPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const rateCheck = checkClientRateLimit("password-reset", RATE_LIMITS.passwordReset);
+    if (!rateCheck.allowed) {
+      toast.error(`Too many requests. Try again in ${Math.ceil(rateCheck.lockoutRemainingMs / 1000)}s`);
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -25,10 +34,11 @@ export default function ForgotPassword() {
       if (error) throw error;
 
       setSent(true);
+      logSecurityEvent({ event_type: "password_reset_request" });
       toast.success("Reset link sent! Check your email.");
     } catch (error: unknown) {
-      // Don't reveal whether the email exists
       setSent(true);
+      logSecurityEvent({ event_type: "password_reset_request", severity: "info" });
       toast.success("If an account exists with that email, a reset link has been sent.");
     } finally {
       setSubmitting(false);

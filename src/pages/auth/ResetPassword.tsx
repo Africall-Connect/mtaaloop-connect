@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Eye, EyeOff, Lock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { logSecurityEvent } from "@/lib/securityLogger";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -60,8 +61,8 @@ export default function ResetPassword() {
 
       if (error) throw error;
 
+      logSecurityEvent({ event_type: "password_reset_complete" });
       toast.success("Password updated successfully!");
-      // Sign out to force fresh login with new password
       await supabase.auth.signOut();
       navigate("/auth/login");
     } catch (error: unknown) {

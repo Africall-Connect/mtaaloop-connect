@@ -8,6 +8,7 @@ import { ArrowLeft, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { checkClientRateLimit, resetClientRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
+import { logSecurityEvent } from "@/lib/securityLogger";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -77,7 +78,11 @@ const Login = () => {
       });
 
       if (error) {
-        // Generic error - don't reveal if email exists
+        logSecurityEvent({
+          event_type: "login_failure",
+          metadata: { email: formData.email.substring(0, 3) + "***" },
+          severity: "warn",
+        });
         toast.error("Invalid email or password");
         return;
       }
@@ -86,6 +91,10 @@ const Login = () => {
       resetClientRateLimit("login");
 
       if (data.user) {
+        logSecurityEvent({
+          event_type: "login_success",
+          user_id: data.user.id,
+        });
         const { data: rolesRows } = await supabase
           .from("user_roles")
           .select("role")

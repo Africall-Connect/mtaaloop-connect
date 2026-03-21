@@ -17,7 +17,11 @@ window.process = process;
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import { PusherProvider } from "./contexts/PusherContext.tsx";  // <-- ADD THIS
+import { PusherProvider } from "./contexts/PusherContext.tsx";
+import { initSecurity } from "./lib/security.ts";
+
+// 🔒 Security initialization (HTTPS enforcement)
+initSecurity();
 
 createRoot(document.getElementById("root")!).render(
   <PusherProvider>
