@@ -14,14 +14,19 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [submitting, setSubmitting] = useState(false);
-  const [failedAttempts, setFailedAttempts] = useState(0);
-  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
-  const lockoutTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [lockoutMs, setLockoutMs] = useState(0);
 
-  const isLockedOut = lockedUntil !== null && Date.now() < lockedUntil;
-  const remainingLockout = isLockedOut
-    ? Math.ceil(((lockedUntil ?? 0) - Date.now()) / 1000)
-    : 0;
+  // Countdown timer for lockout display
+  useEffect(() => {
+    if (lockoutMs <= 0) return;
+    const id = setInterval(() => {
+      setLockoutMs((prev) => Math.max(0, prev - 1000));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [lockoutMs]);
+
+  const isLockedOut = lockoutMs > 0;
+  const remainingLockout = Math.ceil(lockoutMs / 1000);
 
   const routeByRole = async (
     roles: string[] | null | undefined,
