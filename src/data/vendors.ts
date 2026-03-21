@@ -452,8 +452,9 @@ export const vendors: Vendor[] = [
     yearsInBusiness: 1,
     inEstate: true,
     menu: [
-      { id: "plain", name: "Roasted Maize (Plain)", description: "Classic roasted maize", price: 60, category: "Snacks", rating: 4.6, ordersThisWeek: 78 },
-      { id: "butter", name: "Roasted Maize (Butter)", description: "With melted butter", price: 80, category: "Snacks", rating: 4.7, ordersThisWeek: 112, isPopular: true },
+      { id: "plain", name: "Roasted Maize (Plain)", description: "Classic charcoal-roasted maize", price: 60, image: "https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=400&fit=crop", category: "Snacks", rating: 4.6, ordersThisWeek: 78 },
+      { id: "butter", name: "Roasted Maize (Butter)", description: "With melted butter & salt", price: 80, image: "https://images.unsplash.com/photo-1470119693884-47d3a1d1f180?w=400&fit=crop", category: "Snacks", rating: 4.7, ordersThisWeek: 112, isPopular: true },
+      { id: "lime-chili", name: "Roasted Maize (Lime & Chili)", description: "Zesty lime with chili powder", price: 100, image: "https://images.unsplash.com/photo-1562158170-310abe24b16e?w=400&fit=crop", category: "Snacks", rating: 4.8, ordersThisWeek: 89, isNew: true },
     ],
   },
   {
