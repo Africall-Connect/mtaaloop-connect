@@ -576,6 +576,68 @@ export default function AdminOnboarding() {
               </form>
             </Card>
           </TabsContent>
+
+          {/* ===== AGENT TAB ===== */}
+          <TabsContent value="agent">
+            <Card>
+              <CardHeader>
+                <CardTitle>New Service Agent</CardTitle>
+                <CardDescription>Create an agent account. Agents handle service requests like errands, cleaning, and trash collection.</CardDescription>
+              </CardHeader>
+              <form onSubmit={handleAgentSubmit}>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Personal Information</h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="a-fullName">Full Name</Label>
+                        <Input id="a-fullName" value={agentForm.fullName} onChange={(e) => updateAgent('fullName', e.target.value)} />
+                        <FieldError errors={errors} field="fullName" />
+                      </div>
+                      <div>
+                        <Label htmlFor="a-phone">Phone Number</Label>
+                        <Input id="a-phone" type="tel" placeholder="+254…" value={agentForm.phone} onChange={(e) => updateAgent('phone', e.target.value)} />
+                        <FieldError errors={errors} field="phone" />
+                      </div>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="a-email">Email</Label>
+                        <Input id="a-email" type="email" value={agentForm.email} onChange={(e) => updateAgent('email', e.target.value)} />
+                        <FieldError errors={errors} field="email" />
+                      </div>
+                      <div>
+                        <Label htmlFor="a-password">Temporary Password</Label>
+                        <Input id="a-password" type="password" value={agentForm.password} onChange={(e) => updateAgent('password', e.target.value)} />
+                        <FieldError errors={errors} field="password" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Assignment Area (Optional)</h3>
+                    <div>
+                      <Label>Assigned Estate</Label>
+                      <Select onValueChange={(v) => updateAgent('estateId', v)}>
+                        <SelectTrigger><SelectValue placeholder="All estates (no restriction)" /></SelectTrigger>
+                        <SelectContent className="bg-background border shadow-lg z-50">
+                          {estates.map((estate) => (
+                            <SelectItem key={estate.id} value={estate.id}>
+                              {estate.name} - {estate.location}, {estate.county}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <Button type="submit" disabled={loading} className="w-full">
+                    {loading ? 'Creating Agent…' : 'Create Agent Account'}
+                  </Button>
+                </CardContent>
+              </form>
+            </Card>
+          </TabsContent>
         </Tabs>
       </main>
     </div>
