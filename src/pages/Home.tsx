@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { MtaaLoopPin } from "@/components/MtaaLoopLogo";
+import { MtaaLoopOrbit } from "@/components/MtaaLoopLogo";
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { Search, ShoppingBag, MapPin, Users, Stethoscope, ArrowRight, Calendar, CalendarCheck, Sparkles, Store, ChevronRight, Zap, Home as HomeIcon, Heart, Droplets, Check } from "lucide-react";
 import { ScrollAnimatedSection, ScrollAnimatedGrid } from "@/components/ScrollAnimations";
