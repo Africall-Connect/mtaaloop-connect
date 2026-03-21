@@ -61,6 +61,8 @@ const Checkout = () => {
   const [lastOrderDetails, setLastOrderDetails] = useState<unknown>(null);
   const [fullName, setFullName] = useState("");
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [walletLoading, setWalletLoading] = useState(true);
 
   // ── Fetch user preferences ───────────────────────────────────────
   useEffect(() => {
