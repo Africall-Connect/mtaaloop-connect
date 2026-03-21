@@ -44,11 +44,12 @@ export function FileUploadZone({
       if (!newFiles) return;
 
       const fileArray = Array.from(newFiles);
-      const maxSizeBytes = maxSizeMB * 1024 * 1024;
 
       const validFiles = fileArray.filter((file) => {
-        if (file.size > maxSizeBytes) {
-          toast.error(`${file.name} exceeds ${maxSizeMB}MB limit`);
+        // Use centralized file validation (checks MIME, size, dangerous extensions)
+        const validation = validateFileInput(file, { maxSizeMB: maxSizeMB });
+        if (!validation.valid) {
+          toast.error(`${file.name}: ${validation.error}`);
           return false;
         }
         return true;

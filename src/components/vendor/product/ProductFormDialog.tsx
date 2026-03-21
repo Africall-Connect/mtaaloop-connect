@@ -278,14 +278,31 @@ export default function ProductFormDialog({
         finalStoragePath = product.image_storage_path;
       }
 
+      const safeName = formData.name.replace(/<[^>]*>/g, "").trim().slice(0, 200);
+      const safeDesc = (formData.description || "").replace(/<[^>]*>/g, "").trim().slice(0, 2000);
+      const safePrice = Math.max(0, parseFloat(formData.price) || 0);
+      const safeStock = Math.max(0, parseInt(formData.stock_quantity, 10) || 0);
+      const safeLowStock = Math.max(0, parseInt(formData.low_stock_threshold, 10) || 0);
+
+      if (!safeName) {
+        toast.error("Product name is required");
+        setLoading(false);
+        return;
+      }
+      if (safePrice <= 0) {
+        toast.error("Price must be positive");
+        setLoading(false);
+        return;
+      }
+
       const productData: ProductData = {
         vendor_id: realVendorId,
-        name: formData.name,
-        description: formData.description,
+        name: safeName,
+        description: safeDesc,
         category: formData.category,
-        price: parseFloat(formData.price),
-        stock_quantity: parseInt(formData.stock_quantity, 10),
-        low_stock_threshold: parseInt(formData.low_stock_threshold, 10),
+        price: safePrice,
+        stock_quantity: safeStock,
+        low_stock_threshold: safeLowStock,
         is_available: formData.is_available,
         image_url: finalImageUrl,
         image_storage_path: finalStoragePath,
