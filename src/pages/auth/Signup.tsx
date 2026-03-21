@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ErrorResponse } from "@/types/common";
 import { checkClientRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
+import { logSecurityEvent } from "@/lib/securityLogger";
 
 const Signup = () => {
   const navigate = useNavigate();
