@@ -1,41 +1,47 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 2 * 60 * 1000; // 2 minutes
 
 const Login = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [submitting, setSubmitting] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+  const lockoutTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // we add `staffMapping` here so we can route staff too
+  const isLockedOut = lockedUntil !== null && Date.now() < lockedUntil;
+  const remainingLockout = isLockedOut
+    ? Math.ceil(((lockedUntil ?? 0) - Date.now()) / 1000)
+    : 0;
+
   const routeByRole = async (
     roles: string[] | null | undefined,
     userId: string,
     staffMapping?: { vendor_id: string } | null
   ) => {
-    // 0. staff wins before customer flow
     if (staffMapping?.vendor_id) {
-      // store which vendor they belong to
       localStorage.setItem("ml_vendor_profile_id", staffMapping.vendor_id);
       localStorage.setItem("ml_vendor_staff", "true");
       return navigate("/vendor/dashboard");
     }
 
-    // 1. role-based routes
     if (roles?.includes("vendor")) return navigate("/vendor/dashboard");
     if (roles?.includes("rider")) return navigate("/rider/dashboard");
     if (roles?.includes("agent")) return navigate("/agent/dashboard");
     if (roles?.includes("estate") || roles?.includes("estate_manager"))
       return navigate("/estate/dashboard");
 
-    // 2. no role -> check if user has already picked estate/apartment
     const { data: prefs, error: prefsErr } = await supabase
       .from("user_preferences")
       .select("estate_id")
@@ -46,12 +52,17 @@ const Login = () => {
       return navigate("/home");
     }
 
-    // 3. first time → force select
     return navigate("/apartment-selection");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isLockedOut) {
+      toast.error(`Account temporarily locked. Try again in ${remainingLockout}s`);
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -61,28 +72,43 @@ const Login = () => {
       });
 
       if (error) {
-        toast.error(error.message);
+        const newAttempts = failedAttempts + 1;
+        setFailedAttempts(newAttempts);
+
+        if (newAttempts >= MAX_ATTEMPTS) {
+          const unlockTime = Date.now() + LOCKOUT_DURATION_MS;
+          setLockedUntil(unlockTime);
+          setFailedAttempts(0);
+
+          if (lockoutTimer.current) clearTimeout(lockoutTimer.current);
+          lockoutTimer.current = setTimeout(() => setLockedUntil(null), LOCKOUT_DURATION_MS);
+
+          toast.error("Too many failed attempts. Account locked for 2 minutes.");
+        } else {
+          // Generic error - don't reveal if email exists
+          toast.error("Invalid email or password");
+        }
         return;
       }
 
+      // Reset on success
+      setFailedAttempts(0);
+      setLockedUntil(null);
+
       if (data.user) {
-        // 1) fetch roles (your old code)
-        const { data: rolesRows, error: rolesErr } = await supabase
+        const { data: rolesRows } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", data.user.id);
 
         const roles = (rolesRows || []).map((r) => r.role);
 
-        // 2) check if this user is STAFF of a vendor (new part)
-        // this table is the one we created for accepted invites
-        const { data: staffMap, error: staffErr } = await supabase
+        const { data: staffMap } = await supabase
           .from("vendor_user_map")
           .select("vendor_id, role")
           .eq("user_id", data.user.id)
           .maybeSingle();
 
-        // 3) if user is real vendor, keep your old vendor-profile fetch
         if (roles.includes("vendor")) {
           const { data: vp, error: vpErr } = await supabase
             .from("vendor_profiles")
@@ -99,7 +125,6 @@ const Login = () => {
           }
         }
 
-        // 4) toast + route
         toast.success("Welcome back!");
         await routeByRole(roles, data.user.id, staffMap);
       }
@@ -127,16 +152,26 @@ const Login = () => {
           <p className="text-muted-foreground">Login to your MtaaLoop account</p>
         </div>
 
+        {isLockedOut && (
+          <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg flex gap-2 items-start">
+            <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+            <p className="text-sm text-destructive">
+              Too many failed attempts. Try again in {remainingLockout} seconds.
+            </p>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="email">Email or Phone</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
               id="email"
-              type="text"
-              placeholder="john@example.com or +254712345678"
+              type="email"
+              placeholder="john@example.com"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
+              disabled={isLockedOut}
             />
           </div>
 
@@ -150,6 +185,7 @@ const Login = () => {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required
+                disabled={isLockedOut}
               />
               <button
                 type="button"
@@ -168,7 +204,7 @@ const Login = () => {
             </Link>
           </div>
 
-          <Button type="submit" className="w-full" size="lg" disabled={submitting}>
+          <Button type="submit" className="w-full" size="lg" disabled={submitting || isLockedOut}>
             {submitting ? "Logging in..." : "Login"}
           </Button>
         </form>

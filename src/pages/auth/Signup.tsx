@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ErrorResponse } from "@/types/common";
@@ -13,6 +13,8 @@ import { ErrorResponse } from "@/types/common";
 const Signup = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -21,59 +23,94 @@ const Signup = () => {
     agreeToTerms: false,
   });
 
+  const validatePassword = (pw: string): string | null => {
+    if (pw.length < 8) return "Password must be at least 8 characters";
+    if (!/[A-Z]/.test(pw)) return "Password must contain an uppercase letter";
+    if (!/[a-z]/.test(pw)) return "Password must contain a lowercase letter";
+    if (!/\d/.test(pw)) return "Password must contain a number";
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!formData.agreeToTerms) {
-    toast.error("Please agree to Terms & Conditions");
-    return;
-  }
-
-  try {
-    const { data, error } = await supabase.auth.signUp({
-      email: formData.email,
-      password: formData.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
-        data: {
-          full_name: formData.fullName,
-          phone: formData.phone,
-        },
-      },
-    });
-
-    if (error) throw error;
-
-    // Auto-fill user profile
-    if (data.user?.id) {
-      const nameParts = formData.fullName.trim().split(' ');
-      const first_name = nameParts[0] || '';
-      const last_name = nameParts.slice(1).join(' ') || '';
-
-      const { error: profileError } = await supabase.from('customer_profiles').upsert({
-        user_id: data.user.id,
-        full_name: formData.fullName,
-        phone: formData.phone,
-      });
-
-      if (profileError) {
-        console.error('Profile auto-fill error:', profileError);
-        // Don't fail signup if profile fails, just log
-      }
+    if (!formData.agreeToTerms) {
+      toast.error("Please agree to Terms & Conditions");
+      return;
     }
 
-    toast.success("Account created successfully!");
+    const pwError = validatePassword(formData.password);
+    if (pwError) {
+      toast.error(pwError);
+      return;
+    }
 
-    // If you're using email confirmation, this message will be shown
-    // even though they still need to verify their email.
-    // Optionally redirect to a "check your email" page here.
-    navigate("/apartment-selection");
-  } catch (error) {
-    const err = error as ErrorResponse;
-    toast.error(err.message || "An error occurred during signup");
+    setSubmitting(true);
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/apartment-selection`,
+          data: {
+            full_name: formData.fullName,
+            phone: formData.phone,
+          },
+        },
+      });
+
+      if (error) throw error;
+
+      // Auto-fill customer profile
+      if (data.user?.id) {
+        const { error: profileError } = await supabase.from('customer_profiles').upsert({
+          user_id: data.user.id,
+          full_name: formData.fullName,
+          phone: formData.phone,
+        });
+
+        if (profileError) {
+          console.error('Profile auto-fill error:', profileError);
+        }
+      }
+
+      // Show email verification screen instead of navigating directly
+      setEmailSent(true);
+      toast.success("Account created! Please verify your email.");
+    } catch (error) {
+      const err = error as ErrorResponse;
+      toast.error(err.message || "An error occurred during signup");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (emailSent) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-primary/5 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md p-8 text-center">
+          <div className="flex justify-center mb-4">
+            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <CheckCircle className="h-8 w-8 text-primary" />
+            </div>
+          </div>
+          <h1 className="text-2xl font-bold mb-2">Verify Your Email</h1>
+          <p className="text-muted-foreground mb-2">
+            We've sent a verification link to <strong>{formData.email}</strong>.
+          </p>
+          <p className="text-sm text-muted-foreground mb-6">
+            Click the link in the email to activate your account. Check your spam folder if you don't see it.
+          </p>
+          <div className="space-y-3">
+            <Button variant="outline" asChild className="w-full">
+              <Link to="/auth/login">Go to Login</Link>
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
   }
-};
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-primary/5 flex items-center justify-center p-4">
@@ -126,11 +163,11 @@ const Signup = () => {
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
+                placeholder="Min 8 chars, mixed case + number"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required
-                minLength={6}
+                minLength={8}
               />
               <button
                 type="button"
@@ -140,6 +177,9 @@ const Signup = () => {
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Must include uppercase, lowercase, and a number
+            </p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -158,8 +198,8 @@ const Signup = () => {
             </Label>
           </div>
 
-          <Button type="submit" className="w-full" size="lg">
-            Create Account
+          <Button type="submit" className="w-full" size="lg" disabled={submitting}>
+            {submitting ? "Creating Account..." : "Create Account"}
           </Button>
         </form>
 
