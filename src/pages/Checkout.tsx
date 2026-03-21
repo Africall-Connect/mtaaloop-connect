@@ -184,8 +184,8 @@ const Checkout = () => {
     }
   };
 
-  const placeOrder = async (type: string, orderItems: CartItem[]) => {
-    if (!user) { toast.error("Please log in first."); return; }
+  const placeOrder = async (type: string, orderItems: CartItem[]): Promise<string | null> => {
+    if (!user) { toast.error("Please log in first."); return null; }
     const addr = `${deliveryAddress.estate_name}, ${deliveryAddress.house_number}`;
     const totalAmount = orderItems.reduce((s, i) => s + i.price * i.quantity, 0);
     const baseAmount = orderItems.reduce((s, i) => s + (i.base_price || i.price) * i.quantity, 0);
