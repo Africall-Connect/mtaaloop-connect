@@ -37,12 +37,16 @@ const EstateApprovals = lazy(() => import("./pages/admin/EstateApprovals"));
 const EstateManagement = lazy(() => import("./pages/admin/EstateManagement"));
 const RiderApprovals = lazy(() => import("./pages/admin/RiderApprovals"));
 const AdminLiveChatAssign = lazy(() => import("./pages/AdminLiveChatAssign"));
+const AdminServiceRequests = lazy(() => import("./pages/admin/AdminServiceRequests"));
 const ManageMtaaLoopMart = lazy(() => import("./pages/admin/ManageMtaaLoopMart"));
 const AdminVendorPayouts = lazy(() => import("./pages/admin/AdminVendorPayouts"));
 const AdminOnboarding = lazy(() => import("./pages/admin/AdminOnboarding"));
 const SeedIloraFlowers = lazy(() => import("./pages/admin/SeedIloraFlowers"));
 const SeedVendorProducts = lazy(() => import("./pages/admin/SeedVendorProducts"));
 const AdminVendorManagement = lazy(() => import("./pages/admin/AdminVendorManagement"));
+
+// Agent
+const AgentDashboard = lazy(() => import("./pages/agent/AgentDashboard"));
 
 // Role-specific
 const RiderDashboard = lazy(() => import("./pages/rider/RiderDashboard"));
@@ -618,6 +622,20 @@ const App = () => (
               <Route path="/admin/live-chat-assign" element={
                 <ProtectedRoute requiredRole="admin">
                   <AdminLiveChatAssign />
+                </ProtectedRoute>
+              } />
+
+              {/* Admin service requests management */}
+              <Route path="/admin/service-requests" element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminServiceRequests />
+                </ProtectedRoute>
+              } />
+
+              {/* Agent dashboard */}
+              <Route path="/agent/dashboard" element={
+                <ProtectedRoute requiredRole="agent">
+                  <AgentDashboard />
                 </ProtectedRoute>
               } />
 

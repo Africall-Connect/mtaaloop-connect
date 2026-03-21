@@ -34,6 +34,10 @@ export function RoleRouter() {
     return <Navigate to="/rider/dashboard" replace />;
   }
 
+  if (roles.includes('agent')) {
+    return <Navigate to="/agent/dashboard" replace />;
+  }
+
   // Default to customer home
   return <Navigate to="/home" replace />;
 }
