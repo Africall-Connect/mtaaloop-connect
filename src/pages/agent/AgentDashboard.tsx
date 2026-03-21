@@ -228,7 +228,7 @@ export default function AgentDashboard() {
                               </Button>
                             )}
                             {req.status === 'in_progress' && (
-                              <Button size="sm" onClick={() => updateStatus(req.id, 'completed')} className="gap-1 bg-green-600 hover:bg-green-700">
+                              <Button size="sm" onClick={() => updateStatus(req.id, 'completed')} className="gap-1">
                                 <CheckCircle2 className="w-3 h-3" /> Mark Complete
                               </Button>
                             )}
