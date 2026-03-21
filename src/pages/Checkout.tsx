@@ -453,6 +453,13 @@ const Checkout = () => {
                   </div>
                 ))}
               </RadioGroup>
+
+              {paymentMethod === "wallet" && walletBalance !== null && walletBalance < total && (
+                <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>Insufficient balance. You need KSh {(total - walletBalance).toLocaleString()} more. <button className="underline font-semibold" onClick={() => navigate('/wallet')}>Top up now</button></span>
+                </div>
+              )}
             </Card>
 
             <Card className="p-5">
