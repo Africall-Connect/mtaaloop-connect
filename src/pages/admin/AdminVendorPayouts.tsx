@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Loader2, CheckCircle2, RefreshCw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VendorPayout {
   id: string;
@@ -22,9 +23,6 @@ interface VendorSummary {
   payouts: VendorPayout[];
 }
 
-const ADMIN_PAYOUT_SECRET = import.meta.env.VITE_ADMIN_PAYOUT_SECRET;
-const FUNCTIONS_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
-
 const AdminVendorPayouts = () => {
   const [vendors, setVendors] = useState<VendorSummary[]>([]);
   const [loading, setLoading] = useState(false);
@@ -33,20 +31,13 @@ const AdminVendorPayouts = () => {
   const fetchPayouts = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${FUNCTIONS_BASE}/admin-vendor-payouts`, {
+      // Use supabase.functions.invoke which auto-attaches the JWT
+      const { data, error } = await supabase.functions.invoke("admin-vendor-payouts", {
         method: "GET",
-        headers: {
-          "x-admin-secret": ADMIN_PAYOUT_SECRET,
-        },
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `Failed to load payouts (${res.status})`);
-      }
-
-      const data = (await res.json()) as { vendors: VendorSummary[] };
-      setVendors(data.vendors || []);
+      if (error) throw new Error(error.message);
+      setVendors(data?.vendors || []);
     } catch (error: unknown) {
       console.error("Error fetching payouts", error);
       toast.error((error as Error).message || "Failed to load payouts");
@@ -62,31 +53,22 @@ const AdminVendorPayouts = () => {
 
     setProcessingVendor(vendor.vendor_id);
     try {
-      const res = await fetch(`${FUNCTIONS_BASE}/admin-vendor-payouts`, {
+      const { data, error } = await supabase.functions.invoke("admin-vendor-payouts", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-secret": ADMIN_PAYOUT_SECRET,
-        },
-        body: JSON.stringify({
+        body: {
           vendor_id: vendor.vendor_id,
           mark_all_for_vendor: true,
           paid_by: "admin-console",
           note: "Manual settlement via M-PESA / bank",
-        }),
+        },
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `Failed to mark payouts as paid (${res.status})`);
-      }
+      if (error) throw new Error(error.message);
 
-      const data = await res.json();
       toast.success(
         `Marked ${data.updated_count} payout(s) as paid for ${vendor.vendor_name || vendor.vendor_id}`
       );
 
-      // Refresh list
       await fetchPayouts();
     } catch (error: unknown) {
       console.error("Error marking payouts paid", error);
