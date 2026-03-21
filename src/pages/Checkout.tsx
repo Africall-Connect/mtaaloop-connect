@@ -27,6 +27,7 @@ import {
   validatePaymentStep,
   sanitizeCheckoutData,
 } from "@/lib/schemas/checkoutSchema";
+import { getWalletBalance, debitWallet } from "@/lib/customerWallet";
 
 interface TimeSlot { date: string; time: string; available: boolean; }
 interface PromoCode { code: string; discount: number; type: "percentage" | "fixed"; description: string; }
