@@ -25,40 +25,102 @@ interface VendorWithCount extends VendorProfile {
 }
 
 // Parallax service card component
-const ParallaxServiceCard = ({ svc, onClick, index }: { svc: typeof HOME_SERVICES_SHOWCASE[number]; onClick: () => void; index: number }) => {
+// Service category tabs for filtering
+const SERVICE_TABS = [
+  { key: 'all', label: 'All Services', icon: Sparkles },
+  { key: 'quick', label: 'Quick Tasks', icon: Zap },
+  { key: 'home', label: 'Home Services', icon: HomeIcon },
+  { key: 'wellness', label: 'Wellness', icon: Heart },
+  { key: 'utilities', label: 'Utilities', icon: Droplets },
+];
+
+const SERVICE_TAB_MAP: Record<string, string[]> = {
+  quick: ['Trash Collection', 'Osha Viombo', 'Quick Cleaning', 'Laundry Sorting', 'Quick Meal Prep', 'Package Collection', 'Errands'],
+  home: ['House Cleaning', 'Electrical Repairs', 'Plumbing', 'Carpet Cleaning'],
+  wellness: ['Beauty & Spa'],
+  utilities: ['Gas Delivery', 'Water Delivery', 'Pharmacy'],
+};
+
+// Rich service card with pricing, badges, and sub-services
+const ServiceCard = ({ svc, onClick, index }: { svc: ServiceShowcaseItem; onClick: () => void; index: number }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: cardRef,
     offset: ["start end", "end start"],
   });
-  const imgY = useTransform(scrollYProgress, [0, 1], ["-8%", "8%"]);
-  const imgScale = useTransform(scrollYProgress, [0, 0.5, 1], [1.12, 1.05, 1.12]);
+  const imgY = useTransform(scrollYProgress, [0, 1], ["-6%", "6%"]);
+  const imgScale = useTransform(scrollYProgress, [0, 0.5, 1], [1.1, 1.04, 1.1]);
 
   return (
     <motion.div
       ref={cardRef}
-      initial={{ opacity: 0, y: 24 }}
+      initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.5, delay: index * 0.06, ease: [0.25, 0.46, 0.45, 0.94] }}
+      viewport={{ once: true, margin: "-30px" }}
+      transition={{ duration: 0.45, delay: Math.min(index * 0.05, 0.35), ease: [0.25, 0.46, 0.45, 0.94] }}
     >
       <Card
-        className="group overflow-hidden cursor-pointer border-0 shadow-md hover:shadow-2xl transition-all duration-500 hover:-translate-y-1.5 bg-card"
+        className="group overflow-hidden cursor-pointer border-0 shadow-sm hover:shadow-xl transition-all duration-400 hover:-translate-y-1.5 bg-card h-full flex flex-col"
         onClick={onClick}
       >
+        {/* Image with parallax */}
         <div className="relative h-32 sm:h-40 overflow-hidden">
           <motion.img
             src={svc.image}
             alt={svc.title}
-            className="absolute inset-0 w-full h-[130%] object-cover group-hover:brightness-110 transition-[filter] duration-500"
+            className="absolute inset-0 w-full h-[125%] object-cover group-hover:brightness-110 transition-[filter] duration-500"
             style={{ y: imgY, scale: imgScale }}
             loading="lazy"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4">
-            <h3 className="font-bold text-sm sm:text-base text-white drop-shadow-lg leading-tight">{svc.title}</h3>
-            <p className="text-[11px] sm:text-xs text-white/80 line-clamp-1 mt-0.5">{svc.description}</p>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+
+          {/* Badge */}
+          {svc.badge && (
+            <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground text-[10px] font-bold border-0 shadow-md z-10">
+              {svc.badge}
+            </Badge>
+          )}
+
+          {/* Emoji + Title overlay */}
+          <div className="absolute bottom-0 left-0 right-0 p-3">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <span className="text-base">{svc.emoji}</span>
+              <h3 className="font-bold text-sm sm:text-base text-white drop-shadow-lg leading-tight">{svc.title}</h3>
+            </div>
+            {svc.priceHint && (
+              <span className="text-[10px] sm:text-[11px] text-white/90 font-semibold bg-white/15 backdrop-blur-sm rounded-full px-2 py-0.5 inline-block">
+                {svc.priceHint}
+              </span>
+            )}
           </div>
+        </div>
+
+        {/* Card body with description + sub-services */}
+        <div className="p-3 sm:p-3.5 flex flex-col flex-1">
+          <p className="text-[11px] sm:text-xs text-muted-foreground line-clamp-2 mb-2.5 leading-relaxed">
+            {svc.description}
+          </p>
+
+          {/* Sub-services chips */}
+          {svc.subServices && svc.subServices.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-3 mt-auto">
+              {svc.subServices.slice(0, 3).map((sub) => (
+                <span key={sub} className="inline-flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-muted text-muted-foreground rounded-full px-2 py-0.5 font-medium">
+                  <Check className="w-2.5 h-2.5 text-primary" />
+                  {sub}
+                </span>
+              ))}
+              {svc.subServices.length > 3 && (
+                <span className="text-[9px] sm:text-[10px] text-primary font-medium px-1">
+                  +{svc.subServices.length - 3} more
+                </span>
+              )}
+            </div>
+          )}
+
+          <Button size="sm" variant="outline" className="w-full text-[11px] h-7 sm:h-8 gap-1 rounded-lg group-hover:bg-primary group-hover:text-primary-foreground transition-colors mt-auto">
+            Book Now <ArrowRight className="h-3 w-3" />
+          </Button>
         </div>
       </Card>
     </motion.div>
