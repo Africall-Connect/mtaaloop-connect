@@ -1160,13 +1160,13 @@ const OrderTracking = () => {
                           <div class="header">
                             <div>
                               <h1>Receipt</h1>
-                              <div>Order #: ${orderId}</div>
-                              <div>${new Date().toLocaleString()}</div>
+                              <div>Order #: ${escHtml(orderId)}</div>
+                              <div>${escHtml(new Date().toLocaleString())}</div>
                             </div>
                             <div style="text-align:right">
-                              <div>${orderData?.vendor_name ?? ''}</div>
+                              <div>${escHtml(orderData?.vendor_name)}</div>
                               <div style="font-size:12px;color:#666">Delivery Address</div>
-                              <div style="font-size:12px;color:#666">${orderData?.delivery_address ?? ''}</div>
+                              <div style="font-size:12px;color:#666">${escHtml(orderData?.delivery_address)}</div>
                             </div>
                           </div>
 
