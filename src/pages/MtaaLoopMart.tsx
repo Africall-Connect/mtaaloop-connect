@@ -24,6 +24,16 @@ interface SupermarketItem {
 
 const PLACEHOLDER_IMG = "https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&h=300&fit=crop";
 
+const getProductImage = (item: SupermarketItem): string => {
+  const url = item.image_url;
+  if (!url || url.includes('via.placeholder.com')) {
+    // Generate a deterministic Unsplash image based on product name
+    const query = encodeURIComponent(item.clean_name || item.product_name || 'grocery');
+    return `https://source.unsplash.com/300x300/?${query},food`;
+  }
+  return url;
+};
+
 const MtaaLoopMart = () => {
   const { addItem } = useCart();
   const [items, setItems] = useState<SupermarketItem[]>([]);
