@@ -1124,11 +1124,15 @@ const OrderTracking = () => {
                       return;
                     }
 
+                    const escHtml = (s: string | number | null | undefined): string => {
+                      const str = String(s ?? "");
+                      return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#x27;");
+                    };
                     const items = (orderData?.order_items || orderData?.items || []) as OrderItem[];
                     const itemsHtml = items
                       .map(
                         (it) =>
-                          `<tr><td style="padding:6px 8px">${it.quantity} x ${it.product_name}</td><td style="padding:6px 8px;text-align:right">KSh ${it.price}</td></tr>`
+                          `<tr><td style="padding:6px 8px">${escHtml(it.quantity)} x ${escHtml(it.product_name)}</td><td style="padding:6px 8px;text-align:right">KSh ${escHtml(it.price)}</td></tr>`
                       )
                       .join("");
 
