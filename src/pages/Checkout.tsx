@@ -271,6 +271,7 @@ const Checkout = () => {
         setLastOrderDetails({ vendorId: orderItems[0]?.vendorId, vendorName: orderItems[0]?.vendorName });
         setShowAnimation(true);
         toast.success("Order placed successfully!");
+        return orderId;
       }
     } catch (error: unknown) {
       toast.error(`Failed: ${error instanceof Error ? error.message : "Unknown error"}`);
