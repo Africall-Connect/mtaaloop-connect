@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { MtaaLoopPin } from "@/components/MtaaLoopLogo";
+import { MtaaLoopOrbit } from "@/components/MtaaLoopLogo";
 import { useNavigate } from "react-router-dom";
 import { Search, LogIn, Plus, X, Store, CalendarCheck, Clock, Sparkles, ShoppingCart, Home, Pill } from "lucide-react";
 import { getServiceImage } from "@/lib/serviceImages";
