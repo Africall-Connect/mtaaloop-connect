@@ -1,8 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { Search, ShoppingBag, MapPin, Users, Stethoscope, ArrowRight, Calendar, CalendarCheck, Sparkles, Store, ChevronRight } from "lucide-react";
+import { Search, ShoppingBag, MapPin, Users, Stethoscope, ArrowRight, Calendar, CalendarCheck, Sparkles, Store, ChevronRight, Zap, Home as HomeIcon, Heart, Droplets, Check } from "lucide-react";
 import { ScrollAnimatedSection, ScrollAnimatedGrid } from "@/components/ScrollAnimations";
-import { HOME_SERVICES_SHOWCASE } from "@/lib/serviceImages";
+import { HOME_SERVICES_SHOWCASE, ServiceShowcaseItem } from "@/lib/serviceImages";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
