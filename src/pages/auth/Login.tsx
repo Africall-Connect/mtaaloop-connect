@@ -31,6 +31,7 @@ const Login = () => {
     // 1. role-based routes
     if (roles?.includes("vendor")) return navigate("/vendor/dashboard");
     if (roles?.includes("rider")) return navigate("/rider/dashboard");
+    if (roles?.includes("agent")) return navigate("/agent/dashboard");
     if (roles?.includes("estate") || roles?.includes("estate_manager"))
       return navigate("/estate/dashboard");
 

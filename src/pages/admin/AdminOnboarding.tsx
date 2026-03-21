@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ArrowLeft, UserPlus, Store, User, Bike } from 'lucide-react';
+import { ArrowLeft, UserPlus, Store, User, Bike, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 
 // --- Zod Schemas ---
@@ -37,6 +37,10 @@ const vendorSchema = baseSchema.extend({
 });
 
 const customerSchema = baseSchema;
+
+const agentSchema = baseSchema.extend({
+  estateId: z.string().optional(),
+});
 
 const riderSchema = baseSchema.extend({
   idNumber: z.string().trim().min(1, 'ID number is required'),
@@ -84,6 +88,11 @@ export default function AdminOnboarding() {
   const [riderForm, setRiderForm] = useState({
     fullName: '', email: '', phone: '', password: '',
     idNumber: '', vehicleType: '', vehicleRegistration: '', licenseNumber: '', estateId: '',
+  });
+
+  // Agent form
+  const [agentForm, setAgentForm] = useState({
+    fullName: '', email: '', phone: '', password: '', estateId: '',
   });
 
   useEffect(() => { fetchEstates(); }, []);
@@ -238,10 +247,41 @@ export default function AdminOnboarding() {
     }
   };
 
+  // --- Agent submit ---
+  const handleAgentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsed = parseZod(agentSchema, agentForm);
+    if (!parsed.success) return;
+    setLoading(true);
+
+    try {
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: agentForm.email,
+        password: agentForm.password,
+        options: { data: { full_name: agentForm.fullName, phone: agentForm.phone } },
+      });
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('User creation failed');
+
+      const userId = authData.user.id;
+
+      const { error: roleError } = await supabase.from('user_roles').insert({ user_id: userId, role: 'agent' });
+      if (roleError) throw roleError;
+
+      toast.success(`Agent "${agentForm.fullName}" onboarded successfully! They can login at /agent/dashboard`);
+      setAgentForm({ fullName: '', email: '', phone: '', password: '', estateId: '' });
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to onboard agent');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // --- Helper to update form and clear error ---
   const updateVendor = (field: string, value: string) => { clearFieldError(field); setVendorForm((p) => ({ ...p, [field]: value })); };
   const updateCustomer = (field: string, value: string) => { clearFieldError(field); setCustomerForm((p) => ({ ...p, [field]: value })); };
   const updateRider = (field: string, value: string) => { clearFieldError(field); setRiderForm((p) => ({ ...p, [field]: value })); };
+  const updateAgent = (field: string, value: string) => { clearFieldError(field); setAgentForm((p) => ({ ...p, [field]: value })); };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
@@ -265,7 +305,7 @@ export default function AdminOnboarding() {
 
       <main className="container mx-auto px-4 py-8 max-w-2xl">
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setErrors({}); }}>
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="vendor" className="flex items-center gap-2">
               <Store className="h-4 w-4" /> Vendor
             </TabsTrigger>
@@ -273,7 +313,10 @@ export default function AdminOnboarding() {
               <User className="h-4 w-4" /> Customer
             </TabsTrigger>
             <TabsTrigger value="rider" className="flex items-center gap-2">
-              <Bike className="h-4 w-4" /> Delivery Agent
+              <Bike className="h-4 w-4" /> Rider
+            </TabsTrigger>
+            <TabsTrigger value="agent" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" /> Agent
             </TabsTrigger>
           </TabsList>
 
@@ -528,6 +571,68 @@ export default function AdminOnboarding() {
 
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? 'Creating Delivery Agent...' : 'Create Delivery Agent Account'}
+                  </Button>
+                </CardContent>
+              </form>
+            </Card>
+          </TabsContent>
+
+          {/* ===== AGENT TAB ===== */}
+          <TabsContent value="agent">
+            <Card>
+              <CardHeader>
+                <CardTitle>New Service Agent</CardTitle>
+                <CardDescription>Create an agent account. Agents handle service requests like errands, cleaning, and trash collection.</CardDescription>
+              </CardHeader>
+              <form onSubmit={handleAgentSubmit}>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Personal Information</h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="a-fullName">Full Name</Label>
+                        <Input id="a-fullName" value={agentForm.fullName} onChange={(e) => updateAgent('fullName', e.target.value)} />
+                        <FieldError errors={errors} field="fullName" />
+                      </div>
+                      <div>
+                        <Label htmlFor="a-phone">Phone Number</Label>
+                        <Input id="a-phone" type="tel" placeholder="+254…" value={agentForm.phone} onChange={(e) => updateAgent('phone', e.target.value)} />
+                        <FieldError errors={errors} field="phone" />
+                      </div>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="a-email">Email</Label>
+                        <Input id="a-email" type="email" value={agentForm.email} onChange={(e) => updateAgent('email', e.target.value)} />
+                        <FieldError errors={errors} field="email" />
+                      </div>
+                      <div>
+                        <Label htmlFor="a-password">Temporary Password</Label>
+                        <Input id="a-password" type="password" value={agentForm.password} onChange={(e) => updateAgent('password', e.target.value)} />
+                        <FieldError errors={errors} field="password" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Assignment Area (Optional)</h3>
+                    <div>
+                      <Label>Assigned Estate</Label>
+                      <Select onValueChange={(v) => updateAgent('estateId', v)}>
+                        <SelectTrigger><SelectValue placeholder="All estates (no restriction)" /></SelectTrigger>
+                        <SelectContent className="bg-background border shadow-lg z-50">
+                          {estates.map((estate) => (
+                            <SelectItem key={estate.id} value={estate.id}>
+                              {estate.name} - {estate.location}, {estate.county}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <Button type="submit" disabled={loading} className="w-full">
+                    {loading ? 'Creating Agent…' : 'Create Agent Account'}
                   </Button>
                 </CardContent>
               </form>
