@@ -133,12 +133,21 @@ const Checkout = () => {
     setStep(target);
   };
 
-  // ── Order handlers (preserved from original) ────────────────────
+  // ── Order handlers ───────────────────────────────────────────────
   const handlePlaceOrder = async () => {
     if (!agreedToTerms) {
       toast.error("Please agree to Terms & Conditions");
       return;
     }
+
+    // Wallet balance check
+    if (paymentMethod === "wallet") {
+      if (walletBalance === null || walletBalance < total) {
+        toast.error(`Insufficient wallet balance. You have KSh ${walletBalance ?? 0} but need KSh ${total}`);
+        return;
+      }
+    }
+
     setIsProcessing(true);
     try {
       const mtaaLoopMartItems = items.filter(i => i.vendorId === MTAALOOP_MART_VENDOR_ID);
@@ -146,10 +155,28 @@ const Checkout = () => {
       const mtaaLoopManagedItems = items.filter(i => i.isMtaaLoopManaged && i.vendorId !== MTAALOOP_MART_VENDOR_ID);
       const otherItems = items.filter(i => i.vendorId !== MTAALOOP_MART_VENDOR_ID && i.category !== "Minimart" && !i.isMtaaLoopManaged);
 
-      if (mtaaLoopMartItems.length > 0) await placeOrder("premium", mtaaLoopMartItems);
-      if (minimartItems.length > 0) await placeOrder("minimart", minimartItems);
-      if (mtaaLoopManagedItems.length > 0) await placeOrder("mtaaloop", mtaaLoopManagedItems);
-      if (otherItems.length > 0) await placeOrder("regular", otherItems);
+      const allOrderIds: string[] = [];
+
+      if (mtaaLoopMartItems.length > 0) { const id = await placeOrder("premium", mtaaLoopMartItems); if (id) allOrderIds.push(id); }
+      if (minimartItems.length > 0) { const id = await placeOrder("minimart", minimartItems); if (id) allOrderIds.push(id); }
+      if (mtaaLoopManagedItems.length > 0) { const id = await placeOrder("mtaaloop", mtaaLoopManagedItems); if (id) allOrderIds.push(id); }
+      if (otherItems.length > 0) { const id = await placeOrder("regular", otherItems); if (id) allOrderIds.push(id); }
+
+      // Debit wallet after all orders placed
+      if (paymentMethod === "wallet" && allOrderIds.length > 0) {
+        try {
+          await debitWallet(total, allOrderIds[0], `Payment for order${allOrderIds.length > 1 ? 's' : ''}`);
+          // Update all orders to paid
+          for (const oid of allOrderIds) {
+            await supabase.from("orders").update({ payment_status: "paid", payment_channel: "wallet", paid_at: new Date().toISOString() }).eq("id", oid);
+          }
+          setWalletBalance(prev => (prev ?? 0) - total);
+          toast.success("Wallet payment successful!");
+        } catch (walletErr: unknown) {
+          toast.error(`Wallet payment failed: ${walletErr instanceof Error ? walletErr.message : "Unknown error"}`);
+          return;
+        }
+      }
     } catch (e) {
       console.error("Order error:", e);
     } finally {
