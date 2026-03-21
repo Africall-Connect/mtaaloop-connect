@@ -20,7 +20,8 @@ import {
   DollarSign,
   UserPlus,
   Flower2,
-  Package
+  Package,
+  ClipboardList
 } from 'lucide-react';
 
 export default function AdminDashboard() {
