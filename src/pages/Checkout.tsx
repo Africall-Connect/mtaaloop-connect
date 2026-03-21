@@ -27,6 +27,7 @@ import {
   validatePaymentStep,
   sanitizeCheckoutData,
 } from "@/lib/schemas/checkoutSchema";
+import { getWalletBalance, debitWallet } from "@/lib/customerWallet";
 
 interface TimeSlot { date: string; time: string; available: boolean; }
 interface PromoCode { code: string; discount: number; type: "percentage" | "fixed"; description: string; }
@@ -60,8 +61,10 @@ const Checkout = () => {
   const [lastOrderDetails, setLastOrderDetails] = useState<unknown>(null);
   const [fullName, setFullName] = useState("");
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [walletLoading, setWalletLoading] = useState(true);
 
-  // ── Fetch user preferences ───────────────────────────────────────
+  // ── Fetch user preferences & wallet ─────────────────────────────
   useEffect(() => {
     (async () => {
       try {
@@ -84,6 +87,21 @@ const Checkout = () => {
         }
       } catch (e) {
         console.error("Error fetching user data:", e);
+      }
+    })();
+  }, []);
+
+  // ── Fetch wallet balance ─────────────────────────────────────────
+  useEffect(() => {
+    (async () => {
+      try {
+        const balance = await getWalletBalance();
+        setWalletBalance(balance);
+      } catch (e) {
+        console.error("Error fetching wallet:", e);
+        setWalletBalance(0);
+      } finally {
+        setWalletLoading(false);
       }
     })();
   }, []);
@@ -115,12 +133,21 @@ const Checkout = () => {
     setStep(target);
   };
 
-  // ── Order handlers (preserved from original) ────────────────────
+  // ── Order handlers ───────────────────────────────────────────────
   const handlePlaceOrder = async () => {
     if (!agreedToTerms) {
       toast.error("Please agree to Terms & Conditions");
       return;
     }
+
+    // Wallet balance check
+    if (paymentMethod === "wallet") {
+      if (walletBalance === null || walletBalance < total) {
+        toast.error(`Insufficient wallet balance. You have KSh ${walletBalance ?? 0} but need KSh ${total}`);
+        return;
+      }
+    }
+
     setIsProcessing(true);
     try {
       const mtaaLoopMartItems = items.filter(i => i.vendorId === MTAALOOP_MART_VENDOR_ID);
@@ -128,10 +155,28 @@ const Checkout = () => {
       const mtaaLoopManagedItems = items.filter(i => i.isMtaaLoopManaged && i.vendorId !== MTAALOOP_MART_VENDOR_ID);
       const otherItems = items.filter(i => i.vendorId !== MTAALOOP_MART_VENDOR_ID && i.category !== "Minimart" && !i.isMtaaLoopManaged);
 
-      if (mtaaLoopMartItems.length > 0) await placeOrder("premium", mtaaLoopMartItems);
-      if (minimartItems.length > 0) await placeOrder("minimart", minimartItems);
-      if (mtaaLoopManagedItems.length > 0) await placeOrder("mtaaloop", mtaaLoopManagedItems);
-      if (otherItems.length > 0) await placeOrder("regular", otherItems);
+      const allOrderIds: string[] = [];
+
+      if (mtaaLoopMartItems.length > 0) { const id = await placeOrder("premium", mtaaLoopMartItems); if (id) allOrderIds.push(id); }
+      if (minimartItems.length > 0) { const id = await placeOrder("minimart", minimartItems); if (id) allOrderIds.push(id); }
+      if (mtaaLoopManagedItems.length > 0) { const id = await placeOrder("mtaaloop", mtaaLoopManagedItems); if (id) allOrderIds.push(id); }
+      if (otherItems.length > 0) { const id = await placeOrder("regular", otherItems); if (id) allOrderIds.push(id); }
+
+      // Debit wallet after all orders placed
+      if (paymentMethod === "wallet" && allOrderIds.length > 0) {
+        try {
+          await debitWallet(total, allOrderIds[0], `Payment for order${allOrderIds.length > 1 ? 's' : ''}`);
+          // Update all orders to paid
+          for (const oid of allOrderIds) {
+            await supabase.from("orders").update({ payment_status: "paid", payment_channel: "wallet", paid_at: new Date().toISOString() }).eq("id", oid);
+          }
+          setWalletBalance(prev => (prev ?? 0) - total);
+          toast.success("Wallet payment successful!");
+        } catch (walletErr: unknown) {
+          toast.error(`Wallet payment failed: ${walletErr instanceof Error ? walletErr.message : "Unknown error"}`);
+          return;
+        }
+      }
     } catch (e) {
       console.error("Order error:", e);
     } finally {
@@ -139,8 +184,8 @@ const Checkout = () => {
     }
   };
 
-  const placeOrder = async (type: string, orderItems: CartItem[]) => {
-    if (!user) { toast.error("Please log in first."); return; }
+  const placeOrder = async (type: string, orderItems: CartItem[]): Promise<string | null> => {
+    if (!user) { toast.error("Please log in first."); return null; }
     const addr = `${deliveryAddress.estate_name}, ${deliveryAddress.house_number}`;
     const totalAmount = orderItems.reduce((s, i) => s + i.price * i.quantity, 0);
     const baseAmount = orderItems.reduce((s, i) => s + (i.base_price || i.price) * i.quantity, 0);
@@ -175,6 +220,7 @@ const Checkout = () => {
         setLastOrderId(newOrder.id);
         setShowAnimation(true);
         toast.success(`${type === "premium" ? "Premium" : "Minimart"} order placed!`);
+        return newOrder.id;
 
       } else if (type === "mtaaloop") {
         const orderId = crypto.randomUUID();
@@ -201,6 +247,7 @@ const Checkout = () => {
         setLastOrderId(orderId);
         setShowAnimation(true);
         toast.success("Order placed successfully!");
+        return orderId;
 
       } else {
         const orderId = crypto.randomUUID();
@@ -224,9 +271,11 @@ const Checkout = () => {
         setLastOrderDetails({ vendorId: orderItems[0]?.vendorId, vendorName: orderItems[0]?.vendorName });
         setShowAnimation(true);
         toast.success("Order placed successfully!");
+        return orderId;
       }
     } catch (error: unknown) {
       toast.error(`Failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      return null;
     }
   };
 
@@ -378,16 +427,17 @@ const Checkout = () => {
 
               <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-3">
                 {[
-                  { value: "wallet", icon: Wallet, title: "MtaaLoop Wallet", desc: "Pay from your wallet balance", badge: "Instant" },
-                  { value: "mpesa", icon: Smartphone, title: "M-Pesa", desc: "Pay via M-Pesa STK push", badge: "Popular" },
-                  { value: "pay_on_delivery", icon: Truck, title: "Pay on Delivery", desc: "Cash or M-Pesa when delivered", badge: null },
+                  { value: "wallet", icon: Wallet, title: "MtaaLoop Wallet", desc: walletLoading ? "Loading balance..." : `Balance: KSh ${walletBalance?.toLocaleString() ?? 0}`, badge: "Instant", disabled: false },
+                  { value: "mpesa", icon: Smartphone, title: "M-Pesa", desc: "Pay via M-Pesa STK push", badge: "Coming Soon", disabled: true },
+                  { value: "pay_on_delivery", icon: Truck, title: "Pay on Delivery", desc: "Cash or M-Pesa when delivered", badge: null, disabled: false },
                 ].map(opt => (
                   <div
                     key={opt.value}
                     className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      opt.disabled ? "opacity-50 cursor-not-allowed" :
                       paymentMethod === opt.value ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/30"
                     }`}
-                    onClick={() => setPaymentMethod(opt.value)}
+                    onClick={() => !opt.disabled && setPaymentMethod(opt.value)}
                   >
                     <div className="flex items-center gap-3">
                       <RadioGroupItem value={opt.value} id={opt.value} />
@@ -403,6 +453,13 @@ const Checkout = () => {
                   </div>
                 ))}
               </RadioGroup>
+
+              {paymentMethod === "wallet" && walletBalance !== null && walletBalance < total && (
+                <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>Insufficient balance. You need KSh {(total - walletBalance).toLocaleString()} more. <button className="underline font-semibold" onClick={() => navigate('/wallet')}>Top up now</button></span>
+                </div>
+              )}
             </Card>
 
             <Card className="p-5">
