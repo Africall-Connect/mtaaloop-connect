@@ -198,6 +198,7 @@ const ServiceTracking = lazy(() => import("./pages/ServiceTracking"));
 const MyConsultations = lazy(() => import("./pages/MyConsultations"));
 const MyBookings = lazy(() => import("./pages/MyBookings"));
 const ImageGeneratorPage = lazy(() => import("./pages/ImageGenerator"));
+const LaunchKit = lazy(() => import("./pages/LaunchKit"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
