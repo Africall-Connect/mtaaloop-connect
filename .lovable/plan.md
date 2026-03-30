@@ -1,160 +1,89 @@
 
 
-# Fix Plan: Vendor, Rider, Admin, and Customer Issues
+# Launch Kit Page — `/launch-kit`
 
-## Root Cause Analysis
+## Overview
+A marketing launch kit and social media snippet generator page at `/launch-kit`. It reuses the existing MtaaLoop design system components (MtaaLoopOrbit logo, FloatingIcons, Button, Card, motion animations, gradient styles from HeroSection) and introduces two new reusable components: `PhoneMockup` and a sticky-scroll showcase.
 
-After thorough investigation, here are the identified issues across all four account types:
-
-### 1. Vendor: Cannot Accept Orders
-- **RLS Policy Gap**: The `orders` table has vendor SELECT and UPDATE policies that work correctly (via `vendor_profiles.id = orders.vendor_id AND vendor_profiles.user_id = auth.uid()`). However, the vendor `OrdersManagement` component and `ActiveOrdersPanel` both update order status correctly. The likely issue is that **vendor order notifications** aren't creating `deliveries` entries after acceptance, so the order flow stalls after "accepted" status.
-- **Missing Delivery Creation**: When a vendor accepts an order and marks it "ready", there's no automatic `deliveries` row created for rider pickup. The `vendors_create_deliveries_safe` policy exists but no code triggers it from the vendor dashboard.
-- **`premium_deliveries` INSERT Policy Missing**: Customers can insert `premium_deliveries` during checkout, but there's no INSERT policy for the `premium_deliveries` table for customers -- only UPDATE/SELECT policies exist. This blocks premium/minimart order creation.
-
-### 2. Rider: Cannot Accept Deliveries
-- **`premium_deliveries` RLS**: The UPDATE policy checks `rider_id = auth.uid()`, but riders use `rider_profiles.id` (not `auth.uid()`) as `rider_id`. This means riders can never update premium deliveries because their `rider_id` is their profile UUID, not their auth UUID.
-- **Same issue on `trash_deliveries`**: UPDATE uses `rider_id = auth.uid()` but the code sets `rider_id` to `riderProfile.id`.
-- **`rider_can_claim_pending_delivery` policy**: The WITH CHECK allows setting `rider_id` only if `rider_profiles.id = deliveries.rider_id AND rp.user_id = auth.uid()`. This works correctly.
-- **`app_users` view with `security_invoker`**: The previous security hardening set `security_invoker = on` on the `app_users` view. Since `app_users` queries `auth.users`, and authenticated users cannot read `auth.users`, all rider queries that JOIN on `app_users` (for customer info) return NULL/empty data, causing the delivery list to appear empty or break.
-
-### 3. Admin: Multiple Features Malfunctioning
-- **`user_roles` self-insert vulnerability**: Any authenticated user can assign themselves any role including admin. The security scan flagged this as PRIVILEGE_ESCALATION.
-- **Stats queries use `user_roles` table count** for "Total Users" which is incorrect (counts roles, not users).
-- **Admin dashboard navigation** works but links to sub-pages need verification.
-
-### 4. Customer: Checkout "Continue" Button Not Visible
-- **The sticky footer bar** at `bottom-0` with `z-50` should be visible. However, the `pb-40` padding on the content div may not be enough on shorter screens, and the bottom bar may be clipped by the viewport or obscured by the safe-area inset on iOS devices.
+This is a large page with 6 sections. Due to size, the page will be split into the main page file plus sub-components.
 
 ---
 
-## Implementation Plan
+## Files to Create
 
-### Step 1: Fix `app_users` View (Unblocks Riders + Vendors)
-Revert `app_users` from `security_invoker = on` back to a `SECURITY DEFINER` view. The previous security change broke all queries that join `app_users` because authenticated users cannot read `auth.users` directly.
+### 1. `src/components/launch-kit/PhoneMockup.tsx`
+Reusable phone frame component:
+- Accepts `children` (renders any React content inside)
+- iPhone-style frame: rounded-[2.5rem] border, notch at top, shadow
+- Optional `featured` prop for the center phone (taller, purple glow shadow)
+- Optional `label` prop rendered below the frame
 
-```sql
-DROP VIEW IF EXISTS public.app_users;
-CREATE VIEW public.app_users AS
-  SELECT id, email,
-    raw_user_meta_data->>'first_name' AS first_name,
-    raw_user_meta_data->>'last_name' AS last_name,
-    raw_user_meta_data->>'phone' AS phone
-  FROM auth.users;
--- Grant access
-GRANT SELECT ON public.app_users TO authenticated, anon;
-```
+### 2. `src/components/launch-kit/StickyShowcase.tsx`
+The dark-background sticky scroll section (Section 3):
+- Uses `position: sticky` + IntersectionObserver on 4 scroll trigger divs
+- Left side: step number, headline, description with fade transitions
+- Right side: PhoneMockup swapping content based on active step
+- Progress pills at bottom (purple active dot)
+- Steps: Claim, Discover, Connect, Sell
 
-### Step 2: Fix `premium_deliveries` RLS Policies (Unblocks Riders + Checkout)
-- Add INSERT policy for customers creating premium deliveries during checkout.
-- Fix UPDATE policy to use `rider_profiles.id` instead of `auth.uid()` for rider_id comparison.
+### 3. `src/components/launch-kit/SocialSnippetCard.tsx`
+Individual social card component for the 6-card grid (Section 4):
+- Accepts variant prop: `'hero-dark' | 'stat-gradient' | 'feature-cream' | 'connect-dark' | 'vendor-white' | 'urgency-gradient'`
+- 1:1 aspect ratio via `aspect-square`
+- Hover overlay with "Copy" hint
+- Each variant renders its specific layout (logo, text, gradients) as described
 
-```sql
--- Allow customers to create premium deliveries for their orders
-CREATE POLICY "Customers create premium deliveries for own orders"
-  ON public.premium_deliveries FOR INSERT TO authenticated
-  WITH CHECK (EXISTS (
-    SELECT 1 FROM premium_orders po
-    WHERE po.id = premium_deliveries.premium_order_id
-      AND po.customer_id = auth.uid()
-  ));
+### 4. `src/pages/LaunchKit.tsx`
+Main page assembling all 6 sections:
 
--- Fix rider UPDATE to use rider_profiles lookup
-DROP POLICY IF EXISTS "Riders update assigned premium deliveries" ON public.premium_deliveries;
-CREATE POLICY "Riders update assigned premium deliveries"
-  ON public.premium_deliveries FOR UPDATE TO authenticated
-  USING (
-    EXISTS (SELECT 1 FROM rider_profiles rp WHERE rp.id = premium_deliveries.rider_id AND rp.user_id = auth.uid())
-    OR has_role(auth.uid(), 'admin'::app_role)
-  );
+**Section 0 — Top Banner**: Reuses the exact gradient banner pattern from HeroSection (indigo-600 via purple-600 to pink-500), text about launching, "Join Waitlist" button.
 
--- Fix rider SELECT similarly
-DROP POLICY IF EXISTS "Users view own premium deliveries" ON public.premium_deliveries;
-CREATE POLICY "Users view own premium deliveries"
-  ON public.premium_deliveries FOR SELECT TO authenticated
-  USING (
-    EXISTS (SELECT 1 FROM rider_profiles rp WHERE rp.id = premium_deliveries.rider_id AND rp.user_id = auth.uid())
-    OR EXISTS (SELECT 1 FROM premium_orders po WHERE po.id = premium_deliveries.premium_order_id AND po.customer_id = auth.uid())
-    OR has_role(auth.uid(), 'admin'::app_role)
-  );
+**Section 1 — Hero Poster**: Mirrors HeroSection layout exactly:
+- Green pulse dot + "Now Launching in Nairobi"
+- "Your Building." (dark) + "Your Launch." (gradient)
+- Subtext about hyperlocal marketplace
+- Two CTA buttons (same styling as HeroSection)
+- 3 stats boxes (same bordered style)
+- FloatingIcons component reused
 
--- Allow riders to claim pending premium deliveries
-CREATE POLICY "Riders claim pending premium deliveries"
-  ON public.premium_deliveries FOR UPDATE TO authenticated
-  USING (status = 'pending' AND rider_id IS NULL)
-  WITH CHECK (EXISTS (
-    SELECT 1 FROM rider_profiles rp WHERE rp.user_id = auth.uid() AND rp.id = premium_deliveries.rider_id
-  ));
-```
+**Section 2 — Phone Mockup Row**:
+- "App Preview" label, "Built for your building." headline
+- 4 PhoneMockup components in a horizontal flex row
+- Center phone (Browse) gets `featured` prop for larger size + purple glow
+- Below: 3 feature cards in a grid
+- Note: Phone interiors will render simplified placeholder UI (not actual route components, as those require auth context/data) styled to look like the real screens
 
-### Step 3: Fix `trash_deliveries` Rider UPDATE Policy
-Same issue -- fix rider_id comparison.
+**Section 3 — Sticky Scroll Showcase**: Uses StickyShowcase component
 
-```sql
-DROP POLICY IF EXISTS "Riders update assigned trash deliveries" ON public.trash_deliveries;
-CREATE POLICY "Riders update assigned trash deliveries"
-  ON public.trash_deliveries FOR UPDATE TO authenticated
-  USING (
-    EXISTS (SELECT 1 FROM rider_profiles rp WHERE rp.id = trash_deliveries.rider_id AND rp.user_id = auth.uid())
-    OR has_role(auth.uid(), 'admin'::app_role)
-  );
-```
+**Section 4 — Social Snippets Grid**:
+- 3-column grid (1-col on mobile), 6 SocialSnippetCard variants
+- Each card is aspect-square
 
-### Step 4: Fix `rider_wallet` and `rider_wallet_tx` Policies
-Same issue -- `rider_id` is the profile ID, not `auth.uid()`.
+**Section 5 — Instructions Row**: 4 cards in a horizontal row with emoji + title + description
 
-```sql
-DROP POLICY IF EXISTS "Riders view own wallet" ON public.rider_wallet;
-CREATE POLICY "Riders view own wallet"
-  ON public.rider_wallet FOR SELECT TO authenticated
-  USING (
-    EXISTS (SELECT 1 FROM rider_profiles rp WHERE rp.id = rider_wallet.rider_id AND rp.user_id = auth.uid())
-    OR has_role(auth.uid(), 'admin'::app_role)
-  );
+### 5. Route Registration in `src/App.tsx`
+- Add lazy import for LaunchKit
+- Add `<Route path="/launch-kit" element={<LaunchKit />} />`  (public, no ProtectedRoute)
 
-DROP POLICY IF EXISTS "Riders view own transactions" ON public.rider_wallet_tx;
-CREATE POLICY "Riders view own transactions"
-  ON public.rider_wallet_tx FOR SELECT TO authenticated
-  USING (
-    EXISTS (SELECT 1 FROM rider_profiles rp WHERE rp.id = rider_wallet_tx.rider_id AND rp.user_id = auth.uid())
-    OR has_role(auth.uid(), 'admin'::app_role)
-  );
-```
-
-### Step 5: Fix `user_roles` Privilege Escalation
-Remove the dangerous self-insert policy. Role assignment should only happen via triggers (`handle_new_user`, `handle_new_vendor`, etc.) and admin operations.
-
-```sql
-DROP POLICY IF EXISTS "Users can insert own role" ON public.user_roles;
-```
-
-### Step 6: Fix Vendor Delivery Creation Flow
-Add a "Create Delivery" action in `ActiveOrdersPanel.tsx` when order status is "ready", so vendors can dispatch orders for rider pickup. This creates a row in `deliveries` table using the existing `vendors_create_deliveries_safe` INSERT policy.
-
-**File**: `src/components/vendor/dashboard/ActiveOrdersPanel.tsx`
-- Add a "Dispatch for Delivery" button on orders with status "ready"
-- Insert into `deliveries` table with `order_id`, `estate_id`, and `status: 'pending'`
-
-### Step 7: Fix Checkout Button Visibility
-**File**: `src/pages/Checkout.tsx`
-- Increase bottom padding from `pb-40` to `pb-48` to ensure content doesn't hide behind the sticky footer
-- Add `safe-area-inset-bottom` support on the sticky bar for iOS devices
-- Ensure the sticky bar has solid background and proper elevation
-
-### Step 8: Fix Admin Dashboard Stats
-**File**: `src/pages/admin/AdminDashboard.tsx`
-- Fix "Total Users" to count distinct `user_id` from `user_roles` instead of all rows
+### 6. Nav Link in `src/components/landing/HeroSection.tsx`
+- Add "Launch Kit" item to the Partners dropdown menu
 
 ---
 
-## Summary of Changes
+## Design System Compliance
+- All colors use existing CSS variables (--primary, --foreground, gradients)
+- Hard-coded gradient matches HeroSection: `from-indigo-600 via-purple-600 to-pink-500` for banner, `from-blue-600 via-purple-500 to-pink-500` for text gradient
+- Buttons use existing Button component with same className patterns
+- Stats boxes use same `bg-white/50 backdrop-blur-sm rounded-2xl border border-white/40` pattern
+- FloatingIcons reused directly from `@/components/landing/FloatingIcons`
+- MtaaLoopOrbit logo reused from `@/components/MtaaLoopLogo`
+- All animations use framer-motion with the same wave-from-left/right spring patterns
+- Mobile responsive: sections stack vertically, grid goes single column
 
-| Area | Root Cause | Fix |
-|------|-----------|-----|
-| Rider can't accept | `rider_id != auth.uid()` in RLS | Use `rider_profiles` join in policies |
-| Rider sees no deliveries | `app_users` view broken by `security_invoker` | Revert to definer view |
-| Vendor can't dispatch | No delivery creation code | Add dispatch button |
-| Premium checkout fails | No INSERT policy on `premium_deliveries` | Add customer INSERT policy |
-| Checkout button hidden | Insufficient padding + no safe-area | Increase padding + safe area |
-| Admin privilege escalation | Self-insert role policy | Remove dangerous policy |
-| Wallet/tx invisible to riders | Same `rider_id` mismatch | Fix RLS policies |
+---
+
+## Estimated Scope
+- ~5 new files
+- ~1 edit to App.tsx (route)
+- ~1 edit to HeroSection.tsx (nav link)
 
