@@ -43,10 +43,11 @@ export default function AdminDashboard() {
 
   const fetchStats = async () => {
     try {
-      // Get total users from user_roles
-      const { count: totalUsers } = await supabase
+      // Get total unique users from user_roles
+      const { data: userRolesData } = await supabase
         .from('user_roles')
-        .select('*', { count: 'exact', head: true });
+        .select('user_id');
+      const totalUsers = new Set(userRolesData?.map(r => r.user_id)).size;
 
       // Get vendor stats
       const { count: activeVendors } = await supabase

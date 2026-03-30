@@ -303,7 +303,7 @@ const Checkout = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10">
-      <div className="max-w-2xl mx-auto px-4 py-4 pb-40">
+      <div className="max-w-2xl mx-auto px-4 py-4 pb-52">
 
         {/* ── Header ─────────────────────────────────────────────── */}
         <div className="flex items-center gap-3 mb-6">
@@ -552,7 +552,7 @@ const Checkout = () => {
       </div>
 
       {/* ── Sticky Bottom Bar ──────────────────────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t-2 border-primary/20 p-4 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t-2 border-primary/20 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
         <div className="max-w-2xl mx-auto flex gap-3">
           {step > 1 ? (
             <Button variant="outline" onClick={() => setStep((step - 1) as Step)} className="px-6 h-12 text-base border-2 border-primary/30 text-primary hover:bg-primary/5 font-semibold">
