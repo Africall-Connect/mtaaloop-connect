@@ -193,7 +193,7 @@ export default function ActiveOrdersPanel({ vendorId }: ActiveOrdersPanelProps) 
                     )}
                     {order.status === 'accepted' && <Button size="sm" onClick={() => updateOrderStatus(order.id, 'preparing')}>Start Preparing</Button>}
                     {order.status === 'preparing' && <Button size="sm" onClick={() => updateOrderStatus(order.id, 'ready')}><Check className="h-4 w-4 mr-1" />Mark Ready</Button>}
-                    {order.status === 'ready' && <Button size="sm" onClick={() => updateOrderStatus(order.id, 'out_for_delivery')}>Confirm Pickup</Button>}
+                    {order.status === 'ready' && <Button size="sm" onClick={() => dispatchForDelivery(order.id)}>🚴 Dispatch for Delivery</Button>}
                     <Button size="sm" variant="outline" className="gap-1"><Eye className="h-4 w-4" />Details</Button>
                   </div>
                 </CardContent>
