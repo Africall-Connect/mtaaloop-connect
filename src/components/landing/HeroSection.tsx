@@ -102,6 +102,7 @@ export const HeroSection = () => {
               <DropdownMenuItem onClick={() => navigate('/auth/vendor-signup')}>Join as Vendor</DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate('/auth/estate-signup')}>Register Estate</DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate('/auth/rider-signup')}>Become a Rider</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/launch-kit')}>Launch Kit 🚀</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <Button variant="ghost" onClick={() => navigate('/auth/login')} className="rounded-xl">Log In</Button>
