@@ -303,7 +303,7 @@ const Checkout = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10">
-      <div className="max-w-2xl mx-auto px-4 py-4 pb-40">
+      <div className="max-w-2xl mx-auto px-4 py-4 pb-52">
 
         {/* ── Header ─────────────────────────────────────────────── */}
         <div className="flex items-center gap-3 mb-6">
