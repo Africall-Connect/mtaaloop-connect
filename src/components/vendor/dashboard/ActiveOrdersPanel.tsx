@@ -76,6 +76,33 @@ export default function ActiveOrdersPanel({ vendorId }: ActiveOrdersPanelProps) 
     }
   };
 
+  const dispatchForDelivery = async (orderId: string) => {
+    try {
+      // Get the order's estate info
+      const { data: order, error: orderErr } = await supabase
+        .from('orders')
+        .select('estate_id')
+        .eq('id', orderId)
+        .single();
+      if (orderErr) throw orderErr;
+
+      const { error } = await supabase.from('deliveries').insert({
+        order_id: orderId,
+        estate_id: order?.estate_id || null,
+        status: 'pending',
+      });
+      if (error) throw error;
+
+      // Update order status to out_for_delivery
+      await supabase.from('orders').update({ status: 'out_for_delivery' }).eq('id', orderId);
+      toast.success('Order dispatched for delivery!');
+      fetchActiveOrders();
+    } catch (error) {
+      console.error('Dispatch error:', error);
+      toast.error('Failed to dispatch order');
+    }
+  };
+
   const getStatusInfo = (status: string) => {
     const configs: Record<string, { icon: string; color: string; label: string }> = {
       pending: { icon: '🆕', color: 'bg-blue-50 text-blue-700 border-blue-200', label: 'NEW ORDER' },
