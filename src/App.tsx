@@ -235,6 +235,7 @@ const App = () => (
             <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/marketplace" element={<Index />} />
+            <Route path="/launch-kit" element={<LaunchKit />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/auth/signup" element={<Signup />} />
               <Route path="/auth/login" element={<Login />} />
