@@ -4367,6 +4367,7 @@ export type Database = {
           name: string | null
           neighborhood: string | null
           phone: string | null
+          profile_completed: boolean | null
           profile_photo_url: string | null
           text_only: boolean | null
           unit_number: string | null
@@ -4394,6 +4395,7 @@ export type Database = {
           name?: string | null
           neighborhood?: string | null
           phone?: string | null
+          profile_completed?: boolean | null
           profile_photo_url?: string | null
           text_only?: boolean | null
           unit_number?: string | null
@@ -4421,6 +4423,7 @@ export type Database = {
           name?: string | null
           neighborhood?: string | null
           phone?: string | null
+          profile_completed?: boolean | null
           profile_photo_url?: string | null
           text_only?: boolean | null
           unit_number?: string | null
