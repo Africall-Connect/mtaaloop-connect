@@ -272,12 +272,27 @@ export function ActiveDeliveries({ riderId }: ActiveDeliveriesProps) {
                   </div>
 
                   <div className="flex gap-2 flex-wrap pt-4 border-t">
+                    {/* Mark as Paid button for COD orders */}
+                    {type === 'normal' && order.payment_method === 'pay_on_delivery' && order.payment_status !== 'paid' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleMarkAsPaid(delivery)}
+                        disabled={updating === delivery.id}
+                        className="gap-1 border-amber-300 text-amber-700 hover:bg-amber-50"
+                      >
+                        <Banknote className="h-4 w-4" />
+                        Mark as Paid
+                      </Button>
+                    )}
+
                     {nextAction && (
                       <Button
                         size="sm"
-                        onClick={() => handleStatusUpdate(delivery.id, nextAction.nextStatus, type)}
-                        disabled={updating === delivery.id}
-                        className="gap-2 bg-blue-600 hover:bg-blue-700"
+                        onClick={() => handleStatusUpdate(delivery.id, nextAction.nextStatus, type, delivery)}
+                        disabled={updating === delivery.id || (nextAction.nextStatus === 'delivered' && type === 'normal' && order.payment_method === 'pay_on_delivery' && order.payment_status !== 'paid')}
+                        className="gap-2 bg-primary hover:bg-primary/90"
+                        title={nextAction.nextStatus === 'delivered' && type === 'normal' && order.payment_method === 'pay_on_delivery' && order.payment_status !== 'paid' ? 'Collect payment first' : ''}
                       >
                         {updating === delivery.id ? (
                           <>
