@@ -71,9 +71,9 @@ export function AvailableDeliveries({ onDeliveryAccepted, isOnline = true }: Ava
       await loadDeliveries();
       onDeliveryAccepted?.();
     } catch (error) {
-      const err = error as ErrorResponse;
-      console.error('Failed to accept delivery:', err);
-      toast.error(err.message || 'Failed to accept delivery');
+      const errMsg = error instanceof Error ? (error as Error).message : (error as any)?.message || (error as any)?.details || 'Failed to accept delivery';
+      console.error('Failed to accept delivery:', error);
+      toast.error(errMsg);
     } finally {
       setAccepting(null);
     }

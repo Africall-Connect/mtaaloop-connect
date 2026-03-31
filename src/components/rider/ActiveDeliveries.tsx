@@ -2,9 +2,10 @@ import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
-import { Clock, Eye, Check, X, Phone, MessageSquare, MapPin, Navigation, Package, ShoppingCart } from 'lucide-react';
+import { Clock, Eye, Check, X, Phone, MessageSquare, MapPin, Navigation, Package, ShoppingCart, Banknote, CheckCircle2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
 import { fetchActiveDeliveries, getRiderProfileId, updateDeliveryStatus, type ActiveDelivery } from '../../lib/riderDeliveries';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ErrorResponse } from '@/types/common';
 
@@ -42,18 +43,49 @@ export function ActiveDeliveries({ riderId }: ActiveDeliveriesProps) {
     loadDeliveries();
   }, [riderId, loadDeliveries]);
 
-  const handleStatusUpdate = async (deliveryId: string, nextStatus: string, type: 'normal' | 'premium' | 'trash') => {
+  const handleStatusUpdate = async (deliveryId: string, nextStatus: string, type: 'normal' | 'premium' | 'trash', delivery?: ActiveDelivery) => {
     if (updating) return;
+
+    // Block delivery completion for unpaid COD orders
+    if (nextStatus === 'delivered' && delivery && type === 'normal') {
+      const pm = delivery.order.payment_method;
+      const ps = delivery.order.payment_status;
+      if (pm === 'pay_on_delivery' && ps !== 'paid') {
+        toast.error('Please collect payment and mark as paid before completing delivery');
+        return;
+      }
+    }
+
     setUpdating(deliveryId);
 
     try {
       await updateDeliveryStatus(deliveryId, nextStatus, type);
       toast.success(`${type === 'trash' ? 'Trash collection' : 'Delivery'} status updated to ${nextStatus.replace('_', ' ').toUpperCase()}`);
-      // Refresh the list
       await loadDeliveries();
     } catch (error: unknown) {
       console.error('Failed to update delivery status:', error);
-      toast.error(`Failed to update delivery status: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errMsg = error instanceof Error ? error.message : (error as any)?.message || (error as any)?.details || 'Unknown error';
+      toast.error(`Failed to update delivery status: ${errMsg}`);
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const handleMarkAsPaid = async (delivery: ActiveDelivery) => {
+    if (updating) return;
+    setUpdating(delivery.id);
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ payment_status: 'paid', paid_at: new Date().toISOString() })
+        .eq('id', delivery.order.id);
+      if (error) throw error;
+      toast.success('Payment collected and marked as paid!');
+      await loadDeliveries();
+    } catch (error: unknown) {
+      console.error('Failed to mark as paid:', error);
+      const errMsg = error instanceof Error ? error.message : (error as any)?.message || 'Unknown error';
+      toast.error(`Failed to mark as paid: ${errMsg}`);
     } finally {
       setUpdating(null);
     }
@@ -155,14 +187,29 @@ export function ActiveDeliveries({ riderId }: ActiveDeliveriesProps) {
                 <CardContent className="p-6 space-y-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-3">
+                      <div className="flex items-center gap-2 mb-3 flex-wrap">
                         <Badge className={statusInfo.color}>
                           {statusInfo.icon} {statusInfo.label}
                         </Badge>
                         {type === 'premium' && <Badge variant="destructive">Premium</Badge>}
                         {type === 'trash' && <Badge className="bg-emerald-100 text-emerald-700">Trash Collection</Badge>}
+
+                        {/* Payment status badge */}
+                        {type !== 'trash' && order.payment_method === 'pay_on_delivery' && order.payment_status !== 'paid' && (
+                          <Badge className="bg-amber-100 text-amber-800 border-amber-300 gap-1">
+                            <Banknote className="h-3 w-3" />
+                            Collect KES {Number(order.total_amount || order.amount).toLocaleString()}
+                          </Badge>
+                        )}
+                        {type !== 'trash' && (order.payment_status === 'paid' || (order.payment_method && order.payment_method !== 'pay_on_delivery')) && (
+                          <Badge className="bg-green-100 text-green-700 border-green-300 gap-1">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Paid
+                          </Badge>
+                        )}
+
                         {order.order_number && <span className="text-sm font-medium">#{order.order_number}</span>}
-                        <span className="text-xs text-gray-500 flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           {getTimeAgo(delivery.created_at)}
                         </span>
@@ -225,12 +272,27 @@ export function ActiveDeliveries({ riderId }: ActiveDeliveriesProps) {
                   </div>
 
                   <div className="flex gap-2 flex-wrap pt-4 border-t">
+                    {/* Mark as Paid button for COD orders */}
+                    {type === 'normal' && order.payment_method === 'pay_on_delivery' && order.payment_status !== 'paid' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleMarkAsPaid(delivery)}
+                        disabled={updating === delivery.id}
+                        className="gap-1 border-amber-300 text-amber-700 hover:bg-amber-50"
+                      >
+                        <Banknote className="h-4 w-4" />
+                        Mark as Paid
+                      </Button>
+                    )}
+
                     {nextAction && (
                       <Button
                         size="sm"
-                        onClick={() => handleStatusUpdate(delivery.id, nextAction.nextStatus, type)}
-                        disabled={updating === delivery.id}
-                        className="gap-2 bg-blue-600 hover:bg-blue-700"
+                        onClick={() => handleStatusUpdate(delivery.id, nextAction.nextStatus, type, delivery)}
+                        disabled={updating === delivery.id || (nextAction.nextStatus === 'delivered' && type === 'normal' && order.payment_method === 'pay_on_delivery' && order.payment_status !== 'paid')}
+                        className="gap-2 bg-primary hover:bg-primary/90"
+                        title={nextAction.nextStatus === 'delivered' && type === 'normal' && order.payment_method === 'pay_on_delivery' && order.payment_status !== 'paid' ? 'Collect payment first' : ''}
                       >
                         {updating === delivery.id ? (
                           <>

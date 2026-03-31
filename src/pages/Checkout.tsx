@@ -199,6 +199,8 @@ const Checkout = () => {
             total_amount: totalAmount, base_amount: baseAmount,
             delivery_address: addr, customer_notes: instructions,
             house: deliveryAddress.house_number, full_name: fullName,
+            payment_method: paymentMethod,
+            ...(paymentMethod === "pay_on_delivery" ? { payment_status: "cod_pending" } : {}),
             ...(type === "minimart" ? { vendor_id: orderItems[0]?.vendorId } : {}),
           }])
           .select("*").single();
@@ -231,6 +233,8 @@ const Checkout = () => {
           total_amount: totalAmount + deliveryFee, delivery_address: addr,
           customer_notes: instructions, house: deliveryAddress.house_number,
           full_name: fullName, status: "pending", user_email: user.email,
+          payment_method: paymentMethod,
+          ...(paymentMethod === "pay_on_delivery" ? { payment_status: "cod_pending" } : {}),
         }]).select("*").single();
 
         await supabase.from("order_items").insert(
@@ -263,6 +267,8 @@ const Checkout = () => {
           estate_id: estateId, total_amount: total, delivery_address: addr,
           customer_notes: instructions || null, category,
           house: deliveryAddress.house_number, full_name: fullName, user_email: user.email,
+          payment_method: paymentMethod,
+          ...(paymentMethod === "pay_on_delivery" ? { payment_status: "cod_pending" } : {}),
         }]);
         await supabase.from("order_items").insert(
           orderItems.map(i => ({ order_id: orderId, product_id: i.id, product_name: i.name, quantity: i.quantity, price: i.price }))

@@ -51,6 +51,8 @@ export interface ActiveDelivery {
     customer_notes: string | null;
     created_at: string;
     full_name: string | null;
+    payment_method?: string;
+    payment_status?: string;
     customer: {
       first_name: string | null;
       last_name: string | null;
@@ -232,6 +234,8 @@ async function fetchActiveNormalDeliveries(riderProfileId: string): Promise<Acti
         customer_notes,
         created_at,
         full_name,
+        payment_method,
+        payment_status,
         customer:app_users (
           first_name,
           last_name,
