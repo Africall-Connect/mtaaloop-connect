@@ -377,7 +377,7 @@ export default function VendorPOS() {
       {/* Mobile Cart Sheet */}
       <Sheet open={showCart} onOpenChange={setShowCart}>
         <SheetContent side="bottom" className="h-[85vh] p-0">
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full overflow-hidden">
             <SheetHeader className="px-4 pt-4 pb-2">
               <SheetTitle>Current Sale ({cart.length} items)</SheetTitle>
             </SheetHeader>
