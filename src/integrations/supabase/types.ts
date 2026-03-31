@@ -2111,6 +2111,7 @@ export type Database = {
           paid_at: string | null
           payment_attempts: number | null
           payment_channel: string | null
+          payment_method: string | null
           payment_provider: string | null
           payment_reference: string | null
           payment_status: string | null
@@ -2143,6 +2144,7 @@ export type Database = {
           paid_at?: string | null
           payment_attempts?: number | null
           payment_channel?: string | null
+          payment_method?: string | null
           payment_provider?: string | null
           payment_reference?: string | null
           payment_status?: string | null
@@ -2175,6 +2177,7 @@ export type Database = {
           paid_at?: string | null
           payment_attempts?: number | null
           payment_channel?: string | null
+          payment_method?: string | null
           payment_provider?: string | null
           payment_reference?: string | null
           payment_status?: string | null
@@ -2569,6 +2572,7 @@ export type Database = {
           house: string | null
           id: string
           order_number: string | null
+          payment_method: string | null
           payment_status: string | null
           profit_amount: number | null
           rated: boolean
@@ -2592,6 +2596,7 @@ export type Database = {
           house?: string | null
           id?: string
           order_number?: string | null
+          payment_method?: string | null
           payment_status?: string | null
           profit_amount?: number | null
           rated?: boolean
@@ -2615,6 +2620,7 @@ export type Database = {
           house?: string | null
           id?: string
           order_number?: string | null
+          payment_method?: string | null
           payment_status?: string | null
           profit_amount?: number | null
           rated?: boolean

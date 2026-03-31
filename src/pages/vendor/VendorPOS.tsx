@@ -350,7 +350,7 @@ export default function VendorPOS() {
         </div>
 
         {/* Cart Panel - Desktop */}
-        <div className="hidden lg:flex w-[380px] border-l bg-card flex-col">
+        <div className="hidden lg:flex w-[380px] border-l bg-card flex-col h-[calc(100vh-57px)] overflow-hidden">
           <CartPanel
             cart={cart}
             subtotal={subtotal}
@@ -377,7 +377,7 @@ export default function VendorPOS() {
       {/* Mobile Cart Sheet */}
       <Sheet open={showCart} onOpenChange={setShowCart}>
         <SheetContent side="bottom" className="h-[85vh] p-0">
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full overflow-hidden">
             <SheetHeader className="px-4 pt-4 pb-2">
               <SheetTitle>Current Sale ({cart.length} items)</SheetTitle>
             </SheetHeader>
@@ -513,8 +513,8 @@ function CartPanel({
   onUpdateQty, onRemove, onComplete, onClear,
 }: CartPanelProps) {
   return (
-    <div className="flex flex-col h-full">
-      <ScrollArea className="flex-1 p-4">
+    <div className="flex flex-col h-full overflow-hidden">
+      <ScrollArea className="flex-1 min-h-0 p-4">
         {cart.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <ShoppingCart className="h-10 w-10 mb-2 opacity-30" />
@@ -550,11 +550,12 @@ function CartPanel({
             ))}
           </div>
         )}
+      </ScrollArea>
 
-        {cart.length > 0 && (
-          <div className="mt-4 space-y-3">
-            <Separator />
-            <div className="space-y-2">
+      {cart.length > 0 && (
+        <div className="shrink-0 border-t p-4 space-y-3 bg-card" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
               <label className="text-xs font-medium text-muted-foreground">Discount (KES)</label>
               <Input
                 type="number"
@@ -562,17 +563,18 @@ function CartPanel({
                 value={discount || ''}
                 onChange={e => onDiscount(Number(e.target.value) || 0)}
                 placeholder="0"
+                className="mt-1"
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">Payment Method</label>
-              <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Payment</label>
+              <div className="flex gap-1 mt-1">
                 {PAYMENT_METHODS.map(pm => (
                   <Button
                     key={pm.id}
                     variant={paymentMethod === pm.id ? 'default' : 'outline'}
                     size="sm"
-                    className="gap-1 text-xs"
+                    className="flex-1 gap-0.5 text-[10px] px-1 h-9"
                     onClick={() => onPaymentMethod(pm.id)}
                   >
                     <pm.icon className="h-3 w-3" />
@@ -581,32 +583,8 @@ function CartPanel({
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Customer Name</label>
-                <Input
-                  value={customerName}
-                  onChange={e => onCustomerName(e.target.value)}
-                  placeholder="Optional"
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Phone</label>
-                <Input
-                  value={customerPhone}
-                  onChange={e => onCustomerPhone(e.target.value)}
-                  placeholder="Optional"
-                  className="mt-1"
-                />
-              </div>
-            </div>
           </div>
-        )}
-      </ScrollArea>
-
-      {cart.length > 0 && (
-        <div className="border-t p-4 space-y-2 bg-card">
+          <Separator />
           <div className="flex justify-between text-sm text-muted-foreground">
             <span>Subtotal</span>
             <span>KES {subtotal.toLocaleString()}</span>
