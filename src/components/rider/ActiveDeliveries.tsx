@@ -43,18 +43,49 @@ export function ActiveDeliveries({ riderId }: ActiveDeliveriesProps) {
     loadDeliveries();
   }, [riderId, loadDeliveries]);
 
-  const handleStatusUpdate = async (deliveryId: string, nextStatus: string, type: 'normal' | 'premium' | 'trash') => {
+  const handleStatusUpdate = async (deliveryId: string, nextStatus: string, type: 'normal' | 'premium' | 'trash', delivery?: ActiveDelivery) => {
     if (updating) return;
+
+    // Block delivery completion for unpaid COD orders
+    if (nextStatus === 'delivered' && delivery && type === 'normal') {
+      const pm = delivery.order.payment_method;
+      const ps = delivery.order.payment_status;
+      if (pm === 'pay_on_delivery' && ps !== 'paid') {
+        toast.error('Please collect payment and mark as paid before completing delivery');
+        return;
+      }
+    }
+
     setUpdating(deliveryId);
 
     try {
       await updateDeliveryStatus(deliveryId, nextStatus, type);
       toast.success(`${type === 'trash' ? 'Trash collection' : 'Delivery'} status updated to ${nextStatus.replace('_', ' ').toUpperCase()}`);
-      // Refresh the list
       await loadDeliveries();
     } catch (error: unknown) {
       console.error('Failed to update delivery status:', error);
-      toast.error(`Failed to update delivery status: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errMsg = error instanceof Error ? error.message : (error as any)?.message || (error as any)?.details || 'Unknown error';
+      toast.error(`Failed to update delivery status: ${errMsg}`);
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const handleMarkAsPaid = async (delivery: ActiveDelivery) => {
+    if (updating) return;
+    setUpdating(delivery.id);
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ payment_status: 'paid', paid_at: new Date().toISOString() })
+        .eq('id', delivery.order.id);
+      if (error) throw error;
+      toast.success('Payment collected and marked as paid!');
+      await loadDeliveries();
+    } catch (error: unknown) {
+      console.error('Failed to mark as paid:', error);
+      const errMsg = error instanceof Error ? error.message : (error as any)?.message || 'Unknown error';
+      toast.error(`Failed to mark as paid: ${errMsg}`);
     } finally {
       setUpdating(null);
     }
