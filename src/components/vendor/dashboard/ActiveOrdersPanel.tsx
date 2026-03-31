@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Eye, Check, X, Phone, MessageSquare, MapPin } from 'lucide-react';
+import { Clock, Eye, Check, X, MapPin, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Order {
@@ -29,6 +29,8 @@ interface ActiveOrdersPanelProps {
 export default function ActiveOrdersPanel({ vendorId }: ActiveOrdersPanelProps) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dispatchedOrderIds, setDispatchedOrderIds] = useState<Set<string>>(new Set());
+  const [dispatchingId, setDispatchingId] = useState<string | null>(null);
 
   const fetchActiveOrders = useCallback(async () => {
     try {
@@ -43,7 +45,24 @@ export default function ActiveOrdersPanel({ vendorId }: ActiveOrdersPanelProps) 
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setOrders((data as any) || []);
+      const ordersList = (data as any) || [];
+      setOrders(ordersList);
+
+      // Check which ready orders already have a delivery row
+      const readyOrderIds = ordersList
+        .filter((o: Order) => o.status === 'ready')
+        .map((o: Order) => o.id);
+
+      if (readyOrderIds.length > 0) {
+        const { data: existingDeliveries } = await supabase
+          .from('deliveries')
+          .select('order_id')
+          .in('order_id', readyOrderIds);
+
+        if (existingDeliveries) {
+          setDispatchedOrderIds(new Set(existingDeliveries.map(d => d.order_id)));
+        }
+      }
     } catch (error) {
       console.error('Error fetching orders:', error);
     } finally {
@@ -77,7 +96,24 @@ export default function ActiveOrdersPanel({ vendorId }: ActiveOrdersPanelProps) 
   };
 
   const dispatchForDelivery = async (orderId: string) => {
+    if (dispatchingId) return;
+    setDispatchingId(orderId);
+
     try {
+      // Guard: check if delivery already exists
+      const { data: existing } = await supabase
+        .from('deliveries')
+        .select('id')
+        .eq('order_id', orderId)
+        .maybeSingle();
+
+      if (existing) {
+        toast.info('Already dispatched — waiting for a rider to accept.');
+        setDispatchedOrderIds(prev => new Set(prev).add(orderId));
+        setDispatchingId(null);
+        return;
+      }
+
       // Get the order's estate info
       const { data: order, error: orderErr } = await supabase
         .from('orders')
@@ -86,20 +122,28 @@ export default function ActiveOrdersPanel({ vendorId }: ActiveOrdersPanelProps) 
         .single();
       if (orderErr) throw orderErr;
 
+      console.log('[VendorDispatch] Creating delivery for order', orderId, 'estate_id:', order?.estate_id);
+
       const { error } = await supabase.from('deliveries').insert({
         order_id: orderId,
         estate_id: order?.estate_id || null,
         status: 'pending',
       });
-      if (error) throw error;
 
-      // Do NOT update order status here — the sync trigger will handle it
-      // when a rider claims the delivery (assigned → out_for_delivery)
+      if (error) {
+        console.error('[VendorDispatch] Insert failed:', error);
+        throw error;
+      }
+
+      console.log('[VendorDispatch] Delivery created successfully for order', orderId);
+      setDispatchedOrderIds(prev => new Set(prev).add(orderId));
       toast.success('Order dispatched! Waiting for rider to accept.');
       fetchActiveOrders();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Dispatch error:', error);
-      toast.error('Failed to dispatch order');
+      toast.error(`Failed to dispatch: ${error?.message || 'Unknown error'}`);
+    } finally {
+      setDispatchingId(null);
     }
   };
 
@@ -109,7 +153,7 @@ export default function ActiveOrdersPanel({ vendorId }: ActiveOrdersPanelProps) 
       accepted: { icon: '✅', color: 'bg-green-50 text-green-700 border-green-200', label: 'ACCEPTED' },
       preparing: { icon: '👨‍🍳', color: 'bg-orange-50 text-orange-700 border-orange-200', label: 'PREPARING' },
       ready: { icon: '📦', color: 'bg-purple-50 text-purple-700 border-purple-200', label: 'READY FOR PICKUP' },
-      out_for_delivery: { icon: '🚴', color: 'bg-indigo-50 text-indigo-700 border-indigo-200', label: 'OUT FOR DELIVERY' }
+      out_for_delivery: { icon: '🚴', color: 'bg-indigo-50 text-indigo-700 border-indigo-200', label: 'OUT FOR DELIVERY' },
     };
     return configs[status] || configs.pending;
   };
@@ -145,6 +189,8 @@ export default function ActiveOrdersPanel({ vendorId }: ActiveOrdersPanelProps) 
             const statusInfo = getStatusInfo(order.status);
             const customerName = order.full_name || 'Customer';
             const itemsText = order.order_items?.map(item => `${item.product_name} x${item.quantity}`).join(', ') || '';
+            const isDispatched = dispatchedOrderIds.has(order.id);
+            const isDispatching = dispatchingId === order.id;
 
             return (
               <Card key={order.id} className="border-2 hover:shadow-md transition-shadow">
@@ -193,7 +239,17 @@ export default function ActiveOrdersPanel({ vendorId }: ActiveOrdersPanelProps) 
                     )}
                     {order.status === 'accepted' && <Button size="sm" onClick={() => updateOrderStatus(order.id, 'preparing')}>Start Preparing</Button>}
                     {order.status === 'preparing' && <Button size="sm" onClick={() => updateOrderStatus(order.id, 'ready')}><Check className="h-4 w-4 mr-1" />Mark Ready</Button>}
-                    {order.status === 'ready' && <Button size="sm" onClick={() => dispatchForDelivery(order.id)}>🚴 Dispatch for Delivery</Button>}
+                    {order.status === 'ready' && !isDispatched && (
+                      <Button size="sm" onClick={() => dispatchForDelivery(order.id)} disabled={isDispatching}>
+                        {isDispatching ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Dispatching...</> : '🚴 Dispatch for Delivery'}
+                      </Button>
+                    )}
+                    {order.status === 'ready' && isDispatched && (
+                      <Badge className="bg-yellow-50 text-yellow-700 border-yellow-300">⏳ Awaiting Rider</Badge>
+                    )}
+                    {order.status === 'out_for_delivery' && (
+                      <Badge className="bg-indigo-50 text-indigo-700 border-indigo-300">🚴 Rider en route</Badge>
+                    )}
                     <Button size="sm" variant="outline" className="gap-1"><Eye className="h-4 w-4" />Details</Button>
                   </div>
                 </CardContent>
