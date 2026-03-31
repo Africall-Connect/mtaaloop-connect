@@ -635,6 +635,7 @@ const OrderTracking = () => {
       case "accepted": return "Vendor accepted your order";
       case "preparing": return messaging.preparingTitle;
       case "ready": return "Ready for pickup";
+      case "out_for_delivery": return "Rider accepted — on the way to vendor";
       case "in_transit": return "Out for delivery";
       case "delivered": return "Delivered";
       case "cancelled": return "Order cancelled";
