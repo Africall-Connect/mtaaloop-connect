@@ -40,6 +40,26 @@ export function AvailableDeliveries({ onDeliveryAccepted, isOnline = true }: Ava
     }
   }, [isOnline, loadDeliveries]);
 
+  // Real-time subscription for new deliveries
+  useEffect(() => {
+    if (!isOnline) return;
+
+    const channel = supabase
+      .channel('available-deliveries-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'deliveries' }, () => {
+        loadDeliveries();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'premium_deliveries' }, () => {
+        loadDeliveries();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'trash_deliveries' }, () => {
+        loadDeliveries();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [isOnline, loadDeliveries]);
+
   const handleAccept = async (deliveryId: string, type: 'normal' | 'premium' | 'trash') => {
     if (accepting) return;
     setAccepting(deliveryId);
