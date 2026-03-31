@@ -1,113 +1,72 @@
 
 
-# Integrate Payment Type into Rider Workflow
+# Fix POS Cart Panel Layout
 
-## Summary
+## Problem
+The discount, payment method, and customer fields are inside the `ScrollArea`, pushing the Subtotal/Total/Clear/Complete Sale section below the fold. Users must scroll to reach the action buttons.
 
-The `orders` table lacks a `payment_method` column. The checkout has three payment options (`wallet`, `mpesa`, `pay_on_delivery`) but never persists which one was chosen. This means riders cannot distinguish COD from prepaid orders, and the `prevent_unpaid_delivery_start` trigger blocks delivery completion for all non-prepaid orders.
+## Root Cause
+In `CartPanel` (line 517-606), the `ScrollArea` contains both the cart items AND the discount/payment/customer fields. This makes the scrollable area too tall, and the fixed footer at line 608-636 gets pushed off-screen.
 
-## Changes
+## Fix
 
-### Step 1: Database Migration — Add `payment_method` column to `orders`
+### 1. Move discount/payment/customer fields OUT of ScrollArea into the sticky footer
 
-```sql
-ALTER TABLE public.orders
-  ADD COLUMN IF NOT EXISTS payment_method text DEFAULT 'wallet';
+The `ScrollArea` should ONLY contain the cart item list. The discount, payment method, and customer info fields move into the bottom fixed section alongside subtotal/total/buttons.
 
--- Also add to premium_orders for consistency
-ALTER TABLE public.premium_orders
-  ADD COLUMN IF NOT EXISTS payment_method text DEFAULT 'wallet';
-```
+### 2. Constrain desktop sidebar height
 
-### Step 2: Database Migration — Update `prevent_unpaid_delivery_start` trigger
+The desktop cart panel container (line 353) needs `h-[calc(100vh-<header>)]` so the flex column layout works properly and the panel doesn't grow beyond the viewport.
 
-Change the trigger to allow delivery completion for COD orders (rider collects cash), and only block if payment has explicitly `failed`:
+### 3. Mobile sheet — add safe-area padding
 
-```sql
-CREATE OR REPLACE FUNCTION public.prevent_unpaid_delivery_start()
-RETURNS trigger LANGUAGE plpgsql AS $$
-BEGIN
-  IF NEW.status IS DISTINCT FROM OLD.status THEN
-    IF NEW.status = 'delivered' THEN
-      IF EXISTS (
-        SELECT 1 FROM public.orders o
-        WHERE o.id = NEW.order_id
-          AND o.payment_status = 'failed'
-      ) THEN
-        RAISE EXCEPTION 'Cannot complete delivery: payment failed';
-      END IF;
-    END IF;
-  END IF;
-  RETURN NEW;
-END;
-$$;
-```
+Add `pb-[env(safe-area-inset-bottom)]` to the footer section so the Complete Sale button clears any mobile navigation/notch area.
 
-### Step 3: Checkout — Store `paymentMethod` on order creation
+## File Changes
 
-In `src/pages/Checkout.tsx`, add `payment_method: paymentMethod` to all order insert calls (regular, mtaaloop). For `pay_on_delivery`, also set `payment_status: 'cod_pending'` instead of the default `'pending'`.
+**`src/pages/vendor/VendorPOS.tsx`**
 
-### Step 4: Rider API — Include payment data in delivery queries
+1. **Desktop sidebar container** (line 353): Add height constraint
+   ```tsx
+   <div className="hidden lg:flex w-[380px] border-l bg-card flex-col h-[calc(100vh-57px)]">
+   ```
 
-In `src/lib/riderDeliveries.ts`:
-- `fetchActiveNormalDeliveries`: add `payment_method, payment_status, total_amount` to the `orders` select
-- Update `ActiveDelivery` interface to include `payment_method`, `payment_status`
+2. **CartPanel component** (lines 516-638): Restructure so ScrollArea only contains cart items, and all other fields + actions go in the sticky bottom:
 
-### Step 5: Rider UI — Display payment info and "Mark as Paid" button
+   ```tsx
+   function CartPanel({ ... }) {
+     return (
+       <div className="flex flex-col h-full overflow-hidden">
+         {/* Scrollable items only */}
+         <ScrollArea className="flex-1 min-h-0 p-4">
+           {cart.length === 0 ? (
+             // empty state
+           ) : (
+             // cart items list only
+           )}
+         </ScrollArea>
 
-In `src/components/rider/ActiveDeliveries.tsx`:
-- Show "Paid" badge for prepaid orders (`payment_status === 'paid'`)
-- Show "Collect KES X" badge for COD orders (`payment_method === 'pay_on_delivery'`)
-- Add "Mark as Paid" button for COD orders — updates `orders.payment_status` to `'paid'` and `orders.paid_at`
-- Block "Mark as Delivered" button if COD and `payment_status !== 'paid'` (show tooltip explaining why)
+         {/* Fixed bottom: discount, payment, subtotal, buttons */}
+         {cart.length > 0 && (
+           <div className="shrink-0 border-t p-4 space-y-3 bg-card pb-[calc(1rem+env(safe-area-inset-bottom))]">
+             {/* Discount input */}
+             {/* Payment method buttons */}
+             {/* Customer name/phone (collapsible or compact) */}
+             <Separator />
+             {/* Subtotal / Discount / Total */}
+             {/* Clear + Complete Sale buttons */}
+           </div>
+         )}
+       </div>
+     );
+   }
+   ```
 
-### Step 6: RLS — Allow rider to update payment_status on assigned orders
+3. **Mobile sheet** (line 379): Ensure the sheet content allows the CartPanel to fill properly with `overflow-hidden` on the wrapper.
 
-Add an RLS policy so riders can update `payment_status` on orders linked to their active deliveries:
-
-```sql
-CREATE POLICY "rider_mark_cod_paid"
-  ON public.orders FOR UPDATE TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM deliveries d
-      JOIN rider_profiles rp ON rp.id = d.rider_id
-      WHERE d.order_id = orders.id
-        AND rp.user_id = auth.uid()
-        AND d.status IN ('assigned', 'picked')
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM deliveries d
-      JOIN rider_profiles rp ON rp.id = d.rider_id
-      WHERE d.order_id = orders.id
-        AND rp.user_id = auth.uid()
-        AND d.status IN ('assigned', 'picked')
-    )
-  );
-```
-
-## Files to Edit
-
-| File | Change |
-|------|--------|
-| **SQL Migration** | Add `payment_method` column, update trigger, add RLS policy |
-| `src/pages/Checkout.tsx` | Store `payment_method` on order insert |
-| `src/lib/riderDeliveries.ts` | Include payment fields in queries, update types |
-| `src/components/rider/ActiveDeliveries.tsx` | Show payment info, add "Mark as Paid" button, block delivery completion for unpaid COD |
-
-## Flow After Fix
-
-```text
-Checkout (wallet)       → payment_method='wallet', payment_status='paid'
-Checkout (pay_on_delivery) → payment_method='pay_on_delivery', payment_status='cod_pending'
-
-Rider sees COD order    → Badge: "Collect KES 1,500"
-Rider clicks "Mark as Paid" → payment_status='paid'
-Rider clicks "Mark as Delivered" → allowed (payment_status='paid')
-
-Rider sees prepaid order → Badge: "Paid ✓"
-Rider clicks "Mark as Delivered" → allowed immediately
-```
+## Key Principles
+- `ScrollArea` gets `min-h-0` + `flex-1` so it shrinks to available space
+- Footer gets `shrink-0` so it never compresses
+- Parent container gets `overflow-hidden` to enforce the constraint
+- Safe-area inset on the footer bottom padding for mobile devices
 
