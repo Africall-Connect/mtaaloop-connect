@@ -604,9 +604,10 @@ const OrderTracking = () => {
       switch (status) {
         case "pending": setProgress(10); break;
         case "accepted": setProgress(25); break;
-        case "preparing": setProgress(50); break;
-        case "ready": setProgress(65); break;
-        case "in_transit": setProgress(80); break;
+        case "preparing": setProgress(45); break;
+        case "ready": setProgress(60); break;
+        case "out_for_delivery": setProgress(75); break;
+        case "in_transit": setProgress(85); break;
         case "delivered": setProgress(100); setIsDelivered(true); break;
         default: setProgress(0);
       }
