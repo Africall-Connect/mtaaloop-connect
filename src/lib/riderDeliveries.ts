@@ -234,6 +234,8 @@ async function fetchActiveNormalDeliveries(riderProfileId: string): Promise<Acti
         customer_notes,
         created_at,
         full_name,
+        payment_method,
+        payment_status,
         customer:app_users (
           first_name,
           last_name,

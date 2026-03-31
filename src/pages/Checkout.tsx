@@ -267,6 +267,8 @@ const Checkout = () => {
           estate_id: estateId, total_amount: total, delivery_address: addr,
           customer_notes: instructions || null, category,
           house: deliveryAddress.house_number, full_name: fullName, user_email: user.email,
+          payment_method: paymentMethod,
+          ...(paymentMethod === "pay_on_delivery" ? { payment_status: "cod_pending" } : {}),
         }]);
         await supabase.from("order_items").insert(
           orderItems.map(i => ({ order_id: orderId, product_id: i.id, product_name: i.name, quantity: i.quantity, price: i.price }))
