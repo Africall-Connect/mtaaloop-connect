@@ -1,77 +1,113 @@
 
 
-# Fix Vendor-to-Rider Dispatch Flow
+# Integrate Payment Type into Rider Workflow
 
-## Root Cause Analysis
+## Summary
 
-After investigating the full flow (RLS policies, DB triggers, frontend code), the system is mostly wired correctly from a previous fix. The RLS policies on `deliveries` already allow:
-- Vendors to INSERT via `can_vendor_create_delivery(order_id)` ✅
-- Riders to SELECT pending deliveries (`status='pending' AND rider_id IS NULL`) ✅
-- Riders to claim (`rider_can_claim_pending_delivery` WITH CHECK allows `status='assigned'`) ✅
-- Trigger `sync_order_status_on_delivery_update` handles `assigned → out_for_delivery` ✅
+The `orders` table lacks a `payment_method` column. The checkout has three payment options (`wallet`, `mpesa`, `pay_on_delivery`) but never persists which one was chosen. This means riders cannot distinguish COD from prepaid orders, and the `prevent_unpaid_delivery_start` trigger blocks delivery completion for all non-prepaid orders.
 
-**The remaining issues are:**
+## Changes
 
-### Issue 1: Estate ID filtering silently drops deliveries
-`fetchNormalDeliveries(estateId)` applies `.eq('estate_id', estateId)`. If the order's `estate_id` is NULL (e.g., customer didn't set their estate), or the rider's `estate_id` is different, the delivery is invisible to all riders. This is the most likely cause of "rider not seeing dispatched orders."
+### Step 1: Database Migration — Add `payment_method` column to `orders`
 
-**Fix**: Fall back to showing all pending deliveries if estate_id matching fails, or broaden the query to also include deliveries where `estate_id` is NULL.
+```sql
+ALTER TABLE public.orders
+  ADD COLUMN IF NOT EXISTS payment_method text DEFAULT 'wallet';
 
-### Issue 2: Vendor dispatch doesn't provide error feedback for duplicate dispatch
-If a vendor clicks "Dispatch" twice, the second insert could fail silently or create a duplicate delivery row. No guard prevents re-dispatch.
-
-**Fix**: Check if a delivery already exists for the order before inserting. Also disable the dispatch button while in-flight.
-
-### Issue 3: Vendor "Dispatch" button shows for `ready` status but order status stays `ready` with no visual indicator
-After dispatching, the order stays at `ready` status until a rider claims. The vendor sees the same "Dispatch" button again.
-
-**Fix**: Track whether a delivery row exists for the order and show a "Waiting for Rider" state instead of the dispatch button.
-
-### Issue 4: No logging or error toast for RLS failures
-If `dispatchForDelivery` or `acceptDelivery` fails due to RLS, the error is caught but the message is generic. Need better error surfacing.
-
----
-
-## Implementation Plan
-
-### Step 1: Fix `riderDeliveries.ts` — Broaden estate filter
-
-Change `fetchNormalDeliveries` and `fetchPremiumDeliveries` to also include deliveries with NULL `estate_id`, so orders from customers without estate preference still appear to riders:
-
-```ts
-// Instead of: .eq('estate_id', estateId)
-// Use: .or(`estate_id.eq.${estateId},estate_id.is.null`)
+-- Also add to premium_orders for consistency
+ALTER TABLE public.premium_orders
+  ADD COLUMN IF NOT EXISTS payment_method text DEFAULT 'wallet';
 ```
 
-Also handle the case where the rider has no `estate_id` — show all pending deliveries instead of returning empty.
+### Step 2: Database Migration — Update `prevent_unpaid_delivery_start` trigger
 
-### Step 2: Fix `ActiveOrdersPanel.tsx` — Prevent duplicate dispatch + show dispatch state
+Change the trigger to allow delivery completion for COD orders (rider collects cash), and only block if payment has explicitly `failed`:
 
-- Before inserting a delivery, check if one already exists for the order
-- After dispatch, change the button to show "⏳ Awaiting Rider" instead of showing the dispatch button again
-- Fetch delivery status alongside orders to know which ones have been dispatched
+```sql
+CREATE OR REPLACE FUNCTION public.prevent_unpaid_delivery_start()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.status IS DISTINCT FROM OLD.status THEN
+    IF NEW.status = 'delivered' THEN
+      IF EXISTS (
+        SELECT 1 FROM public.orders o
+        WHERE o.id = NEW.order_id
+          AND o.payment_status = 'failed'
+      ) THEN
+        RAISE EXCEPTION 'Cannot complete delivery: payment failed';
+      END IF;
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+```
 
-### Step 3: Fix `ActiveOrdersPanel.tsx` — Add `out_for_delivery` to status configs
+### Step 3: Checkout — Store `paymentMethod` on order creation
 
-The `getStatusInfo` map doesn't include `out_for_delivery`, so when the trigger updates the order status after rider claims, the vendor sees no label. Add it.
+In `src/pages/Checkout.tsx`, add `payment_method: paymentMethod` to all order insert calls (regular, mtaaloop). For `pay_on_delivery`, also set `payment_status: 'cod_pending'` instead of the default `'pending'`.
 
-### Step 4: Add console logging for debugging
+### Step 4: Rider API — Include payment data in delivery queries
 
-Add `console.log` breadcrumbs in:
-- `dispatchForDelivery` (before/after insert)
-- `fetchNormalDeliveries` (query result count)
-- `acceptDelivery` (before/after update)
+In `src/lib/riderDeliveries.ts`:
+- `fetchActiveNormalDeliveries`: add `payment_method, payment_status, total_amount` to the `orders` select
+- Update `ActiveDelivery` interface to include `payment_method`, `payment_status`
 
-This enables future debugging via browser console.
+### Step 5: Rider UI — Display payment info and "Mark as Paid" button
 
----
+In `src/components/rider/ActiveDeliveries.tsx`:
+- Show "Paid" badge for prepaid orders (`payment_status === 'paid'`)
+- Show "Collect KES X" badge for COD orders (`payment_method === 'pay_on_delivery'`)
+- Add "Mark as Paid" button for COD orders — updates `orders.payment_status` to `'paid'` and `orders.paid_at`
+- Block "Mark as Delivered" button if COD and `payment_status !== 'paid'` (show tooltip explaining why)
+
+### Step 6: RLS — Allow rider to update payment_status on assigned orders
+
+Add an RLS policy so riders can update `payment_status` on orders linked to their active deliveries:
+
+```sql
+CREATE POLICY "rider_mark_cod_paid"
+  ON public.orders FOR UPDATE TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM deliveries d
+      JOIN rider_profiles rp ON rp.id = d.rider_id
+      WHERE d.order_id = orders.id
+        AND rp.user_id = auth.uid()
+        AND d.status IN ('assigned', 'picked')
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM deliveries d
+      JOIN rider_profiles rp ON rp.id = d.rider_id
+      WHERE d.order_id = orders.id
+        AND rp.user_id = auth.uid()
+        AND d.status IN ('assigned', 'picked')
+    )
+  );
+```
 
 ## Files to Edit
 
 | File | Change |
 |------|--------|
-| `src/lib/riderDeliveries.ts` | Broaden estate_id filter to include NULL; handle rider with no estate |
-| `src/components/vendor/dashboard/ActiveOrdersPanel.tsx` | Prevent double dispatch; show "Awaiting Rider" state; add `out_for_delivery` status |
+| **SQL Migration** | Add `payment_method` column, update trigger, add RLS policy |
+| `src/pages/Checkout.tsx` | Store `payment_method` on order insert |
+| `src/lib/riderDeliveries.ts` | Include payment fields in queries, update types |
+| `src/components/rider/ActiveDeliveries.tsx` | Show payment info, add "Mark as Paid" button, block delivery completion for unpaid COD |
 
-No SQL migration needed — RLS and triggers are already correct from the prior fix.
+## Flow After Fix
+
+```text
+Checkout (wallet)       → payment_method='wallet', payment_status='paid'
+Checkout (pay_on_delivery) → payment_method='pay_on_delivery', payment_status='cod_pending'
+
+Rider sees COD order    → Badge: "Collect KES 1,500"
+Rider clicks "Mark as Paid" → payment_status='paid'
+Rider clicks "Mark as Delivered" → allowed (payment_status='paid')
+
+Rider sees prepaid order → Badge: "Paid ✓"
+Rider clicks "Mark as Delivered" → allowed immediately
+```
 
