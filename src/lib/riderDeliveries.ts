@@ -51,6 +51,8 @@ export interface ActiveDelivery {
     customer_notes: string | null;
     created_at: string;
     full_name: string | null;
+    payment_method?: string;
+    payment_status?: string;
     customer: {
       first_name: string | null;
       last_name: string | null;
