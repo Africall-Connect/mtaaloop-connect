@@ -328,6 +328,11 @@ const OrderTracking = () => {
                 description: "Your order is ready and waiting for pickup by the rider.",
                 emoji: "✨"
               },
+              out_for_delivery: {
+                title: "Rider Accepted! 🏍️",
+                description: "A rider has accepted your delivery and is heading to the vendor.",
+                emoji: "🚴"
+              },
               in_transit: {
                 title: "Out for Delivery! 🏍️",
                 description: "Your order is on the way. Get ready to enjoy!",
