@@ -84,9 +84,9 @@ async function getRiderProfile() {
   return profile;
 }
 
-async function fetchNormalDeliveries(estateId: string): Promise<AvailableDelivery[]> {
+async function fetchNormalDeliveries(estateId: string | null): Promise<AvailableDelivery[]> {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from("deliveries")
       .select(`
         id,
@@ -110,10 +110,18 @@ async function fetchNormalDeliveries(estateId: string): Promise<AvailableDeliver
         )
       `)
       .eq("status", "pending")
-      .is("rider_id", null)
-      .eq('estate_id', estateId);
+      .is("rider_id", null);
+
+    // Broaden filter: include matching estate OR null estate deliveries
+    if (estateId) {
+      query = query.or(`estate_id.eq.${estateId},estate_id.is.null`);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
+    
+    console.log(`[RiderDeliveries] fetchNormalDeliveries: ${data?.length ?? 0} pending deliveries found`);
     
     return data.map(d => {
       const orderData = Array.isArray(d.orders) ? d.orders[0] : d.orders;
