@@ -187,14 +187,29 @@ export function ActiveDeliveries({ riderId }: ActiveDeliveriesProps) {
                 <CardContent className="p-6 space-y-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-3">
+                      <div className="flex items-center gap-2 mb-3 flex-wrap">
                         <Badge className={statusInfo.color}>
                           {statusInfo.icon} {statusInfo.label}
                         </Badge>
                         {type === 'premium' && <Badge variant="destructive">Premium</Badge>}
                         {type === 'trash' && <Badge className="bg-emerald-100 text-emerald-700">Trash Collection</Badge>}
+
+                        {/* Payment status badge */}
+                        {type !== 'trash' && order.payment_method === 'pay_on_delivery' && order.payment_status !== 'paid' && (
+                          <Badge className="bg-amber-100 text-amber-800 border-amber-300 gap-1">
+                            <Banknote className="h-3 w-3" />
+                            Collect KES {Number(order.total_amount || order.amount).toLocaleString()}
+                          </Badge>
+                        )}
+                        {type !== 'trash' && (order.payment_status === 'paid' || (order.payment_method && order.payment_method !== 'pay_on_delivery')) && (
+                          <Badge className="bg-green-100 text-green-700 border-green-300 gap-1">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Paid
+                          </Badge>
+                        )}
+
                         {order.order_number && <span className="text-sm font-medium">#{order.order_number}</span>}
-                        <span className="text-xs text-gray-500 flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           {getTimeAgo(delivery.created_at)}
                         </span>
