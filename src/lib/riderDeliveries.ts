@@ -197,21 +197,22 @@ async function fetchPremiumDeliveries(estateId: string | null): Promise<Availabl
 
 export async function fetchAvailableDeliveries(): Promise<AvailableDelivery[]> {
   const riderProfile = await getRiderProfile();
-  if (!riderProfile.estate_id) {
-    console.warn("Rider has no estate_id, cannot fetch deliveries.");
-    return [];
+  const estateId = riderProfile.estate_id || null;
+
+  if (!estateId) {
+    console.warn("[RiderDeliveries] Rider has no estate_id — showing all pending deliveries.");
   }
 
   const [normalDeliveries, premiumDeliveries, trashDeliveries] = await Promise.all([
-    fetchNormalDeliveries(riderProfile.estate_id),
-    fetchPremiumDeliveries(riderProfile.estate_id),
-    fetchAvailableTrashDeliveries(riderProfile.estate_id),
+    fetchNormalDeliveries(estateId),
+    fetchPremiumDeliveries(estateId),
+    fetchAvailableTrashDeliveries(estateId || ''),
   ]);
 
   const allDeliveries = [...normalDeliveries, ...premiumDeliveries, ...trashDeliveries];
-
   allDeliveries.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
+  console.log(`[RiderDeliveries] Total available deliveries: ${allDeliveries.length}`);
   return allDeliveries;
 }
 
