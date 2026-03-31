@@ -2,9 +2,10 @@ import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
-import { Clock, Eye, Check, X, Phone, MessageSquare, MapPin, Navigation, Package, ShoppingCart } from 'lucide-react';
+import { Clock, Eye, Check, X, Phone, MessageSquare, MapPin, Navigation, Package, ShoppingCart, Banknote, CheckCircle2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
 import { fetchActiveDeliveries, getRiderProfileId, updateDeliveryStatus, type ActiveDelivery } from '../../lib/riderDeliveries';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ErrorResponse } from '@/types/common';
 
