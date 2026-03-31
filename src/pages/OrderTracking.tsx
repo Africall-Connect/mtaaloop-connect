@@ -691,6 +691,7 @@ const OrderTracking = () => {
           }
         );
         break;
+      case "out_for_delivery":
       case "in_transit":
         actions.push(
           { 

@@ -251,6 +251,7 @@ const Checkout = () => {
 
       } else {
         const orderId = crypto.randomUUID();
+        const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}`;
         let category: string | null = null;
         try {
           const { data: prod } = await supabase.from("products").select("category").eq("id", orderItems[0].id).single();
@@ -258,7 +259,7 @@ const Checkout = () => {
         } catch {}
 
         await supabase.from("orders").insert([{
-          id: orderId, customer_id: user.id, vendor_id: orderItems[0]?.vendorId,
+          id: orderId, order_number: orderNumber, customer_id: user.id, vendor_id: orderItems[0]?.vendorId,
           estate_id: estateId, total_amount: total, delivery_address: addr,
           customer_notes: instructions || null, category,
           house: deliveryAddress.house_number, full_name: fullName, user_email: user.email,

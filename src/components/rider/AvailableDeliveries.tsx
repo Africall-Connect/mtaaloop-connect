@@ -4,6 +4,7 @@ import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { MapPin, Package, Clock, RefreshCw } from 'lucide-react';
 import { fetchAvailableDeliveries, acceptDelivery, type AvailableDelivery } from '../../lib/riderDeliveries';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ErrorResponse } from '@/types/common';
 
