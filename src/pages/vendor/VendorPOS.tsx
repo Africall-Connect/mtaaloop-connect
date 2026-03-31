@@ -350,7 +350,7 @@ export default function VendorPOS() {
         </div>
 
         {/* Cart Panel - Desktop */}
-        <div className="hidden lg:flex w-[380px] border-l bg-card flex-col">
+        <div className="hidden lg:flex w-[380px] border-l bg-card flex-col h-[calc(100vh-57px)] overflow-hidden">
           <CartPanel
             cart={cart}
             subtotal={subtotal}
