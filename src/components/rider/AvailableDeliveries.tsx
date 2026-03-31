@@ -4,6 +4,7 @@ import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { MapPin, Package, Clock, RefreshCw } from 'lucide-react';
 import { fetchAvailableDeliveries, acceptDelivery, type AvailableDelivery } from '../../lib/riderDeliveries';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ErrorResponse } from '@/types/common';
 
@@ -38,6 +39,26 @@ export function AvailableDeliveries({ onDeliveryAccepted, isOnline = true }: Ava
     } else {
       setLoading(false);
     }
+  }, [isOnline, loadDeliveries]);
+
+  // Real-time subscription for new deliveries
+  useEffect(() => {
+    if (!isOnline) return;
+
+    const channel = supabase
+      .channel('available-deliveries-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'deliveries' }, () => {
+        loadDeliveries();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'premium_deliveries' }, () => {
+        loadDeliveries();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'trash_deliveries' }, () => {
+        loadDeliveries();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [isOnline, loadDeliveries]);
 
   const handleAccept = async (deliveryId: string, type: 'normal' | 'premium' | 'trash') => {

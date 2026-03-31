@@ -93,9 +93,9 @@ export default function ActiveOrdersPanel({ vendorId }: ActiveOrdersPanelProps) 
       });
       if (error) throw error;
 
-      // Update order status to out_for_delivery
-      await supabase.from('orders').update({ status: 'out_for_delivery' }).eq('id', orderId);
-      toast.success('Order dispatched for delivery!');
+      // Do NOT update order status here — the sync trigger will handle it
+      // when a rider claims the delivery (assigned → out_for_delivery)
+      toast.success('Order dispatched! Waiting for rider to accept.');
       fetchActiveOrders();
     } catch (error) {
       console.error('Dispatch error:', error);

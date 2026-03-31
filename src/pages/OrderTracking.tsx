@@ -328,6 +328,11 @@ const OrderTracking = () => {
                 description: "Your order is ready and waiting for pickup by the rider.",
                 emoji: "✨"
               },
+              out_for_delivery: {
+                title: "Rider Accepted! 🏍️",
+                description: "A rider has accepted your delivery and is heading to the vendor.",
+                emoji: "🚴"
+              },
               in_transit: {
                 title: "Out for Delivery! 🏍️",
                 description: "Your order is on the way. Get ready to enjoy!",
@@ -604,9 +609,10 @@ const OrderTracking = () => {
       switch (status) {
         case "pending": setProgress(10); break;
         case "accepted": setProgress(25); break;
-        case "preparing": setProgress(50); break;
-        case "ready": setProgress(65); break;
-        case "in_transit": setProgress(80); break;
+        case "preparing": setProgress(45); break;
+        case "ready": setProgress(60); break;
+        case "out_for_delivery": setProgress(75); break;
+        case "in_transit": setProgress(85); break;
         case "delivered": setProgress(100); setIsDelivered(true); break;
         default: setProgress(0);
       }
@@ -634,6 +640,7 @@ const OrderTracking = () => {
       case "accepted": return "Vendor accepted your order";
       case "preparing": return messaging.preparingTitle;
       case "ready": return "Ready for pickup";
+      case "out_for_delivery": return "Rider accepted — on the way to vendor";
       case "in_transit": return "Out for delivery";
       case "delivered": return "Delivered";
       case "cancelled": return "Order cancelled";
@@ -684,6 +691,7 @@ const OrderTracking = () => {
           }
         );
         break;
+      case "out_for_delivery":
       case "in_transit":
         actions.push(
           { 
