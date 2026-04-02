@@ -17,18 +17,45 @@ import { z } from "zod";
 
 const vendorFormSchema = z.object({
   fullName: z.string().trim().min(2, "Full name is required"),
+  ownerIdNumber: z.string().trim().optional(),
   email: z.string().trim().email("Valid email is required"),
   phone: z.string().regex(/^(\+254|07)\d{8,13}$/, "Enter a valid Kenyan phone number"),
+  alternatePhone: z.string().regex(/^(\+254|07)\d{8,13}$/, "Enter a valid Kenyan phone number").optional(),
   password: z.string().min(8, "Password must be at least 8 characters")
     .regex(/[A-Z]/, "Must contain an uppercase letter")
     .regex(/[a-z]/, "Must contain a lowercase letter")
     .regex(/[0-9]/, "Must contain a number"),
   businessName: z.string().trim().min(2, "Business name is required"),
-  businessType: z.string().min(1, "Select a business type"),
+  businessType: z.array(z.string()).optional(),
+  otherCategory: z.string().trim().optional(),
   businessDescription: z.string().trim().max(2000).optional(),
   businessPhone: z.string().regex(/^(\+254|07)\d{8,13}$/, "Enter a valid business phone"),
   businessAddress: z.string().optional(),
   estateId: z.string().optional(),
+  nearestLandmark: z.string().optional(),
+  estateOrBuildingName: z.string().optional(),
+  mpesaNumber: z.string().optional(),
+  paybillNumber: z.string().optional(),
+  accountName: z.string().optional(),
+  productsAndServices: z.string().optional(),
+  hasFixedMenu: z.boolean().optional(),
+  minOrderAmount: z.string().optional(),
+  averagePreparationTime: z.string().optional(),
+  maxDeliveryDistance: z.string().optional(),
+  deliveryPreferences: z.array(z.string()).optional(),
+  hasPackaging: z.boolean().optional(),
+  canHandleBulk: z.boolean().optional(),
+  documentSupport: z.array(z.string()).optional(),
+  additionalDocuments: z.string().optional(),
+  whatsappBusiness: z.string().optional(),
+  facebookPage: z.string().optional(),
+  instagramHandle: z.string().optional(),
+  website: z.string().optional(),
+  bankName: z.string().optional(),
+  bankBranch: z.string().optional(),
+  bankAccountName: z.string().optional(),
+  bankAccountNumber: z.string().optional(),
+  additionalInformation: z.string().optional(),
 });
 
 const VendorOnboarding = () => {
@@ -40,15 +67,42 @@ const VendorOnboarding = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     fullName: "",
+    ownerIdNumber: "",
     email: "",
     phone: "",
+    alternatePhone: "",
     password: "",
     businessName: "",
-    businessType: "",
+    businessType: [] as string[],
+    otherCategory: "",
     businessDescription: "",
     businessPhone: "",
     businessAddress: "",
     estateId: "",
+    nearestLandmark: "",
+    estateOrBuildingName: "",
+    mpesaNumber: "",
+    paybillNumber: "",
+    accountName: "",
+    productsAndServices: "",
+    hasFixedMenu: false,
+    minOrderAmount: "",
+    averagePreparationTime: "",
+    maxDeliveryDistance: "",
+    deliveryPreferences: [] as string[],
+    hasPackaging: false,
+    canHandleBulk: false,
+    documentSupport: [] as string[],
+    additionalDocuments: "",
+    whatsappBusiness: "",
+    facebookPage: "",
+    instagramHandle: "",
+    website: "",
+    bankName: "",
+    bankBranch: "",
+    bankAccountName: "",
+    bankAccountNumber: "",
+    additionalInformation: "",
   });
 
   useEffect(() => {
@@ -109,10 +163,37 @@ const VendorOnboarding = () => {
       const { error: profileError } = await supabase.from("vendor_profiles").insert({
         user_id: authData.user.id,
         business_name: formData.businessName,
-        business_type: formData.businessType,
+        business_type: Array.isArray(formData.businessType) ? formData.businessType.join(", ") : formData.businessType,
         business_description: formData.businessDescription || null,
         business_phone: formData.businessPhone,
+        business_email: formData.email || null,
         business_address: formData.businessAddress || null,
+        owner_id_number: formData.ownerIdNumber || null,
+        alternate_phone: formData.alternatePhone || null,
+        nearest_landmark: formData.nearestLandmark || null,
+        estate_or_building_name: formData.estateOrBuildingName || null,
+        mpesa_number: formData.mpesaNumber || null,
+        paybill_number: formData.paybillNumber || null,
+        account_name: formData.accountName || null,
+        products_and_services: formData.productsAndServices || null,
+        has_fixed_menu: formData.hasFixedMenu,
+        min_order_amount: formData.minOrderAmount ? parseInt(formData.minOrderAmount, 10) : null,
+        average_preparation_time: formData.averagePreparationTime || null,
+        max_delivery_distance: formData.maxDeliveryDistance || null,
+        delivery_preferences: formData.deliveryPreferences.length > 0 ? formData.deliveryPreferences : null,
+        has_packaging: formData.hasPackaging,
+        can_handle_bulk: formData.canHandleBulk,
+        document_support: formData.documentSupport.length > 0 ? formData.documentSupport : null,
+        additional_documents: formData.additionalDocuments || null,
+        whatsapp_business: formData.whatsappBusiness || null,
+        facebook_page: formData.facebookPage || null,
+        instagram_handle: formData.instagramHandle || null,
+        website: formData.website || null,
+        bank_name: formData.bankName || null,
+        bank_branch: formData.bankBranch || null,
+        bank_account_name: formData.bankAccountName || null,
+        bank_account_number: formData.bankAccountNumber || null,
+        additional_information: formData.additionalInformation || null,
         slug,
         estate_id: locationInEstate === "inside" && formData.estateId ? formData.estateId : null,
         is_approved: false,
@@ -193,25 +274,72 @@ const VendorOnboarding = () => {
             <CardContent className="space-y-6">
               {/* Personal Info */}
               <div className="space-y-4">
-                <h3 className="font-semibold text-foreground border-b pb-2">Personal Information</h3>
+                <h3 className="font-semibold text-foreground border-b pb-2">Section 1 — Business Information</h3>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="fullName">Full Name *</Label>
+                    <Label htmlFor="businessName">Business / Store Name *</Label>
+                    <Input id="businessName" required value={formData.businessName} onChange={(e) => setFormData({ ...formData, businessName: e.target.value })} />
+                    {errors.businessName && <p className="text-sm text-destructive mt-1">{errors.businessName}</p>}
+                  </div>
+                  <div>
+                    <Label htmlFor="fullName">Business Owner Full Name *</Label>
                     <Input id="fullName" required value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} />
                     {errors.fullName && <p className="text-sm text-destructive mt-1">{errors.fullName}</p>}
                   </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="phone">Phone Number *</Label>
+                    <Label htmlFor="ownerIdNumber">ID Number</Label>
+                    <Input id="ownerIdNumber" value={formData.ownerIdNumber} onChange={(e) => setFormData({ ...formData, ownerIdNumber: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">Phone Number (Primary) *</Label>
                     <Input id="phone" type="tel" placeholder="+254 or 07..." required value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
                     {errors.phone && <p className="text-sm text-destructive mt-1">{errors.phone}</p>}
                   </div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
+                    <Label htmlFor="alternatePhone">Alternate Phone Number</Label>
+                    <Input id="alternatePhone" type="tel" placeholder="Optional" value={formData.alternatePhone} onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value })} />
+                  </div>
+                  <div>
                     <Label htmlFor="email">Email *</Label>
                     <Input id="email" type="email" required value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
                     {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
                   </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="businessAddress">Physical Location / Address of Business</Label>
+                    <Input id="businessAddress" placeholder="Address" value={formData.businessAddress} onChange={(e) => setFormData({ ...formData, businessAddress: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label htmlFor="nearestLandmark">Nearest Landmark</Label>
+                    <Input id="nearestLandmark" value={formData.nearestLandmark} onChange={(e) => setFormData({ ...formData, nearestLandmark: e.target.value })} />
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="estateOrBuildingName">Estate or Building Name</Label>
+                    <Input id="estateOrBuildingName" value={formData.estateOrBuildingName} onChange={(e) => setFormData({ ...formData, estateOrBuildingName: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label htmlFor="mpesaNumber">M-Pesa Number for Payments</Label>
+                    <Input id="mpesaNumber" value={formData.mpesaNumber} onChange={(e) => setFormData({ ...formData, mpesaNumber: e.target.value })} />
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="paybillNumber">Paybill / Till Number (if applicable)</Label>
+                    <Input id="paybillNumber" value={formData.paybillNumber} onChange={(e) => setFormData({ ...formData, paybillNumber: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label htmlFor="accountName">Account Name</Label>
+                    <Input id="accountName" value={formData.accountName} onChange={(e) => setFormData({ ...formData, accountName: e.target.value })} />
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="password">Password *</Label>
                     <Input id="password" type="password" required placeholder="Min 8 chars, mixed case + number" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
@@ -222,16 +350,11 @@ const VendorOnboarding = () => {
 
               {/* Business Info */}
               <div className="space-y-4">
-                <h3 className="font-semibold text-foreground border-b pb-2">Business Information</h3>
+                <h3 className="font-semibold text-foreground border-b pb-2">Business Information (Continued)</h3>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="businessName">Business Name *</Label>
-                    <Input id="businessName" required value={formData.businessName} onChange={(e) => setFormData({ ...formData, businessName: e.target.value })} />
-                    {errors.businessName && <p className="text-sm text-destructive mt-1">{errors.businessName}</p>}
-                  </div>
-                  <div>
                     <Label htmlFor="businessType">Business Type *</Label>
-                    <Select onValueChange={(value) => setFormData({ ...formData, businessType: value })}>
+                    <Select onValueChange={(value) => setFormData({ ...formData, businessType: [value] })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select business type" />
                       </SelectTrigger>
@@ -310,6 +433,346 @@ const VendorOnboarding = () => {
                     placeholder="Tell us about your business, what you sell, your specialties..."
                     rows={3}
                   />
+                </div>
+
+                {/* SECTION 2 — BUSINESS CATEGORY */}
+                <div className="pt-4">
+                  <h4 className="font-semibold text-foreground">Business Category</h4>
+                  <p className="text-xs text-muted-foreground">Select one or more categories that describe your business.</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3 text-sm">
+                    {[
+                      "Gas and Cooking Fuel",
+                      "Groceries and Fresh Produce",
+                      "Pharmacy and Medicine",
+                      "Water and Beverages",
+                      "Fast Food and Cooked Meals",
+                      "Bakery and Confectionery",
+                      "Electronics and Accessories",
+                      "Clothing and Fashion",
+                      "Hardware and Home Supplies",
+                      "Laundry and Cleaning Services",
+                      "Beauty and Personal Care",
+                      "Stationery and Office Supplies",
+                      "Wines, Spirits and Beverages",
+                      "Pet Supplies",
+                    ].map((category) => (
+                      <label key={category} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 border-primary text-primary focus:ring-primary"
+                          checked={formData.businessType.includes(category)}
+                          onChange={(e) => {
+                            const selected = formData.businessType.includes(category)
+                              ? formData.businessType.filter((item) => item !== category)
+                              : [...formData.businessType, category];
+                            setFormData({ ...formData, businessType: selected });
+                          }}
+                        />
+                        <span>{category}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="mt-3">
+                    <Label htmlFor="otherCategory">Other (specify)</Label>
+                    <Input
+                      id="otherCategory"
+                      value={formData.otherCategory}
+                      onChange={(e) => setFormData({ ...formData, otherCategory: e.target.value })}
+                      placeholder="If not listed"
+                    />
+                  </div>
+                </div>
+
+                {/* SECTION 3 — PRODUCTS AND SERVICES */}
+                <div className="pt-4">
+                  <h4 className="font-semibold text-foreground">Products and Services</h4>
+                  <Label htmlFor="productsAndServices">Main products or services offered</Label>
+                  <Textarea
+                    id="productsAndServices"
+                    value={formData.productsAndServices}
+                    onChange={(e) => setFormData({ ...formData, productsAndServices: e.target.value })}
+                    placeholder="e.g. 6kg gas refill, 13kg gas refill, gas stove installation..."
+                    rows={3}
+                  />
+
+                  <div className="grid md:grid-cols-2 gap-4 mt-2">
+                    <div>
+                      <Label>Do you have a fixed menu or price list available?</Label>
+                      <div className="flex items-center gap-4 mt-1">
+                        <label className="inline-flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="fixedMenu"
+                            checked={formData.hasFixedMenu === true}
+                            onChange={() => setFormData({ ...formData, hasFixedMenu: true })}
+                          />
+                          Yes
+                        </label>
+                        <label className="inline-flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="fixedMenu"
+                            checked={formData.hasFixedMenu === false}
+                            onChange={() => setFormData({ ...formData, hasFixedMenu: false })}
+                          />
+                          No
+                        </label>
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="minOrderAmount">Minimum Order Amount (KES)</Label>
+                      <Input
+                        id="minOrderAmount"
+                        value={formData.minOrderAmount}
+                        onChange={(e) => setFormData({ ...formData, minOrderAmount: e.target.value })}
+                        placeholder="e.g. 250"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4 mt-3">
+                    <div>
+                      <Label htmlFor="averagePreparationTime">Average Delivery Preparation Time</Label>
+                      <Input
+                        id="averagePreparationTime"
+                        value={formData.averagePreparationTime}
+                        onChange={(e) => setFormData({ ...formData, averagePreparationTime: e.target.value })}
+                        placeholder="e.g. 20-30 mins"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="maxDeliveryDistance">Maximum Delivery Distance</Label>
+                      <Input
+                        id="maxDeliveryDistance"
+                        value={formData.maxDeliveryDistance}
+                        onChange={(e) => setFormData({ ...formData, maxDeliveryDistance: e.target.value })}
+                        placeholder="e.g. up to 5km"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* SECTION 4 — OPERATING HOURS */}
+                <div className="pt-4">
+                  <h4 className="font-semibold text-foreground">Operating Hours</h4>
+                  <p className="text-xs text-muted-foreground">Select availability for each day.</p>
+                  <div className="grid gap-3 mt-3">
+                    {[
+                      "Monday",
+                      "Tuesday",
+                      "Wednesday",
+                      "Thursday",
+                      "Friday",
+                      "Saturday",
+                      "Sunday",
+                    ].map((day) => (
+                      <div key={day} className="grid grid-cols-2 md:grid-cols-4 gap-2 items-center">
+                        <span className="font-medium">{day}</span>
+                        <Input type="text" placeholder="Opening time" className="w-full" />
+                        <Input type="text" placeholder="Closing time" className="w-full" />
+                        <label className="inline-flex items-center gap-2">
+                          <input type="checkbox" /> Yes
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* SECTION 5 — DELIVERY PREFERENCES */}
+                <div className="pt-4">
+                  <h4 className="font-semibold text-foreground">Delivery Preferences</h4>
+                  <div className="grid gap-2 mt-2">
+                    {[
+                      { value: "mtaaloop_rider", label: "I will prepare order and hand it to a Mtaaloop rider" },
+                      { value: "own_riders", label: "I have my own riders and can deliver independently" },
+                      { value: "both", label: "Both options depending on the order" },
+                      { value: "need_support", label: "I need Mtaaloop to provide full delivery support" },
+                    ].map((pref) => (
+                      <label key={pref.value} className="inline-flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={formData.deliveryPreferences.includes(pref.value)}
+                          onChange={(e) => {
+                            const prefs = e.target.checked
+                              ? [...formData.deliveryPreferences, pref.value]
+                              : formData.deliveryPreferences.filter((item) => item !== pref.value);
+                            setFormData({ ...formData, deliveryPreferences: prefs });
+                          }}
+                        />
+                        {pref.label}
+                      </label>
+                    ))}
+                  </div>
+                  <div className="mt-3 grid md:grid-cols-2 gap-4">
+                    <label className="inline-flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.hasPackaging}
+                        onChange={(e) => setFormData({ ...formData, hasPackaging: e.target.checked })}
+                      />
+                      I have packaging available
+                    </label>
+                    <label className="inline-flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.canHandleBulk}
+                        onChange={(e) => setFormData({ ...formData, canHandleBulk: e.target.checked })}
+                      />
+                      I can handle bulk orders
+                    </label>
+                  </div>
+                </div>
+
+                {/* SECTION 6 — DOCUMENTS AND VERIFICATION */}
+                <div className="pt-4">
+                  <h4 className="font-semibold text-foreground">Documents and Verification</h4>
+                  <div className="grid md:grid-cols-2 gap-2 mt-2 text-sm">
+                    {[
+                      "National ID or Passport (Owner)",
+                      "Business Permit or Trading Licence",
+                      "KRA PIN Certificate",
+                      "M-Pesa or Bank Statement (last 3 months)",
+                      "Certificate of Incorporation (if registered)",
+                      "Health Certificate (for food vendors)",
+                      "Product Photos or Store Photos",
+                      "Any other relevant certification",
+                    ].map((doc) => (
+                      <label key={doc} className="inline-flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={formData.documentSupport.includes(doc)}
+                          onChange={(e) => {
+                            const docs = e.target.checked
+                              ? [...formData.documentSupport, doc]
+                              : formData.documentSupport.filter((item) => item !== doc);
+                            setFormData({ ...formData, documentSupport: docs });
+                          }}
+                        />
+                        {doc}
+                      </label>
+                    ))}
+                  </div>
+                  <Label htmlFor="additionalDocuments" className="mt-2">Additional documents</Label>
+                  <Textarea
+                    id="additionalDocuments"
+                    value={formData.additionalDocuments}
+                    onChange={(e) => setFormData({ ...formData, additionalDocuments: e.target.value })}
+                    rows={2}
+                    placeholder="Any other documents or certifications you would like to highlight"
+                  />
+                </div>
+
+                {/* SECTION 7 — ONLINE PRESENCE */}
+                <div className="pt-4">
+                  <h4 className="font-semibold text-foreground">Online Presence (Optional)</h4>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="whatsappBusiness">WhatsApp Business Number</Label>
+                      <Input
+                        id="whatsappBusiness"
+                        value={formData.whatsappBusiness}
+                        onChange={(e) => setFormData({ ...formData, whatsappBusiness: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="facebookPage">Facebook Page</Label>
+                      <Input
+                        id="facebookPage"
+                        value={formData.facebookPage}
+                        onChange={(e) => setFormData({ ...formData, facebookPage: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="instagramHandle">Instagram Handle</Label>
+                      <Input
+                        id="instagramHandle"
+                        value={formData.instagramHandle}
+                        onChange={(e) => setFormData({ ...formData, instagramHandle: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="website">Website</Label>
+                      <Input
+                        id="website"
+                        value={formData.website}
+                        onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* SECTION 8 — BANK DETAILS */}
+                <div className="pt-4">
+                  <h4 className="font-semibold text-foreground">Bank Details (Optional)</h4>
+                  <div className="grid md:grid-cols-2 gap-4 mt-2">
+                    <div>
+                      <Label htmlFor="bankName">Bank Name</Label>
+                      <Input
+                        id="bankName"
+                        value={formData.bankName}
+                        onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="bankBranch">Branch</Label>
+                      <Input
+                        id="bankBranch"
+                        value={formData.bankBranch}
+                        onChange={(e) => setFormData({ ...formData, bankBranch: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4 mt-3">
+                    <div>
+                      <Label htmlFor="bankAccountName">Account Name</Label>
+                      <Input
+                        id="bankAccountName"
+                        value={formData.bankAccountName}
+                        onChange={(e) => setFormData({ ...formData, bankAccountName: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="bankAccountNumber">Account Number</Label>
+                      <Input
+                        id="bankAccountNumber"
+                        value={formData.bankAccountNumber}
+                        onChange={(e) => setFormData({ ...formData, bankAccountNumber: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* SECTION 9 — ADDITIONAL INFORMATION */}
+                <div className="pt-4">
+                  <h4 className="font-semibold text-foreground">Additional Information</h4>
+                  <Textarea
+                    id="additionalInformation"
+                    value={formData.additionalInformation}
+                    onChange={(e) => setFormData({ ...formData, additionalInformation: e.target.value })}
+                    rows={3}
+                    placeholder="Special instructions, seasonal availability, promotions, unique offerings..."
+                  />
+                </div>
+
+                {/* SECTION 10 — DECLARATION */}
+                <div className="pt-4 border-t border-border mt-4">
+                  <p className="text-sm">
+                    I confirm that all information provided in this form is accurate and complete to the best of my knowledge. I understand that providing false information may result in rejection or removal from the MtaaLoop platform.
+                    I agree to comply with MtaaLoop's vendor terms, delivery standards and customer service expectations as communicated during onboarding and thereafter.
+                  </p>
+                  <div className="grid md:grid-cols-2 gap-4 mt-3">
+                    <Input
+                      id="vendorSignature"
+                      placeholder="Vendor Signature"
+                      value={formData.fullName}
+                      disabled
+                    />
+                    <Input
+                      id="applicationDate"
+                      placeholder="Date"
+                      value={new Date().toLocaleDateString()}
+                      disabled
+                    />
+                  </div>
                 </div>
               </div>
 

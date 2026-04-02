@@ -1,0 +1,30 @@
+-- Add new vendor onboarding fields to vendor_profiles
+ALTER TABLE public.vendor_profiles
+  ADD COLUMN owner_id_number text,
+  ADD COLUMN alternate_phone text,
+  ADD COLUMN nearest_landmark text,
+  ADD COLUMN estate_or_building_name text,
+  ADD COLUMN mpesa_number text,
+  ADD COLUMN paybill_number text,
+  ADD COLUMN account_name text,
+  ADD COLUMN products_and_services text,
+  ADD COLUMN has_fixed_menu boolean DEFAULT false,
+  ADD COLUMN min_order_amount integer,
+  ADD COLUMN average_preparation_time text,
+  ADD COLUMN max_delivery_distance text,
+  ADD COLUMN delivery_preferences text[],
+  ADD COLUMN has_packaging boolean DEFAULT false,
+  ADD COLUMN can_handle_bulk boolean DEFAULT false,
+  ADD COLUMN document_support text[],
+  ADD COLUMN additional_documents text,
+  ADD COLUMN whatsapp_business text,
+  ADD COLUMN facebook_page text,
+  ADD COLUMN instagram_handle text,
+  ADD COLUMN website text,
+  ADD COLUMN bank_name text,
+  ADD COLUMN bank_branch text,
+  ADD COLUMN bank_account_name text,
+  ADD COLUMN bank_account_number text,
+  ADD COLUMN additional_information text;
+
+-- The table already has RLS policies; the new columns are covered by existing policy.

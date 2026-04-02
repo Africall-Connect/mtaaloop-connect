@@ -51,13 +51,13 @@ export function VendorProductCard({ product, onClick }: VendorProductCardProps) 
 
         <Button 
           size="sm" 
-          className="w-full"
+          className="w-full bg-[#2563EB] text-white hover:bg-[#1E40AF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-300"
           onClick={(e) => {
             e.stopPropagation();
             // Will trigger parent onClick instead
           }}
         >
-          <Plus className="h-4 w-4 mr-1" />
+          <Plus className="h-4 w-4 mr-1 text-white" />
           Add
         </Button>
       </div>

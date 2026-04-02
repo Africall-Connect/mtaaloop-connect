@@ -20,15 +20,41 @@ const VendorSignup = () => {
   const [estates, setEstates] = useState<Estate[]>([]);
   const [formData, setFormData] = useState({
     fullName: "",
+    ownerIdNumber: "",
     email: "",
     phone: "",
+    alternatePhone: "",
     password: "",
     businessName: "",
     businessType: "",
+    otherCategory: "",
     businessDescription: "",
     businessPhone: "",
     businessAddress: "",
+    nearestLandmark: "",
+    estateOrBuildingName: "",
+    mpesaNumber: "",
+    paybillNumber: "",
+    accountName: "",
     estateId: "",
+    deliveryPreferences: [] as string[],
+    hasFixedMenu: false,
+    minOrderAmount: "",
+    averagePreparationTime: "",
+    maxDeliveryDistance: "",
+    hasPackaging: false,
+    canHandleBulk: false,
+    documentSupport: [] as string[],
+    additionalDocuments: "",
+    whatsappBusiness: "",
+    facebookPage: "",
+    instagramHandle: "",
+    website: "",
+    bankName: "",
+    bankBranch: "",
+    bankAccountName: "",
+    bankAccountNumber: "",
+    additionalInformation: "",
   });
 
   useEffect(() => {
@@ -88,7 +114,34 @@ const VendorSignup = () => {
           business_type: formData.businessType,
           business_description: formData.businessDescription,
           business_phone: formData.businessPhone,
+          business_email: formData.email,
           business_address: formData.businessAddress,
+          owner_id_number: formData.ownerIdNumber || null,
+          alternate_phone: formData.alternatePhone || null,
+          nearest_landmark: formData.nearestLandmark || null,
+          estate_or_building_name: formData.estateOrBuildingName || null,
+          mpesa_number: formData.mpesaNumber || null,
+          paybill_number: formData.paybillNumber || null,
+          account_name: formData.accountName || null,
+          products_and_services: formData.businessDescription || null,
+          has_fixed_menu: formData.hasFixedMenu,
+          min_order_amount: formData.minOrderAmount ? parseInt(formData.minOrderAmount, 10) : null,
+          average_preparation_time: formData.averagePreparationTime || null,
+          max_delivery_distance: formData.maxDeliveryDistance || null,
+          delivery_preferences: formData.deliveryPreferences.length > 0 ? formData.deliveryPreferences : null,
+          has_packaging: formData.hasPackaging,
+          can_handle_bulk: formData.canHandleBulk,
+          document_support: formData.documentSupport.length > 0 ? formData.documentSupport : null,
+          additional_documents: formData.additionalDocuments || null,
+          whatsapp_business: formData.whatsappBusiness || null,
+          facebook_page: formData.facebookPage || null,
+          instagram_handle: formData.instagramHandle || null,
+          website: formData.website || null,
+          bank_name: formData.bankName || null,
+          bank_branch: formData.bankBranch || null,
+          bank_account_name: formData.bankAccountName || null,
+          bank_account_number: formData.bankAccountNumber || null,
+          additional_information: formData.additionalInformation || null,
           slug: slug,
           estate_id: locationInEstate === "inside" && formData.estateId ? formData.estateId : null,
           is_approved: false,
@@ -116,10 +169,19 @@ const VendorSignup = () => {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-4">
-              <h3 className="font-semibold">Personal Information</h3>
+              <h3 className="font-semibold">Section 1 — Business Information</h3>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="fullName">Full Name</Label>
+                  <Label htmlFor="businessName">Business / Store Name</Label>
+                  <Input
+                    id="businessName"
+                    required
+                    value={formData.businessName}
+                    onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="fullName">Business Owner Full Name</Label>
                   <Input
                     id="fullName"
                     required
@@ -127,8 +189,30 @@ const VendorSignup = () => {
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   />
                 </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="ownerIdNumber">ID Number</Label>
+                  <Input
+                    id="ownerIdNumber"
+                    value={formData.ownerIdNumber}
+                    onChange={(e) => setFormData({ ...formData, ownerIdNumber: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="alternatePhone">Alternate Phone Number</Label>
+                  <Input
+                    id="alternatePhone"
+                    type="tel"
+                    value={formData.alternatePhone}
+                    onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="phone">Primary Phone Number</Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -137,10 +221,8 @@ const VendorSignup = () => {
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   />
                 </div>
-              </div>
-              <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Email Address</Label>
                   <Input
                     id="email"
                     type="email"
@@ -149,6 +231,8 @@ const VendorSignup = () => {
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   />
                 </div>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="password">Password</Label>
                   <Input
@@ -163,53 +247,153 @@ const VendorSignup = () => {
             </div>
 
             <div className="space-y-4">
-              <h3 className="font-semibold">Business Information</h3>
+              <h3 className="font-semibold">Section 2 — Business Details</h3>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="businessName">Business Name</Label>
-                  <Input
-                    id="businessName"
-                    required
-                    value={formData.businessName}
-                    onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="businessType">Business Type</Label>
+                  <Label htmlFor="businessType">Business Category</Label>
                   <Select onValueChange={(value) => setFormData({ ...formData, businessType: value })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select business type" />
                     </SelectTrigger>
                     <SelectContent className="max-h-[300px] bg-background border shadow-lg z-50">
-                      {/* Inventory Categories */}
                       <SelectItem value="food-drinks">Food & Drinks</SelectItem>
                       <SelectItem value="living-essentials">Living Essentials</SelectItem>
                       <SelectItem value="groceries-food">Groceries & Food</SelectItem>
                       <SelectItem value="restaurant">Restaurant</SelectItem>
                       <SelectItem value="liquor-store">Liquor Store</SelectItem>
                       <SelectItem value="flowers-gifts">Flowers & Gifts</SelectItem>
-                      {/* Service Categories */}
                       <SelectItem value="utilities-services">Utilities & Services</SelectItem>
                       <SelectItem value="home-services">Home Services</SelectItem>
-                      {/* Booking Categories */}
                       <SelectItem value="beauty-spa">Beauty & Spa</SelectItem>
                       <SelectItem value="accommodation">Accommodation</SelectItem>
-                      {/* Pharmacy (Hybrid) */}
                       <SelectItem value="pharmacy">Pharmacy</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+                <div>
+                  <Label htmlFor="otherCategory">Other Category</Label>
+                  <Input
+                    id="otherCategory"
+                    value={formData.otherCategory}
+                    onChange={(e) => setFormData({ ...formData, otherCategory: e.target.value })}
+                    placeholder="If not listed"
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="businessPhone">Business Phone</Label>
-                <Input
-                  id="businessPhone"
-                  type="tel"
-                  required
-                  value={formData.businessPhone}
-                  onChange={(e) => setFormData({ ...formData, businessPhone: e.target.value })}
-                />
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="businessPhone">Business Phone</Label>
+                  <Input
+                    id="businessPhone"
+                    type="tel"
+                    required
+                    value={formData.businessPhone}
+                    onChange={(e) => setFormData({ ...formData, businessPhone: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="businessAddress">Physical Location / Address</Label>
+                  <Input
+                    id="businessAddress"
+                    required
+                    value={formData.businessAddress}
+                    onChange={(e) => setFormData({ ...formData, businessAddress: e.target.value })}
+                  />
+                </div>
               </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="nearestLandmark">Nearest Landmark</Label>
+                  <Input
+                    id="nearestLandmark"
+                    value={formData.nearestLandmark}
+                    onChange={(e) => setFormData({ ...formData, nearestLandmark: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="estateOrBuildingName">Estate or Building Name</Label>
+                  <Input
+                    id="estateOrBuildingName"
+                    value={formData.estateOrBuildingName}
+                    onChange={(e) => setFormData({ ...formData, estateOrBuildingName: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="mpesaNumber">M-Pesa Number for Payments</Label>
+                  <Input
+                    id="mpesaNumber"
+                    value={formData.mpesaNumber}
+                    onChange={(e) => setFormData({ ...formData, mpesaNumber: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="paybillNumber">Paybill / Till Number</Label>
+                  <Input
+                    id="paybillNumber"
+                    value={formData.paybillNumber}
+                    onChange={(e) => setFormData({ ...formData, paybillNumber: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="accountName">Account Name</Label>
+                  <Input
+                    id="accountName"
+                    value={formData.accountName}
+                    onChange={(e) => setFormData({ ...formData, accountName: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="businessDescription">Product/Service Description</Label>
+                  <Textarea
+                    id="businessDescription"
+                    value={formData.businessDescription}
+                    onChange={(e) => setFormData({ ...formData, businessDescription: e.target.value })}
+                    placeholder="Main products or services offered"
+                  />
+                </div>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="minOrderAmount">Minimum Order Amount (KES)</Label>
+                  <Input
+                    id="minOrderAmount"
+                    value={formData.minOrderAmount}
+                    onChange={(e) => setFormData({ ...formData, minOrderAmount: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="averagePreparationTime">Average Delivery Preparation Time</Label>
+                  <Input
+                    id="averagePreparationTime"
+                    value={formData.averagePreparationTime}
+                    onChange={(e) => setFormData({ ...formData, averagePreparationTime: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="maxDeliveryDistance">Maximum Delivery Distance</Label>
+                  <Input
+                    id="maxDeliveryDistance"
+                    value={formData.maxDeliveryDistance}
+                    onChange={(e) => setFormData({ ...formData, maxDeliveryDistance: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="additionalInformation">Additional Information</Label>
+                  <Textarea
+                    id="additionalInformation"
+                    value={formData.additionalInformation}
+                    onChange={(e) => setFormData({ ...formData, additionalInformation: e.target.value })}
+                    placeholder="Special instructions, promotions, unique offerings"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-3">
                 <Label>Business Location</Label>
                 <RadioGroup value={locationInEstate} onValueChange={setLocationInEstate}>

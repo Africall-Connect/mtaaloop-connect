@@ -68,18 +68,11 @@ export const HomeProductCard = ({
         </span>
         <Button
           size="icon"
-          variant="default"
-          className="h-7 w-7 sm:h-8 sm:w-8 rounded-full"
+          className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-[#2563EB] text-white hover:bg-[#1E40AF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-300"
           onClick={(e) => onAddToCart(e, product)}
           disabled={!product.is_available}
         >
-          <Plus className="h-4 w-4" />
-        </Button>
-      </div>
-      
-      <div className="flex items-center gap-1 text-[10px] sm:text-xs text-muted-foreground mt-1">
-        <Store className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-        <span className="truncate">{product.vendor.business_name}</span>
+          <Plus className="h-4 w-4 text-white" />
       </div>
     </div>
   </Card>

@@ -530,14 +530,15 @@ const Checkout = () => {
             </Card>
 
             {/* Terms */}
-            <div className="flex items-start gap-2 px-1">
+            <div className="flex items-start gap-2 px-3 py-3 border border-primary/30 bg-white/90 rounded-lg shadow-sm md:px-4 md:py-4">
               <Checkbox
                 id="terms"
                 checked={agreedToTerms}
                 onCheckedChange={c => setAgreedToTerms(c as boolean)}
+                className="h-5 w-5 border-2 border-primary text-white bg-white focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-300"
               />
-              <Label htmlFor="terms" className="text-sm leading-snug cursor-pointer">
-                I agree to the <span className="text-primary underline">Terms & Conditions</span>
+              <Label htmlFor="terms" className="text-base font-medium text-foreground leading-tight cursor-pointer">
+                I agree to the <span className="text-[#2563EB] font-semibold underline">Terms & Conditions</span>
               </Label>
             </div>
           </div>
@@ -564,22 +565,32 @@ const Checkout = () => {
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t-2 border-primary/20 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
         <div className="max-w-2xl mx-auto flex gap-3">
           {step > 1 ? (
-            <Button variant="outline" onClick={() => setStep((step - 1) as Step)} className="px-6 h-12 text-base border-2 border-primary/30 text-primary hover:bg-primary/5 font-semibold">
+            <Button
+              onClick={() => setStep((step - 1) as Step)}
+              className="px-6 h-12 text-base font-semibold rounded-lg bg-[#2563EB] text-white hover:bg-[#1E40AF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-300 shadow-lg"
+            >
               <ArrowLeft className="h-5 w-5 mr-2" /> Back
             </Button>
           ) : (
-            <Button variant="outline" onClick={() => navigate(-1)} className="px-6 h-12 text-base border-2 border-primary/30 text-primary hover:bg-primary/5 font-semibold">
+            <Button
+              onClick={() => navigate(-1)}
+              className="px-6 h-12 text-base font-semibold rounded-lg bg-[#2563EB] text-white hover:bg-[#1E40AF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-300 shadow-lg"
+            >
               <ArrowLeft className="h-5 w-5 mr-2" /> Cart
             </Button>
           )}
 
           {step < 3 ? (
-            <Button className="flex-1 h-12 text-base font-bold shadow-lg" size="lg" onClick={() => goToStep((step + 1) as Step)}>
+            <Button
+              className="flex-1 h-12 text-base font-bold rounded-lg bg-[#2563EB] text-white hover:bg-[#1E40AF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-300 shadow-lg"
+              size="lg"
+              onClick={() => goToStep((step + 1) as Step)}
+            >
               Continue <ArrowRight className="h-5 w-5 ml-2" />
             </Button>
           ) : (
             <Button
-              className="flex-1 h-12 text-base font-bold shadow-lg"
+              className="flex-1 h-12 text-base font-bold rounded-lg bg-[#2563EB] text-white hover:bg-[#1E40AF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-300 shadow-lg disabled:opacity-60"
               size="lg"
               onClick={handlePlaceOrder}
               disabled={isProcessing || !agreedToTerms}

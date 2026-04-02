@@ -123,12 +123,11 @@ export const CategoryProductGrid = ({
                   </span>
                   <Button
                     size="icon"
-                    variant="default"
-                    className="h-8 w-8 rounded-full"
+                    className="h-8 w-8 rounded-full bg-[#2563EB] text-white hover:bg-[#1E40AF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-300"
                     onClick={(e) => handleAddToCart(e, product)}
                     disabled={!product.is_available}
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-4 w-4 text-white" />
                   </Button>
                 </div>
                 {product.vendor && (
