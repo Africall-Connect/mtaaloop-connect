@@ -73,6 +73,8 @@ const VendorOnboarding = () => {
       ? "border-destructive text-destructive focus-visible:ring-destructive focus-visible:ring-2"
       : "";
 
+  const [documentFiles, setDocumentFiles] = useState<File[]>([]);
+
   const [formData, setFormData] = useState({
     fullName: "",
     ownerIdNumber: "",
@@ -128,6 +130,24 @@ const VendorOnboarding = () => {
     fetchEstates();
   }, []);
 
+  const uploadDocumentToStorage = async (file: File, vendorId: string) => {
+    const extension = file.name.split(".").pop()?.toLowerCase() || "pdf";
+    const fileName = `${crypto.randomUUID()}.${extension}`;
+    const filePath = `vendor-documents/${vendorId}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("vendor-documents")
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage.from("vendor-documents").getPublicUrl(filePath);
+    return data?.publicUrl ?? "";
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -177,10 +197,20 @@ const VendorOnboarding = () => {
       if (authError) throw authError;
       if (!authData.user) throw new Error("User creation failed");
 
-      const slug = formData.businessName
-        .toLowerCase()
-        .replace(/\s+/g, "-")
-        .replace(/[^a-z0-9-]/g, "");
+      const documentUrls = [] as string[];
+      if (documentFiles.length > 0) {
+        for (const file of documentFiles) {
+          try {
+            const publicUrl = await uploadDocumentToStorage(file, authData.user.id);
+            if (publicUrl) documentUrls.push(publicUrl);
+          } catch (err) {
+            console.error("Document upload failed", err);
+            toast.error("Failed to upload business document. Please try again.");
+            setLoading(false);
+            return;
+          }
+        }
+      }
 
       const { error: profileError } = await supabase.from("vendor_profiles").insert({
         user_id: authData.user.id,
@@ -199,6 +229,7 @@ const VendorOnboarding = () => {
         paybill_number: formData.paybillNumber || null,
         account_name: formData.accountName || null,
         products_and_services: formData.productsAndServices || null,
+        document_support: documentUrls.length > 0 ? documentUrls : formData.documentSupport.length > 0 ? formData.documentSupport : null,
         has_fixed_menu: formData.hasFixedMenu,
         min_order_amount: formData.minOrderAmount ? parseInt(formData.minOrderAmount, 10) : null,
         average_preparation_time: formData.averagePreparationTime || null,
@@ -206,7 +237,6 @@ const VendorOnboarding = () => {
         delivery_preferences: formData.deliveryPreferences.length > 0 ? formData.deliveryPreferences : null,
         has_packaging: formData.hasPackaging,
         can_handle_bulk: formData.canHandleBulk,
-        document_support: formData.documentSupport.length > 0 ? formData.documentSupport : null,
         additional_documents: formData.additionalDocuments || null,
         whatsapp_business: formData.whatsappBusiness || null,
         facebook_page: formData.facebookPage || null,
@@ -251,7 +281,7 @@ const VendorOnboarding = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Please check your email to verify your account. Once approved by our admin team, you'll be able to log in and start accepting orders.
+              Your vendor application is submitted. Our team reviews it quickly, and you will be updated when it's approved.
             </p>
             <Link to="/auth/login">
               <Button variant="outline" className="w-full mt-2">
@@ -700,6 +730,29 @@ const VendorOnboarding = () => {
                       </label>
                     ))}
                   </div>
+
+                  <div className="mt-4">
+                    <Label htmlFor="businessDocumentFiles">Upload Business Documents (PDF/JPG/PNG)</Label>
+                    <input
+                      id="businessDocumentFiles"
+                      type="file"
+                      multiple
+                      accept="application/pdf,image/*"
+                      onChange={(e) => {
+                        if (!e.target.files) return;
+                        setDocumentFiles(Array.from(e.target.files));
+                      }}
+                      className="mt-1 block w-full text-sm text-gray-700"
+                    />
+                    {documentFiles.length > 0 && (
+                      <div className="mt-2 text-xs text-muted-foreground space-y-1">
+                        {documentFiles.map((file) => (
+                          <p key={file.name} className="truncate">{file.name}</p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <Label htmlFor="additionalDocuments" className="mt-2">Additional documents</Label>
                   <Textarea
                     id="additionalDocuments"
