@@ -180,6 +180,7 @@ const VendorSettings = lazy(() => import("./pages/vendor/VendorSettings"));
 const VendorPayoutsPage = lazy(() => import("./pages/vendor/VendorPayoutsPage"));
 const PharmacyConsultationManagement = lazy(() => import("./pages/vendor/PharmacyConsultationManagement"));
 const VendorPOS = lazy(() => import("./pages/vendor/VendorPOS"));
+const VendorOnboarding = lazy(() => import("./pages/VendorOnboarding"));
 
 // Services & misc
 const SupportLiveChat = lazy(() => import("./pages/SupportLiveChat"));
@@ -243,6 +244,7 @@ const App = () => (
               <Route path="/auth/reset-password" element={<ResetPassword />} />
               <Route path="/auth/role-selection" element={<RoleSelection />} />
               <Route path="/auth/vendor-signup" element={<VendorSignup />} />
+              <Route path="/vendor-onboarding" element={<VendorOnboarding />} />
               <Route path="/auth/estate-signup" element={<EstateSignup />} />
               <Route path="/auth/rider-signup" element={<RiderSignup />} />
               <Route path="/pending-approval" element={<PendingApproval />} />
