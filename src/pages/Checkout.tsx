@@ -262,14 +262,15 @@ const Checkout = () => {
           if (prod) category = prod.category;
         } catch {}
 
-        await supabase.from("orders").insert([{
+        const { error: orderError } = await supabase.from("orders").insert([{
           id: orderId, order_number: orderNumber, customer_id: user.id, vendor_id: orderItems[0]?.vendorId,
-          estate_id: estateId, total_amount: total, delivery_address: addr,
+          estate_id: estateId, total_amount: totalAmount + deliveryFee, delivery_address: addr,
           customer_notes: instructions || null, category,
           house: deliveryAddress.house_number, full_name: fullName, user_email: user.email,
           payment_method: paymentMethod,
           ...(paymentMethod === "pay_on_delivery" ? { payment_status: "cod_pending" } : {}),
-        }]);
+        }]).select().single();
+        if (orderError) throw orderError;
         await supabase.from("order_items").insert(
           orderItems.map(i => ({ order_id: orderId, product_id: i.id, product_name: i.name, quantity: i.quantity, price: i.price }))
         );
