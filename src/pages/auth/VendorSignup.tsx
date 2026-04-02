@@ -105,17 +105,23 @@ const VendorSignup = () => {
       if (!authData.user) throw new Error("User creation failed");
 
       // Create vendor profile (role will be auto-assigned by database trigger)
-      const slug = formData.businessName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      const slug = formData.businessName
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '') || `vendor-${Date.now()}`;
+      const businessAddressValue = formData.businessAddress?.trim() || "Not provided";
+      const businessTypeValue = formData.businessType || "general";
+
       const { error: profileError } = await supabase
         .from("vendor_profiles")
         .insert({
           user_id: authData.user.id,
           business_name: formData.businessName,
-          business_type: formData.businessType,
+          business_type: businessTypeValue,
           business_description: formData.businessDescription,
           business_phone: formData.businessPhone,
           business_email: formData.email,
-          business_address: formData.businessAddress,
+          business_address: businessAddressValue,
           owner_id_number: formData.ownerIdNumber || null,
           alternate_phone: formData.alternatePhone || null,
           nearest_landmark: formData.nearestLandmark || null,

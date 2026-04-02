@@ -162,6 +162,18 @@ const VendorOnboarding = () => {
         },
       });
 
+      const flowSlug = formData.businessName
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9-]/g, "") || `vendor-${Date.now()}`;
+
+      const businessTypeValue =
+        Array.isArray(formData.businessType) && formData.businessType.length > 0
+          ? formData.businessType.join(", ")
+          : "general";
+
+      const businessAddressValue = formData.businessAddress?.trim() || "Not provided";
+
       if (authError) throw authError;
       if (!authData.user) throw new Error("User creation failed");
 
@@ -173,12 +185,13 @@ const VendorOnboarding = () => {
       const { error: profileError } = await supabase.from("vendor_profiles").insert({
         user_id: authData.user.id,
         business_name: formData.businessName,
-        business_type: Array.isArray(formData.businessType) ? formData.businessType.join(", ") : formData.businessType,
+        business_type: businessTypeValue,
         business_description: formData.businessDescription || null,
         business_phone: formData.businessPhone,
         business_email: formData.email || null,
-        business_address: formData.businessAddress || null,
+        business_address: businessAddressValue,
         owner_id_number: formData.ownerIdNumber || null,
+        slug: flowSlug,
         alternate_phone: formData.alternatePhone || null,
         nearest_landmark: formData.nearestLandmark || null,
         estate_or_building_name: formData.estateOrBuildingName || null,
