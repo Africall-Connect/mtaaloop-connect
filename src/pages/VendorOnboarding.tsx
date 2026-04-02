@@ -56,6 +56,8 @@ const vendorFormSchema = z.object({
   bankAccountName: z.string().optional(),
   bankAccountNumber: z.string().optional(),
   additionalInformation: z.string().optional(),
+  vendorSignature: z.string().optional(),
+  applicationDate: z.string().optional(),
 });
 
 const VendorOnboarding = () => {
@@ -103,6 +105,8 @@ const VendorOnboarding = () => {
     bankAccountName: "",
     bankAccountNumber: "",
     additionalInformation: "",
+    vendorSignature: "",
+    applicationDate: new Date().toISOString().slice(0, 10),
   });
 
   useEffect(() => {
@@ -194,16 +198,17 @@ const VendorOnboarding = () => {
         bank_account_name: formData.bankAccountName || null,
         bank_account_number: formData.bankAccountNumber || null,
         additional_information: formData.additionalInformation || null,
-        slug,
-        estate_id: locationInEstate === "inside" && formData.estateId ? formData.estateId : null,
-        is_approved: false,
-      });
+        vendor_signature: formData.vendorSignature || null,
+        application_date: formData.applicationDate || null,
+      } as any);
 
       if (profileError) throw profileError;
 
       setSubmitted(true);
     } catch (error: any) {
-      toast.error(error?.message || "An error occurred during submission");
+      const msg = error?.message || error?.details || "Unknown error";
+      toast.error(`Failed to create profile: ${msg}`);
+      return;
     } finally {
       setLoading(false);
     }
@@ -764,14 +769,14 @@ const VendorOnboarding = () => {
                     <Input
                       id="vendorSignature"
                       placeholder="Vendor Signature"
-                      value={formData.fullName}
-                      disabled
+                      value={formData.vendorSignature}
+                      onChange={(e) => setFormData({ ...formData, vendorSignature: e.target.value })}
                     />
                     <Input
                       id="applicationDate"
-                      placeholder="Date"
-                      value={new Date().toLocaleDateString()}
-                      disabled
+                      type="date"
+                      value={formData.applicationDate}
+                      onChange={(e) => setFormData({ ...formData, applicationDate: e.target.value })}
                     />
                   </div>
                 </div>
