@@ -130,21 +130,28 @@ const VendorOnboarding = () => {
     fetchEstates();
   }, []);
 
+  const STORAGE_BUCKET = process.env.VITE_SUPABASE_DOC_BUCKET || "vendor-documents";
+
   const uploadDocumentToStorage = async (file: File, vendorId: string) => {
     const extension = file.name.split(".").pop()?.toLowerCase() || "pdf";
     const fileName = `${crypto.randomUUID()}.${extension}`;
-    const filePath = `vendor-documents/${vendorId}/${fileName}`;
+    const filePath = `${vendorId}/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
-      .from("vendor-documents")
+      .from(STORAGE_BUCKET)
       .upload(filePath, file, {
         cacheControl: "3600",
         upsert: false,
       });
 
-    if (uploadError) throw uploadError;
+    if (uploadError) {
+      if (uploadError.message?.toLowerCase().includes("bucket not found")) {
+        throw new Error(`Bucket "${STORAGE_BUCKET}" not found. Create it in Supabase Storage before retrying.`);
+      }
+      throw uploadError;
+    }
 
-    const { data } = supabase.storage.from("vendor-documents").getPublicUrl(filePath);
+    const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
     return data?.publicUrl ?? "";
   };
 
@@ -203,9 +210,9 @@ const VendorOnboarding = () => {
           try {
             const publicUrl = await uploadDocumentToStorage(file, authData.user.id);
             if (publicUrl) documentUrls.push(publicUrl);
-          } catch (err) {
+          } catch (err: any) {
             console.error("Document upload failed", err);
-            toast.error("Failed to upload business document. Please try again.");
+            toast.error(err?.message || "Failed to upload business document. Please try again.");
             setLoading(false);
             return;
           }
