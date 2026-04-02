@@ -268,7 +268,7 @@ const Checkout = () => {
           customer_notes: instructions || null, category,
           house: deliveryAddress.house_number, full_name: fullName, user_email: user.email,
           payment_method: paymentMethod,
-          ...(paymentMethod === "pay_on_delivery" ? { payment_status: "cod_pending" } : {}),
+          ...(paymentMethod === "pay_on_delivery" ? { payment_status: "pending" } : {}),
         }]).select().single();
         if (orderError) throw orderError;
         await supabase.from("order_items").insert(
