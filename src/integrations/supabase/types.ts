@@ -1489,6 +1489,7 @@ export type Database = {
           is_muted: boolean | null
           is_video_off: boolean | null
           joined_at: string | null
+          participant_status: string | null
           room_id: string | null
           user_id: string | null
         }
@@ -1498,6 +1499,7 @@ export type Database = {
           is_muted?: boolean | null
           is_video_off?: boolean | null
           joined_at?: string | null
+          participant_status?: string | null
           room_id?: string | null
           user_id?: string | null
         }
@@ -1507,6 +1509,7 @@ export type Database = {
           is_muted?: boolean | null
           is_video_off?: boolean | null
           joined_at?: string | null
+          participant_status?: string | null
           room_id?: string | null
           user_id?: string | null
         }
@@ -1555,6 +1558,8 @@ export type Database = {
           max_participants: number | null
           name: string
           password_hash: string | null
+          pending_join_requests: Json | null
+          room_type: string | null
           topic: string | null
           updated_at: string | null
         }
@@ -1571,6 +1576,8 @@ export type Database = {
           max_participants?: number | null
           name: string
           password_hash?: string | null
+          pending_join_requests?: Json | null
+          room_type?: string | null
           topic?: string | null
           updated_at?: string | null
         }
@@ -1587,6 +1594,8 @@ export type Database = {
           max_participants?: number | null
           name?: string
           password_hash?: string | null
+          pending_join_requests?: Json | null
+          room_type?: string | null
           topic?: string | null
           updated_at?: string | null
         }
@@ -3743,6 +3752,90 @@ export type Database = {
           },
         ]
       }
+      user_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string | null
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_blocks_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_blocks_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_connections: {
+        Row: {
+          connected_user_id: string
+          created_at: string | null
+          id: string
+          match_id: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          connected_user_id: string
+          created_at?: string | null
+          id?: string
+          match_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          connected_user_id?: string
+          created_at?: string | null
+          id?: string
+          match_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_connections_connected_user_id_fkey"
+            columns: ["connected_user_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_connections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_gamification: {
         Row: {
           created_at: string | null
@@ -3844,6 +3937,63 @@ export type Database = {
             foreignKeyName: "user_preferences_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_reports: {
+        Row: {
+          admin_notes: string | null
+          created_at: string | null
+          details: string | null
+          id: string
+          match_id: string | null
+          reason: string
+          reported_id: string
+          reporter_id: string
+          reviewed_at: string | null
+          room_id: string | null
+          status: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string | null
+          details?: string | null
+          id?: string
+          match_id?: string | null
+          reason: string
+          reported_id: string
+          reporter_id: string
+          reviewed_at?: string | null
+          room_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string | null
+          details?: string | null
+          id?: string
+          match_id?: string | null
+          reason?: string
+          reported_id?: string
+          reporter_id?: string
+          reviewed_at?: string | null
+          room_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_reports_reported_id_fkey"
+            columns: ["reported_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
             referencedRelation: "app_users"
             referencedColumns: ["id"]
           },
@@ -4369,6 +4519,7 @@ export type Database = {
           id: string
           interests: string[] | null
           is_online: boolean | null
+          karma_score: number | null
           last_online_at: string | null
           name: string | null
           neighborhood: string | null
@@ -4397,6 +4548,7 @@ export type Database = {
           id?: string
           interests?: string[] | null
           is_online?: boolean | null
+          karma_score?: number | null
           last_online_at?: string | null
           name?: string | null
           neighborhood?: string | null
@@ -4425,6 +4577,7 @@ export type Database = {
           id?: string
           interests?: string[] | null
           is_online?: boolean | null
+          karma_score?: number | null
           last_online_at?: string | null
           name?: string | null
           neighborhood?: string | null
@@ -4572,6 +4725,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      cleanup_empty_rooms: { Args: never; Returns: undefined }
       cleanup_rate_limits: { Args: never; Returns: undefined }
       cleanup_security_logs: { Args: never; Returns: undefined }
       credit_customer_wallet: {
@@ -4639,6 +4793,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_blocked_user_ids: { Args: { for_user_id: string }; Returns: string[] }
       get_consultation_booking_vendor_id: {
         Args: { _booking_id: string }
         Returns: string
@@ -4698,6 +4853,10 @@ export type Database = {
         | { Args: { r: string; uid: string }; Returns: boolean }
       is_consultation_vendor: {
         Args: { _user_id: string; _vendor_id: string }
+        Returns: boolean
+      }
+      is_user_blocked: {
+        Args: { check_by_user_id: string; check_user_id: string }
         Returns: boolean
       }
       reject_estate: {
