@@ -281,8 +281,9 @@ const Checkout = () => {
         toast.success("Order placed successfully!");
         return orderId;
       }
-    } catch (error: unknown) {
-      toast.error(`Failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } catch (error: any) {
+      const msg = error?.message || error?.details || "Unknown error";
+      toast.error(`Failed to create order: ${msg}`);
       return null;
     }
   };
