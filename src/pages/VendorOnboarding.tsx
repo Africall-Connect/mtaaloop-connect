@@ -67,6 +67,12 @@ const VendorOnboarding = () => {
   const [locationInEstate, setLocationInEstate] = useState<string>("inside");
   const [estates, setEstates] = useState<Estate[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const hasError = (field: string) => Boolean(errors[field]);
+  const errorClass = (field: string) =>
+    hasError(field)
+      ? "border-destructive text-destructive focus-visible:ring-destructive focus-visible:ring-2"
+      : "";
+
   const [formData, setFormData] = useState({
     fullName: "",
     ownerIdNumber: "",
@@ -283,46 +289,62 @@ const VendorOnboarding = () => {
                 <h3 className="font-semibold text-foreground border-b pb-2">Section 1 — Business Information</h3>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="businessName">Business / Store Name *</Label>
-                    <Input id="businessName" required value={formData.businessName} onChange={(e) => setFormData({ ...formData, businessName: e.target.value })} />
+                    <Label htmlFor="businessName" className={hasError("businessName") ? "text-destructive" : ""}>Business / Store Name *</Label>
+                    <Input
+                      id="businessName"
+                      required
+                      className={errorClass("businessName")}
+                      value={formData.businessName}
+                      onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+                    />
                     {errors.businessName && <p className="text-sm text-destructive mt-1">{errors.businessName}</p>}
                   </div>
                   <div>
-                    <Label htmlFor="fullName">Business Owner Full Name *</Label>
-                    <Input id="fullName" required value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} />
+                    <Label htmlFor="fullName" className={hasError("fullName") ? "text-destructive" : ""}>Business Owner Full Name *</Label>
+                    <Input
+                      id="fullName"
+                      required
+                      className={errorClass("fullName")}
+                      value={formData.fullName}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    />
                     {errors.fullName && <p className="text-sm text-destructive mt-1">{errors.fullName}</p>}
                   </div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="ownerIdNumber">ID Number</Label>
-                    <Input id="ownerIdNumber" value={formData.ownerIdNumber} onChange={(e) => setFormData({ ...formData, ownerIdNumber: e.target.value })} />
+                    <Input id="ownerIdNumber" className={errorClass("ownerIdNumber")} value={formData.ownerIdNumber} onChange={(e) => setFormData({ ...formData, ownerIdNumber: e.target.value })} />
+                    {errors.ownerIdNumber && <p className="text-sm text-destructive mt-1">{errors.ownerIdNumber}</p>}
                   </div>
                   <div>
-                    <Label htmlFor="phone">Phone Number (Primary) *</Label>
-                    <Input id="phone" type="tel" placeholder="+254 or 07..." required value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
+                    <Label htmlFor="phone" className={hasError("phone") ? "text-destructive" : ""}>Phone Number (Primary) *</Label>
+                    <Input id="phone" type="tel" placeholder="+254 or 07..." required className={errorClass("phone")} value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
                     {errors.phone && <p className="text-sm text-destructive mt-1">{errors.phone}</p>}
                   </div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="alternatePhone">Alternate Phone Number</Label>
-                    <Input id="alternatePhone" type="tel" placeholder="Optional" value={formData.alternatePhone} onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value })} />
+                    <Label htmlFor="alternatePhone" className={hasError("alternatePhone") ? "text-destructive" : ""}>Alternate Phone Number</Label>
+                    <Input id="alternatePhone" type="tel" placeholder="Optional" className={errorClass("alternatePhone")} value={formData.alternatePhone} onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value })} />
+                    {errors.alternatePhone && <p className="text-sm text-destructive mt-1">{errors.alternatePhone}</p>}
                   </div>
                   <div>
-                    <Label htmlFor="email">Email *</Label>
-                    <Input id="email" type="email" required value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                    <Label htmlFor="email" className={hasError("email") ? "text-destructive" : ""}>Email *</Label>
+                    <Input id="email" type="email" required className={errorClass("email")} value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
                     {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
                   </div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="businessAddress">Physical Location / Address of Business</Label>
-                    <Input id="businessAddress" placeholder="Address" value={formData.businessAddress} onChange={(e) => setFormData({ ...formData, businessAddress: e.target.value })} />
+                    <Input id="businessAddress" placeholder="Address" className={errorClass("businessAddress")} value={formData.businessAddress} onChange={(e) => setFormData({ ...formData, businessAddress: e.target.value })} />
+                    {errors.businessAddress && <p className="text-sm text-destructive mt-1">{errors.businessAddress}</p>}
                   </div>
                   <div>
                     <Label htmlFor="nearestLandmark">Nearest Landmark</Label>
-                    <Input id="nearestLandmark" value={formData.nearestLandmark} onChange={(e) => setFormData({ ...formData, nearestLandmark: e.target.value })} />
+                    <Input id="nearestLandmark" className={errorClass("nearestLandmark")} value={formData.nearestLandmark} onChange={(e) => setFormData({ ...formData, nearestLandmark: e.target.value })} />
+                    {errors.nearestLandmark && <p className="text-sm text-destructive mt-1">{errors.nearestLandmark}</p>}
                   </div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
@@ -347,8 +369,16 @@ const VendorOnboarding = () => {
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="password">Password *</Label>
-                    <Input id="password" type="password" required placeholder="Min 8 chars, mixed case + number" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
+                    <Label htmlFor="password" className={hasError("password") ? "text-destructive" : ""}>Password *</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      required
+                      placeholder="Min 8 chars, mixed case + number"
+                      className={errorClass("password")}
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    />
                     {errors.password && <p className="text-sm text-destructive mt-1">{errors.password}</p>}
                   </div>
                 </div>
@@ -359,9 +389,9 @@ const VendorOnboarding = () => {
                 <h3 className="font-semibold text-foreground border-b pb-2">Business Information (Continued)</h3>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="businessType">Business Type *</Label>
+                    <Label htmlFor="businessType" className={hasError("businessType") ? "text-destructive" : ""}>Business Type *</Label>
                     <Select onValueChange={(value) => setFormData({ ...formData, businessType: [value] })}>
-                      <SelectTrigger>
+                      <SelectTrigger className={errorClass("businessType")}>
                         <SelectValue placeholder="Select business type" />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px] bg-background border shadow-lg z-50">
@@ -382,8 +412,8 @@ const VendorOnboarding = () => {
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="businessPhone">Business Phone *</Label>
-                  <Input id="businessPhone" type="tel" placeholder="+254 or 07..." required value={formData.businessPhone} onChange={(e) => setFormData({ ...formData, businessPhone: e.target.value })} />
+                  <Label htmlFor="businessPhone" className={hasError("businessPhone") ? "text-destructive" : ""}>Business Phone *</Label>
+                  <Input id="businessPhone" type="tel" placeholder="+254 or 07..." required className={errorClass("businessPhone")} value={formData.businessPhone} onChange={(e) => setFormData({ ...formData, businessPhone: e.target.value })} />
                   {errors.businessPhone && <p className="text-sm text-destructive mt-1">{errors.businessPhone}</p>}
                 </div>
 
@@ -766,18 +796,28 @@ const VendorOnboarding = () => {
                     I agree to comply with MtaaLoop's vendor terms, delivery standards and customer service expectations as communicated during onboarding and thereafter.
                   </p>
                   <div className="grid md:grid-cols-2 gap-4 mt-3">
-                    <Input
-                      id="vendorSignature"
-                      placeholder="Vendor Signature"
-                      value={formData.vendorSignature}
-                      onChange={(e) => setFormData({ ...formData, vendorSignature: e.target.value })}
-                    />
-                    <Input
-                      id="applicationDate"
-                      type="date"
-                      value={formData.applicationDate}
-                      onChange={(e) => setFormData({ ...formData, applicationDate: e.target.value })}
-                    />
+                    <div>
+                      <Label htmlFor="vendorSignature" className={hasError("vendorSignature") ? "text-destructive" : ""}>Vendor Signature</Label>
+                      <Input
+                        id="vendorSignature"
+                        placeholder="Vendor Signature"
+                        className={errorClass("vendorSignature")}
+                        value={formData.vendorSignature}
+                        onChange={(e) => setFormData({ ...formData, vendorSignature: e.target.value })}
+                      />
+                      {errors.vendorSignature && <p className="text-sm text-destructive mt-1">{errors.vendorSignature}</p>}
+                    </div>
+                    <div>
+                      <Label htmlFor="applicationDate" className={hasError("applicationDate") ? "text-destructive" : ""}>Application Date</Label>
+                      <Input
+                        id="applicationDate"
+                        type="date"
+                        className={errorClass("applicationDate")}
+                        value={formData.applicationDate}
+                        onChange={(e) => setFormData({ ...formData, applicationDate: e.target.value })}
+                      />
+                      {errors.applicationDate && <p className="text-sm text-destructive mt-1">{errors.applicationDate}</p>}
+                    </div>
                   </div>
                 </div>
               </div>
