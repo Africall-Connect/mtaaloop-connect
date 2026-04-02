@@ -164,7 +164,7 @@ const VendorOnboarding = () => {
       {/* Header */}
       <div className="border-b bg-card">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-3">
-          <MtaaLoopLogo />
+          <MtaaLoopOrbit size={40} />
           <div>
             <h1 className="text-lg font-bold text-foreground">MtaaLoop Vendor Onboarding</h1>
             <p className="text-xs text-muted-foreground">Your neighbourhood, delivered.</p>
