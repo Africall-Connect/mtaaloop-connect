@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Estate } from "@/types/common";
-import { MtaaLoopLogo } from "@/components/MtaaLoopLogo";
+import { MtaaLoopOrbit } from "@/components/MtaaLoopLogo";
 import { CheckCircle, Store, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { z } from "zod";
