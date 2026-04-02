@@ -200,7 +200,7 @@ const Checkout = () => {
             delivery_address: addr, customer_notes: instructions,
             house: deliveryAddress.house_number, full_name: fullName,
             payment_method: paymentMethod,
-            ...(paymentMethod === "pay_on_delivery" ? { payment_status: "cod_pending" } : {}),
+            ...(paymentMethod === "pay_on_delivery" ? { payment_status: "pending" } : {}),
             ...(type === "minimart" ? { vendor_id: orderItems[0]?.vendorId } : {}),
           }])
           .select("*").single();
