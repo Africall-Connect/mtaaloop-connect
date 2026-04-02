@@ -257,9 +257,6 @@ const VendorOnboarding = () => {
         {/* Hero */}
         <div className="mb-6 text-center">
           <img src="/logo.png" alt="MtaaLoop Vendor Onboarding Logo" className="mx-auto mb-4 h-24 w-auto object-contain" />
-          <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-            <Store className="h-7 w-7 text-primary" />
-          </div>
           <h2 className="text-2xl font-bold text-foreground">Become a MtaaLoop Vendor</h2>
           <p className="text-muted-foreground mt-1 max-w-md mx-auto">
             Join hundreds of vendors reaching customers in their estates. Fill out the form below to get started.
