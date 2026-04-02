@@ -134,7 +134,7 @@ const VendorOnboarding = () => {
         <Card className="w-full max-w-md text-center">
           <CardHeader className="pb-2">
             <div className="mx-auto mb-4">
-              <MtaaLoopLogo />
+              <MtaaLoopOrbit size={60} />
             </div>
             <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
               <CheckCircle className="h-8 w-8 text-primary" />
