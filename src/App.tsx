@@ -180,6 +180,7 @@ const VendorSettings = lazy(() => import("./pages/vendor/VendorSettings"));
 const VendorPayoutsPage = lazy(() => import("./pages/vendor/VendorPayoutsPage"));
 const PharmacyConsultationManagement = lazy(() => import("./pages/vendor/PharmacyConsultationManagement"));
 const VendorPOS = lazy(() => import("./pages/vendor/VendorPOS"));
+const VendorOnboarding = lazy(() => import("./pages/VendorOnboarding"));
 
 // Services & misc
 const SupportLiveChat = lazy(() => import("./pages/SupportLiveChat"));
