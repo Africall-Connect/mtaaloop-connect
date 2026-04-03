@@ -579,9 +579,9 @@ const Home = () => {
                         </div>
                       )}
                       <Badge className={`absolute top-2 right-2 text-[10px] ${
-                        pharmacy.is_open ? "bg-emerald-600 text-white" : "bg-destructive text-destructive-foreground"
+                        isVendorCurrentlyOpen(pharmacy.open_hours, pharmacy.is_open) ? "bg-emerald-600 text-white" : "bg-destructive text-destructive-foreground"
                       }`}>
-                        {pharmacy.is_open ? "Open" : "Closed"}
+                        {isVendorCurrentlyOpen(pharmacy.open_hours, pharmacy.is_open) ? "Open" : "Closed"}
                       </Badge>
                     </div>
                     <div className="p-3.5">
