@@ -40,7 +40,6 @@ const MyOrders = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
