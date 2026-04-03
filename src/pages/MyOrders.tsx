@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Package, Clock, ChefHat, CheckCircle2, Truck, XCircle, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -7,6 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCart } from "@/contexts/CartContext";
+import { toast } from "sonner";
 
 interface OrderItem {
   product_name?: string;
@@ -30,10 +32,13 @@ interface Order {
     business_name?: string;
   } | null;
   isPremium?: boolean;
+  vendor_id?: string;
 }
 
 const MyOrders = () => {
   const { user } = useAuth();
+  const { addItem } = useCart();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -147,6 +152,29 @@ const MyOrders = () => {
     return orders;
   };
 
+  const handleOrderAgain = (order: Order) => {
+    let addedCount = 0;
+    for (const item of order.order_items || []) {
+      const price = item.price ?? (item.subtotal && item.quantity ? item.subtotal / item.quantity : 0);
+      if (!price || !item.product_name) continue;
+      addItem({
+        id: crypto.randomUUID(),
+        name: item.product_name,
+        price,
+        quantity: item.quantity || 1,
+        vendorId: order.vendor_id ?? order.id,
+        vendorName: order.vendor_profiles?.business_name ?? "Vendor",
+      });
+      addedCount++;
+    }
+    if (addedCount > 0) {
+      toast.success(`${addedCount} item(s) added to cart`);
+      navigate("/cart");
+    } else {
+      toast.error("Could not re-order — item details unavailable");
+    }
+  };
+
   const OrderCard = ({ order }: { order: Order }) => (
     <Card className={`p-4 sm:p-6 hover:shadow-lg transition-all duration-300 ${getStatusBorderColor(order.status)}`}>
       <div className="flex items-start justify-between mb-4">
@@ -179,7 +207,7 @@ const MyOrders = () => {
       <div className="flex items-center justify-between pt-4 border-t">
         <div className="font-bold text-lg text-primary">KSh {Number(order.total_amount).toLocaleString()}</div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="gap-1">
+          <Button variant="outline" size="sm" className="gap-1" onClick={() => handleOrderAgain(order)}>
             <RotateCcw className="h-3 w-3" />
             <span className="hidden sm:inline">Order Again</span>
           </Button>
