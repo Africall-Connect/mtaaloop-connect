@@ -3,6 +3,7 @@ import { Store, Star, Clock, ArrowRight, ChevronLeft, ChevronRight } from "lucid
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { isVendorCurrentlyOpen } from "@/lib/vendorHours";
 
 const FALLBACK_IMG = "https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=400&h=300&fit=crop";
 
@@ -24,6 +25,7 @@ interface VendorShowcaseProps {
     business_type: string;
     operational_category: string;
     is_open: boolean;
+    open_hours?: string | null;
     rating: number;
     delivery_time: string | null;
     product_count?: number;
@@ -37,6 +39,7 @@ export const VendorShowcaseCard = ({ vendor, onClick }: VendorShowcaseProps) => 
   const hasCarousel = products.length > 0;
   const [activeIdx, setActiveIdx] = useState(0);
   const autoRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const currentlyOpen = isVendorCurrentlyOpen(vendor.open_hours, vendor.is_open);
 
   useEffect(() => {
     if (products.length <= 1) return;
@@ -134,9 +137,9 @@ export const VendorShowcaseCard = ({ vendor, onClick }: VendorShowcaseProps) => 
 
         {/* Status badge */}
         <Badge className={`absolute top-2 right-2 text-[10px] font-semibold z-20 border-0 ${
-          vendor.is_open ? "bg-emerald-600 text-white shadow-sm" : "bg-destructive text-destructive-foreground"
+          currentlyOpen ? "bg-emerald-600 text-white shadow-sm" : "bg-destructive text-destructive-foreground"
         }`}>
-          {vendor.is_open ? "Open" : "Closed"}
+          {currentlyOpen ? "Open" : "Closed"}
         </Badge>
 
         {/* Category badge */}

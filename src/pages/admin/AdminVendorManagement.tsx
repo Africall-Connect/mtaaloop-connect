@@ -15,9 +15,10 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { ArrowLeft, Search, Edit, Store, Loader2 } from 'lucide-react';
+import { ArrowLeft, Search, Edit, Store, Loader2, Clock, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { MAIN_CATEGORIES } from '@/constants/categories';
+import { isVendorCurrentlyOpen } from '@/lib/vendorHours';
 
 interface VendorProfile {
   id: string;
@@ -31,7 +32,15 @@ interface VendorProfile {
   estate_id: string | null;
   is_approved: boolean;
   is_active: boolean;
+  is_open: boolean;
   slug: string | null;
+  open_hours: string | null;
+  tagline: string | null;
+  delivery_time: string | null;
+  delivery_fee: number | null;
+  logo_url: string | null;
+  rating: number;
+  review_count: number;
   created_at: string;
   estates?: { name: string } | null;
 }
@@ -78,6 +87,10 @@ export default function AdminVendorManagement() {
       is_approved: vendor.is_approved,
       is_active: vendor.is_active,
       slug: vendor.slug,
+      open_hours: vendor.open_hours,
+      tagline: vendor.tagline,
+      delivery_time: vendor.delivery_time,
+      delivery_fee: vendor.delivery_fee,
     });
   };
 
@@ -97,6 +110,10 @@ export default function AdminVendorManagement() {
           is_approved: editForm.is_approved,
           is_active: editForm.is_active,
           slug: editForm.slug,
+          open_hours: editForm.open_hours,
+          tagline: editForm.tagline,
+          delivery_time: editForm.delivery_time,
+          delivery_fee: editForm.delivery_fee,
         })
         .eq('id', editVendor.id);
 
@@ -189,6 +206,7 @@ export default function AdminVendorManagement() {
                     <TableHead>Type</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead>Estate</TableHead>
+                    <TableHead>Hours</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -196,36 +214,47 @@ export default function AdminVendorManagement() {
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                         No vendors found
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filtered.map(vendor => (
-                      <TableRow key={vendor.id}>
-                        <TableCell className="font-medium">{vendor.business_name}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{vendor.business_type}</Badge>
-                        </TableCell>
-                        <TableCell className="text-sm">{vendor.business_phone}</TableCell>
-                        <TableCell className="text-sm">
-                          {vendor.estates?.name || '—'}
-                        </TableCell>
-                        <TableCell>
-                          {vendor.is_approved ? (
-                            <Badge className="bg-green-500/10 text-green-600 border-green-200">Approved</Badge>
-                          ) : (
-                            <Badge variant="secondary">Pending</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" onClick={() => openEdit(vendor)}>
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    filtered.map(vendor => {
+                      const currentlyOpen = isVendorCurrentlyOpen(vendor.open_hours, vendor.is_open);
+                      return (
+                        <TableRow key={vendor.id}>
+                          <TableCell className="font-medium">{vendor.business_name}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{vendor.business_type}</Badge>
+                          </TableCell>
+                          <TableCell className="text-sm">{vendor.business_phone}</TableCell>
+                          <TableCell className="text-sm">
+                            {vendor.estates?.name || '—'}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-xs text-muted-foreground">{vendor.open_hours || 'Not set'}</span>
+                              <Badge variant={currentlyOpen ? "default" : "secondary"} className={`text-[10px] w-fit ${currentlyOpen ? 'bg-emerald-600 text-white' : ''}`}>
+                                {currentlyOpen ? 'Open Now' : 'Closed'}
+                              </Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {vendor.is_approved ? (
+                              <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200">Approved</Badge>
+                            ) : (
+                              <Badge variant="secondary">Pending</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="sm" onClick={() => openEdit(vendor)}>
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
@@ -311,6 +340,47 @@ export default function AdminVendorManagement() {
                 onChange={e => setEditForm(f => ({ ...f, slug: e.target.value }))}
                 placeholder="e.g. ilora-flowers"
               />
+            </div>
+
+            <div>
+              <Label className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> Working Hours (e.g. 06:00-17:00)</Label>
+              <Input
+                value={editForm.open_hours || ''}
+                onChange={e => setEditForm(f => ({ ...f, open_hours: e.target.value }))}
+                placeholder="06:00-17:00"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Format: HH:MM-HH:MM (24h). Customers will see "Open" or "Closed" based on this.
+              </p>
+            </div>
+
+            <div>
+              <Label>Tagline</Label>
+              <Input
+                value={editForm.tagline || ''}
+                onChange={e => setEditForm(f => ({ ...f, tagline: e.target.value }))}
+                placeholder="Fresh flowers delivered to your door"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Delivery Time</Label>
+                <Input
+                  value={editForm.delivery_time || ''}
+                  onChange={e => setEditForm(f => ({ ...f, delivery_time: e.target.value }))}
+                  placeholder="15-30 min"
+                />
+              </div>
+              <div>
+                <Label>Delivery Fee (KES)</Label>
+                <Input
+                  type="number"
+                  value={editForm.delivery_fee ?? ''}
+                  onChange={e => setEditForm(f => ({ ...f, delivery_fee: e.target.value ? Number(e.target.value) : null }))}
+                  placeholder="0"
+                />
+              </div>
             </div>
 
             <div className="flex items-center justify-between border rounded-lg p-3">
