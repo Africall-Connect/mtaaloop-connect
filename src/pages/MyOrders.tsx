@@ -36,7 +36,10 @@ interface Order {
 
 const MyOrders = () => {
   const { user } = useAuth();
+  const { addItem } = useCart();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
