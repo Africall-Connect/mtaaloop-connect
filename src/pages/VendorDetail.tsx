@@ -232,11 +232,16 @@ const VendorDetail = () => {
 
           <div className="flex items-center justify-between pt-4 border-t">
             <div className="text-sm">
-              <div className="font-medium">⏰ {vendor.open_hours}</div>
-              {vendor.is_active && (
-                <div className="flex items-center gap-2 text-live mt-1">
-                  <div className="w-2 h-2 rounded-full bg-live animate-pulse" />
-                  LIVE - Taking orders now
+              <div className="font-medium">⏰ {vendor.open_hours || 'Hours not set'}</div>
+              {isVendorCurrentlyOpen(vendor.open_hours, vendor.is_open) ? (
+                <div className="flex items-center gap-2 text-emerald-600 mt-1">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Open — Taking orders now
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-destructive mt-1">
+                  <div className="w-2 h-2 rounded-full bg-destructive" />
+                  Closed
                 </div>
               )}
             </div>
