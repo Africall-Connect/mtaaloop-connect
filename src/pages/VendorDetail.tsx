@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Share2, Heart, Star, MapPin, Clock, DollarSign, CheckCircle, Phone, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { isVendorCurrentlyOpen } from "@/lib/vendorHours";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
