@@ -32,6 +32,7 @@ interface Order {
     business_name?: string;
   } | null;
   isPremium?: boolean;
+  vendor_id?: string;
 }
 
 const MyOrders = () => {
