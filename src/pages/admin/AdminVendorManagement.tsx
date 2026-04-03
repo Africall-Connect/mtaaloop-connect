@@ -198,6 +198,7 @@ export default function AdminVendorManagement() {
                     <TableHead>Type</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead>Estate</TableHead>
+                    <TableHead>Hours</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -205,36 +206,47 @@ export default function AdminVendorManagement() {
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                         No vendors found
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filtered.map(vendor => (
-                      <TableRow key={vendor.id}>
-                        <TableCell className="font-medium">{vendor.business_name}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{vendor.business_type}</Badge>
-                        </TableCell>
-                        <TableCell className="text-sm">{vendor.business_phone}</TableCell>
-                        <TableCell className="text-sm">
-                          {vendor.estates?.name || '—'}
-                        </TableCell>
-                        <TableCell>
-                          {vendor.is_approved ? (
-                            <Badge className="bg-green-500/10 text-green-600 border-green-200">Approved</Badge>
-                          ) : (
-                            <Badge variant="secondary">Pending</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" onClick={() => openEdit(vendor)}>
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    filtered.map(vendor => {
+                      const currentlyOpen = isVendorCurrentlyOpen(vendor.open_hours, vendor.is_open);
+                      return (
+                        <TableRow key={vendor.id}>
+                          <TableCell className="font-medium">{vendor.business_name}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{vendor.business_type}</Badge>
+                          </TableCell>
+                          <TableCell className="text-sm">{vendor.business_phone}</TableCell>
+                          <TableCell className="text-sm">
+                            {vendor.estates?.name || '—'}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-xs text-muted-foreground">{vendor.open_hours || 'Not set'}</span>
+                              <Badge variant={currentlyOpen ? "default" : "secondary"} className={`text-[10px] w-fit ${currentlyOpen ? 'bg-emerald-600 text-white' : ''}`}>
+                                {currentlyOpen ? 'Open Now' : 'Closed'}
+                              </Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {vendor.is_approved ? (
+                              <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200">Approved</Badge>
+                            ) : (
+                              <Badge variant="secondary">Pending</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="sm" onClick={() => openEdit(vendor)}>
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
