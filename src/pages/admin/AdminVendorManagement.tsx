@@ -87,6 +87,10 @@ export default function AdminVendorManagement() {
       is_approved: vendor.is_approved,
       is_active: vendor.is_active,
       slug: vendor.slug,
+      open_hours: vendor.open_hours,
+      tagline: vendor.tagline,
+      delivery_time: vendor.delivery_time,
+      delivery_fee: vendor.delivery_fee,
     });
   };
 
@@ -106,6 +110,10 @@ export default function AdminVendorManagement() {
           is_approved: editForm.is_approved,
           is_active: editForm.is_active,
           slug: editForm.slug,
+          open_hours: editForm.open_hours,
+          tagline: editForm.tagline,
+          delivery_time: editForm.delivery_time,
+          delivery_fee: editForm.delivery_fee,
         })
         .eq('id', editVendor.id);
 
