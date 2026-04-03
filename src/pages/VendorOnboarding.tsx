@@ -74,6 +74,64 @@ const VendorOnboarding = () => {
       : "";
 
   const [documentFiles, setDocumentFiles] = useState<File[]>([]);
+  const [signatureDataUrl, setSignatureDataUrl] = useState<string>("");
+  const signatureCanvasRef = useRef<HTMLCanvasElement>(null);
+  const isDrawingRef = useRef(false);
+
+  const getCanvasPoint = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    const canvas = signatureCanvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if ("touches" in e) {
+      return { x: (e.touches[0].clientX - rect.left) * scaleX, y: (e.touches[0].clientY - rect.top) * scaleY };
+    }
+    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+  }, []);
+
+  const startDrawing = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    isDrawingRef.current = true;
+    const ctx = signatureCanvasRef.current?.getContext("2d");
+    if (!ctx) return;
+    const { x, y } = getCanvasPoint(e);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  }, [getCanvasPoint]);
+
+  const draw = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDrawingRef.current) return;
+    e.preventDefault();
+    const ctx = signatureCanvasRef.current?.getContext("2d");
+    if (!ctx) return;
+    const { x, y } = getCanvasPoint(e);
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "hsl(var(--foreground))";
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  }, [getCanvasPoint]);
+
+  const stopDrawing = useCallback(() => {
+    isDrawingRef.current = false;
+    const canvas = signatureCanvasRef.current;
+    if (canvas) {
+      const dataUrl = canvas.toDataURL("image/png");
+      setSignatureDataUrl(dataUrl);
+      setFormData(prev => ({ ...prev, vendorSignature: dataUrl }));
+    }
+  }, []);
+
+  const clearSignature = useCallback(() => {
+    const canvas = signatureCanvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext("2d");
+      ctx?.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    setSignatureDataUrl("");
+    setFormData(prev => ({ ...prev, vendorSignature: "" }));
+  }, []);
 
   const [formData, setFormData] = useState({
     fullName: "",
