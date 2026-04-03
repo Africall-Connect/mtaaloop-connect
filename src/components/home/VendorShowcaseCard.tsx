@@ -25,6 +25,7 @@ interface VendorShowcaseProps {
     business_type: string;
     operational_category: string;
     is_open: boolean;
+    open_hours?: string | null;
     rating: number;
     delivery_time: string | null;
     product_count?: number;
