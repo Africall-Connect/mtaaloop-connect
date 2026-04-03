@@ -39,6 +39,7 @@ export const VendorShowcaseCard = ({ vendor, onClick }: VendorShowcaseProps) => 
   const hasCarousel = products.length > 0;
   const [activeIdx, setActiveIdx] = useState(0);
   const autoRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const currentlyOpen = isVendorCurrentlyOpen(vendor.open_hours, vendor.is_open);
 
   useEffect(() => {
     if (products.length <= 1) return;
