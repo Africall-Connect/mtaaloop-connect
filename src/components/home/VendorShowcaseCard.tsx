@@ -3,6 +3,7 @@ import { Store, Star, Clock, ArrowRight, ChevronLeft, ChevronRight } from "lucid
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { isVendorCurrentlyOpen } from "@/lib/vendorHours";
 
 const FALLBACK_IMG = "https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=400&h=300&fit=crop";
 
