@@ -871,13 +871,31 @@ const VendorOnboarding = () => {
                   <div className="grid md:grid-cols-2 gap-4 mt-3">
                     <div>
                       <Label htmlFor="vendorSignature" className={hasError("vendorSignature") ? "text-destructive" : ""}>Vendor Signature</Label>
-                      <Input
-                        id="vendorSignature"
-                        placeholder="Vendor Signature"
-                        className={errorClass("vendorSignature")}
-                        value={formData.vendorSignature}
-                        onChange={(e) => setFormData({ ...formData, vendorSignature: e.target.value })}
-                      />
+                      <div className="relative">
+                        <canvas
+                          ref={signatureCanvasRef}
+                          width={400}
+                          height={200}
+                          className={`w-full h-[200px] border rounded-md cursor-crosshair bg-background touch-none ${hasError("vendorSignature") ? "border-destructive" : "border-input"}`}
+                          onMouseDown={startDrawing}
+                          onMouseMove={draw}
+                          onMouseUp={stopDrawing}
+                          onMouseLeave={stopDrawing}
+                          onTouchStart={startDrawing}
+                          onTouchMove={draw}
+                          onTouchEnd={stopDrawing}
+                        />
+                        {!signatureDataUrl && (
+                          <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none">
+                            Sign here
+                          </span>
+                        )}
+                        {signatureDataUrl && (
+                          <Button type="button" variant="ghost" size="sm" className="absolute top-1 right-1" onClick={clearSignature}>
+                            Clear
+                          </Button>
+                        )}
+                      </div>
                       {errors.vendorSignature && <p className="text-sm text-destructive mt-1">{errors.vendorSignature}</p>}
                     </div>
                     <div>
