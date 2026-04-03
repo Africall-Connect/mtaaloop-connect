@@ -15,9 +15,10 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { ArrowLeft, Search, Edit, Store, Loader2 } from 'lucide-react';
+import { ArrowLeft, Search, Edit, Store, Loader2, Clock, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { MAIN_CATEGORIES } from '@/constants/categories';
+import { isVendorCurrentlyOpen } from '@/lib/vendorHours';
 
 interface VendorProfile {
   id: string;
@@ -31,7 +32,15 @@ interface VendorProfile {
   estate_id: string | null;
   is_approved: boolean;
   is_active: boolean;
+  is_open: boolean;
   slug: string | null;
+  open_hours: string | null;
+  tagline: string | null;
+  delivery_time: string | null;
+  delivery_fee: number | null;
+  logo_url: string | null;
+  rating: number;
+  review_count: number;
   created_at: string;
   estates?: { name: string } | null;
 }
