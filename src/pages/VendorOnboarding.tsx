@@ -188,7 +188,7 @@ const VendorOnboarding = () => {
     fetchEstates();
   }, []);
 
-  const STORAGE_BUCKET = process.env.VITE_SUPABASE_DOC_BUCKET || "vendor-documents";
+  const STORAGE_BUCKET = (import.meta.env.VITE_SUPABASE_DOC_BUCKET as string) || "vendor-documents";
 
   const uploadDocumentToStorage = async (file: File, vendorId: string) => {
     const extension = file.name.split(".").pop()?.toLowerCase() || "pdf";
