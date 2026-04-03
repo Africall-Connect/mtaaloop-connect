@@ -137,9 +137,9 @@ export const VendorShowcaseCard = ({ vendor, onClick }: VendorShowcaseProps) => 
 
         {/* Status badge */}
         <Badge className={`absolute top-2 right-2 text-[10px] font-semibold z-20 border-0 ${
-          vendor.is_open ? "bg-emerald-600 text-white shadow-sm" : "bg-destructive text-destructive-foreground"
+          currentlyOpen ? "bg-emerald-600 text-white shadow-sm" : "bg-destructive text-destructive-foreground"
         }`}>
-          {vendor.is_open ? "Open" : "Closed"}
+          {currentlyOpen ? "Open" : "Closed"}
         </Badge>
 
         {/* Category badge */}
