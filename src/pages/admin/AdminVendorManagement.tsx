@@ -342,6 +342,47 @@ export default function AdminVendorManagement() {
               />
             </div>
 
+            <div>
+              <Label className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> Working Hours (e.g. 06:00-17:00)</Label>
+              <Input
+                value={editForm.open_hours || ''}
+                onChange={e => setEditForm(f => ({ ...f, open_hours: e.target.value }))}
+                placeholder="06:00-17:00"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Format: HH:MM-HH:MM (24h). Customers will see "Open" or "Closed" based on this.
+              </p>
+            </div>
+
+            <div>
+              <Label>Tagline</Label>
+              <Input
+                value={editForm.tagline || ''}
+                onChange={e => setEditForm(f => ({ ...f, tagline: e.target.value }))}
+                placeholder="Fresh flowers delivered to your door"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Delivery Time</Label>
+                <Input
+                  value={editForm.delivery_time || ''}
+                  onChange={e => setEditForm(f => ({ ...f, delivery_time: e.target.value }))}
+                  placeholder="15-30 min"
+                />
+              </div>
+              <div>
+                <Label>Delivery Fee (KES)</Label>
+                <Input
+                  type="number"
+                  value={editForm.delivery_fee ?? ''}
+                  onChange={e => setEditForm(f => ({ ...f, delivery_fee: e.target.value ? Number(e.target.value) : null }))}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+
             <div className="flex items-center justify-between border rounded-lg p-3">
               <div>
                 <p className="font-medium text-sm">Approved</p>
