@@ -369,7 +369,7 @@ const OrderTracking = () => {
 
               // Play sound effect (optional)
               try {
-                const audio = new Audio('/notification.mp3');
+                const audio = new Audio('/sounds/notification.wav');
                 audio.volume = 0.5;
                 audio.play().catch(() => {/* ignore if audio fails */});
               } catch (e) {
