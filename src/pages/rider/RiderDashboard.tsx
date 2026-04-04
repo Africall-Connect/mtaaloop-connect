@@ -512,7 +512,7 @@ export default function RiderDashboard() {
                     </Button>
                     <Button
                       variant="outline"
-                      onClick={() => {/* Simulate navigation */}}
+                      onClick={() => { const addr = delivery?.orders?.vendor_address || delivery?.orders?.delivery_address; if (addr) window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`, '_blank'); }}
                       className="text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2 h-auto whitespace-nowrap"
                       size="sm"
                     >
@@ -552,7 +552,7 @@ export default function RiderDashboard() {
                     </Button>
                     <Button
                       variant="outline"
-                      onClick={() => {/* Simulate navigation */}}
+                      onClick={() => { const addr = delivery?.orders?.delivery_address; if (addr) window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`, '_blank'); }}
                       className="text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2 h-auto whitespace-nowrap"
                       size="sm"
                     >
@@ -682,7 +682,7 @@ export default function RiderDashboard() {
                             </div>
                           );})}
                           {recentDeliveries.length > 3 && (
-                            <Button variant="link" className="w-full text-xs p-0 h-auto dark:text-gray-300">
+                            <Button variant="link" className="w-full text-xs p-0 h-auto dark:text-gray-300" onClick={() => setActiveTab('active-orders')}>
                               View All Recent Deliveries →
                             </Button>
                           )}
@@ -726,6 +726,7 @@ export default function RiderDashboard() {
                           variant="link"
                           className="w-full mt-1 sm:mt-2 text-xs p-0 h-auto"
                           size="sm"
+                          onClick={() => setActiveTab('active-orders')}
                         >
                           View All Deliveries →
                         </Button>
@@ -790,6 +791,7 @@ export default function RiderDashboard() {
                           variant="link"
                           className="w-full mt-1 sm:mt-2 text-xs p-0 h-auto"
                           size="sm"
+                          onClick={() => setActiveView('wallet')}
                         >
                           View Wallet →
                         </Button>
@@ -823,6 +825,7 @@ export default function RiderDashboard() {
                           variant="link"
                           className="w-full mt-1 sm:mt-2 text-xs p-0 h-auto"
                           size="sm"
+                          onClick={() => setActiveTab('insights')}
                         >
                           View Analytics →
                         </Button>
@@ -881,6 +884,7 @@ export default function RiderDashboard() {
                           variant="link"
                           className="w-full mt-2 sm:mt-3 text-xs p-0 h-auto"
                           size="sm"
+                          onClick={() => setActiveTab('active-orders')}
                         >
                           View Details →
                         </Button>

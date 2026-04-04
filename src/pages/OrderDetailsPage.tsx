@@ -62,8 +62,13 @@ const OrderDetailsPage = () => {
         return;
       }
       setStatus("loading");
-      const { data: orderData } = await supabase.from("orders").select("*").eq("id", orderId).single();
+      const { data: orderData, error } = await supabase.from("orders").select("*").eq("id", orderId).single();
 
+      if (error) {
+        console.error("Error fetching order:", error);
+        setStatus("loaded");
+        return;
+      }
       if (orderData) {
         setOrder(orderData);
       }

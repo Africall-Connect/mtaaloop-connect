@@ -14,6 +14,7 @@ import {
   TrendingUp, AlertCircle, Eye, Edit, Trash2, Copy, ToggleLeft, ArrowLeft, Layers
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { exportToCSV } from '@/lib/exportCSV';
 import ProductFormDialog from '@/components/vendor/product/ProductFormDialog';
 import BulkActionsBar from '@/components/vendor/product/BulkActionsBar';
 import ProductAnalytics from '@/components/vendor/product/ProductAnalytics';
@@ -407,7 +408,7 @@ export default function AdvancedProductManagement() {
                   <SelectItem value="stock_low">Stock: Low to High</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="icon" onClick={() => { exportToCSV(products.map(p => ({ name: p.name, price: p.price, stock: p.stock_quantity, status: p.is_available ? 'Active' : 'Inactive', category: p.category })), 'products-export'); toast.success("Products exported"); }}>
                 <Download className="h-4 w-4" />
               </Button>
             </div>
@@ -538,7 +539,7 @@ export default function AdvancedProductManagement() {
                               <Copy className="h-4 w-4 mr-1" />
                               Duplicate
                             </Button>
-                            <Button size="sm" variant="outline">
+                            <Button size="sm" variant="outline" onClick={() => openEditDialog(product)}>
                               <Eye className="h-4 w-4 mr-1" />
                               View Details
                             </Button>

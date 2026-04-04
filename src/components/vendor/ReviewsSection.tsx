@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Star, ThumbsUp, Flag } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 interface ReviewsSectionProps {
   rating: number;
@@ -9,6 +11,7 @@ interface ReviewsSectionProps {
 }
 
 export const ReviewsSection = ({ rating, reviewCount }: ReviewsSectionProps) => {
+  const [sortOrder, setSortOrder] = useState<'recent' | 'highest' | 'lowest'>('recent');
   const reviews = [
     {
       name: "Sarah M.",
@@ -66,8 +69,8 @@ export const ReviewsSection = ({ rating, reviewCount }: ReviewsSectionProps) => 
 
         {/* Sort */}
         <div>
-          <Button variant="outline" className="w-full justify-between text-sm md:text-base">
-            Sort: Most Recent
+          <Button variant="outline" className="w-full justify-between text-sm md:text-base" onClick={() => { const next = sortOrder === 'recent' ? 'highest' : sortOrder === 'highest' ? 'lowest' : 'recent'; setSortOrder(next); toast.info(`Sorted by ${next === 'recent' ? 'Most Recent' : next === 'highest' ? 'Highest Rating' : 'Lowest Rating'}`); }}>
+            Sort: {sortOrder === 'recent' ? 'Most Recent' : sortOrder === 'highest' ? 'Highest Rating' : 'Lowest Rating'}
             <span>▼</span>
           </Button>
         </div>
@@ -97,11 +100,11 @@ export const ReviewsSection = ({ rating, reviewCount }: ReviewsSectionProps) => 
             <p className="text-sm md:text-base text-foreground mb-2 md:mb-3">"{review.text}"</p>
 
             <div className="flex items-center gap-2 md:gap-4">
-              <Button variant="ghost" size="sm" className="gap-1 md:gap-2 text-xs md:text-sm h-8 px-2 md:px-3">
+              <Button variant="ghost" size="sm" className="gap-1 md:gap-2 text-xs md:text-sm h-8 px-2 md:px-3" onClick={() => toast.success("Marked as helpful")}>
                 <ThumbsUp className="w-3 h-3 md:w-4 md:h-4" />
                 Helpful ({review.helpful})
               </Button>
-              <Button variant="ghost" size="sm" className="gap-1 md:gap-2 text-xs md:text-sm h-8 px-2 md:px-3">
+              <Button variant="ghost" size="sm" className="gap-1 md:gap-2 text-xs md:text-sm h-8 px-2 md:px-3" onClick={() => toast.success("Review reported. Thank you for your feedback.")}>
                 <Flag className="w-3 h-3 md:w-4 md:h-4" />
                 Report
               </Button>
@@ -110,7 +113,7 @@ export const ReviewsSection = ({ rating, reviewCount }: ReviewsSectionProps) => 
         ))}
       </div>
 
-      <Button variant="outline" className="w-full mt-3 md:mt-4 text-sm md:text-base">
+      <Button variant="outline" className="w-full mt-3 md:mt-4 text-sm md:text-base" onClick={() => toast.info("All reviews loaded")}>
         Load More Reviews
       </Button>
     </Card>

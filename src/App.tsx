@@ -10,6 +10,7 @@ import { ApartmentProvider } from "./contexts/ApartmentContext";
 import { AddressProvider } from "./contexts/AddressContext";
 import { GamificationProvider } from "./contexts/GamificationContext";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { CustomCursor } from "./components/CustomCursor";
@@ -180,6 +181,7 @@ const VendorSettings = lazy(() => import("./pages/vendor/VendorSettings"));
 const VendorPayoutsPage = lazy(() => import("./pages/vendor/VendorPayoutsPage"));
 const PharmacyConsultationManagement = lazy(() => import("./pages/vendor/PharmacyConsultationManagement"));
 const VendorPOS = lazy(() => import("./pages/vendor/VendorPOS"));
+const VendorNotificationsPage = lazy(() => import("./components/vendor/NotificationsPage"));
 const VendorOnboarding = lazy(() => import("./pages/VendorOnboarding"));
 
 // Services & misc
@@ -226,6 +228,7 @@ const App = () => (
           <CartProvider>
             <AddressProvider>
               <SubscriptionProvider>
+                <NotificationProvider>
                 <TooltipProvider>
                 <CustomCursor />
                 <Toaster />
@@ -551,7 +554,7 @@ const App = () => (
               <Route path="/subcategory/water-refills" element={<WaterRefills />} />
               <Route path="/subcategory/gas-refills" element={<GasRefills />} />
               <Route path="/subcategory/house-hunting" element={<HouseHunting />} />
-              <Route path="/subcategory/PhoneComouterRepairs" element={<PhoneComputerRepairs />} />
+              <Route path="/subcategory/PhoneComputerRepairs" element={<PhoneComputerRepairs />} />
               <Route path="/subcategory/appliance-repairs" element={<ApplianceRepairs />} />
               <Route path="/subcategory/plumbing-repairs" element={<PlumbingRepairs />} />
               <Route path="/subcategory/electrical-repairs" element={<ElectricalRepairs />} />
@@ -776,6 +779,11 @@ const App = () => (
                   <PharmacyConsultationManagement />
                 </ProtectedRoute>
               } />
+              <Route path="/vendor/notifications" element={
+                <ProtectedRoute requiredRole="vendor" requireApproval>
+                  <VendorNotificationsPage />
+                </ProtectedRoute>
+              } />
 
               {/* Customer consultation history */}
               <Route path="/my-consultations" element={
@@ -829,6 +837,7 @@ const App = () => (
           </GlobalLayout>
           </BrowserRouter>
                 </TooltipProvider>
+                </NotificationProvider>
               </SubscriptionProvider>
             </AddressProvider>
           </CartProvider>

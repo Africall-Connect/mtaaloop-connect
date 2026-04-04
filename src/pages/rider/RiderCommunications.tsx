@@ -310,15 +310,15 @@ export default function RiderCommunications() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => window.location.href = `tel:${selectedConv.customer_phone || ''}`}>
                         <Phone className="h-4 w-4 mr-1" />
                         Call
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => window.location.href = `mailto:${selectedConv.customer_email || ''}`}>
                         <Mail className="h-4 w-4 mr-1" />
                         Email
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => { setConversations(prev => prev.filter(c => c.customer_id !== selectedConv.customer_id)); setSelectedConv(null); toast.success("Conversation archived"); }}>
                         <Archive className="h-4 w-4" />
                       </Button>
                     </div>

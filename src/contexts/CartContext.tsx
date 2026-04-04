@@ -287,10 +287,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const clearVendorCart = (vendorId: string) => {
+    const vendorItemIds = items.filter(item => item.vendorId === vendorId).map(item => item.id);
     setItems((prev) => prev.filter((item) => item.vendorId !== vendorId));
     setSelectedItems((prev) => {
       const newSet = new Set(prev);
-      items.filter(item => item.vendorId === vendorId).forEach(item => newSet.delete(item.id));
+      vendorItemIds.forEach(id => newSet.delete(id));
       return newSet;
     });
   };
