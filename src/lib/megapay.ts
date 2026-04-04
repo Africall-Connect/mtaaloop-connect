@@ -20,7 +20,8 @@ interface TransactionStatusResponse {
 }
 
 /**
- * Initiate M-Pesa STK Push via MegaPay API (through Edge Function proxy)
+ * Initiate M-Pesa STK Push via MegaPay API (through Edge Function proxy).
+ * Does NOT create an order — just sends the STK push.
  */
 export async function initiateMpesaPayment(
   phoneNumber: string,
@@ -39,7 +40,7 @@ export async function initiateMpesaPayment(
 }
 
 /**
- * Check M-Pesa transaction status via MegaPay API (through Edge Function proxy)
+ * Check M-Pesa transaction status via MegaPay API (through Edge Function proxy).
  */
 export async function checkTransactionStatus(
   transactionRequestId: string
@@ -53,27 +54,34 @@ export async function checkTransactionStatus(
 }
 
 /**
- * Poll for payment completion.
- * Returns true if paid, false if cancelled/failed, null if still pending.
+ * Poll MegaPay transaction status until completed, failed, or timeout.
+ * This polls the MegaPay API directly (no order needed in DB yet).
  */
-export async function pollPaymentStatus(
-  orderId: string,
-  maxAttempts = 30,
+export async function pollMpesaTransaction(
+  transactionRequestId: string,
+  maxAttempts = 40,
   intervalMs = 3000
-): Promise<'paid' | 'failed' | 'timeout'> {
+): Promise<{ status: 'paid' | 'failed' | 'timeout'; receipt?: string }> {
   for (let i = 0; i < maxAttempts; i++) {
     await new Promise(resolve => setTimeout(resolve, intervalMs));
 
-    const { data } = await supabase
-      .from('orders')
-      .select('payment_status')
-      .eq('id', orderId)
-      .single();
+    const result = await checkTransactionStatus(transactionRequestId);
+    if (!result) continue;
 
-    if (data?.payment_status === 'paid') return 'paid';
-    if (data?.payment_status === 'failed') return 'failed';
+    // MegaPay returns TransactionCode "0" for success
+    if (result.TransactionStatus === 'Completed' || result.TransactionCode === '0') {
+      return { status: 'paid', receipt: result.TransactionReceipt };
+    }
+
+    // Any non-zero code means failed/cancelled
+    if (result.ResultCode && result.ResultCode !== '200' && result.TransactionStatus) {
+      // If TransactionStatus exists and is not pending, it's done
+      if (result.TransactionStatus !== 'Pending' && result.TransactionStatus !== 'Processing') {
+        return { status: 'failed' };
+      }
+    }
   }
-  return 'timeout';
+  return { status: 'timeout' };
 }
 
 /**

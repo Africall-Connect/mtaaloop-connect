@@ -28,7 +28,7 @@ import {
   sanitizeCheckoutData,
 } from "@/lib/schemas/checkoutSchema";
 import { getWalletBalance, debitWallet } from "@/lib/customerWallet";
-import { initiateMpesaPayment, pollPaymentStatus, formatPhoneNumber } from "@/lib/megapay";
+import { initiateMpesaPayment, pollMpesaTransaction, formatPhoneNumber } from "@/lib/megapay";
 
 interface TimeSlot { date: string; time: string; available: boolean; }
 interface PromoCode { code: string; discount: number; type: "percentage" | "fixed"; description: string; }
@@ -161,6 +161,54 @@ const Checkout = () => {
       }
     }
 
+    // ══════════════════════════════════════════════════════════════
+    // M-PESA: Collect payment BEFORE creating the order
+    // ══════════════════════════════════════════════════════════════
+    let mpesaReceipt: string | undefined;
+    if (paymentMethod === "mpesa") {
+      const phone = formatPhoneNumber(mpesaPhone);
+      if (!phone || phone.length < 12) {
+        toast.error("Please enter a valid M-Pesa phone number");
+        return;
+      }
+
+      setMpesaWaiting(true);
+      try {
+        const tempRef = `MTAA-${Date.now()}`;
+        const stkResult = await initiateMpesaPayment(phone, Math.ceil(total), tempRef);
+        if (!stkResult.success || !stkResult.transaction_request_id) {
+          toast.error(stkResult.error || "Failed to send STK push. Please try again.");
+          setMpesaWaiting(false);
+          return;
+        }
+
+        toast.success("STK push sent! Check your phone and enter your M-Pesa PIN.");
+
+        // Poll MegaPay transaction status until paid/failed/timeout
+        const result = await pollMpesaTransaction(stkResult.transaction_request_id, 40, 3000);
+
+        if (result.status === "paid") {
+          toast.success("M-Pesa payment confirmed! Placing your order...");
+          mpesaReceipt = result.receipt;
+        } else if (result.status === "failed") {
+          toast.error("M-Pesa payment was cancelled or failed. Please try again.");
+          setMpesaWaiting(false);
+          return; // Do NOT create order
+        } else {
+          toast.error("Payment timed out. Please try again.");
+          setMpesaWaiting(false);
+          return; // Do NOT create order
+        }
+      } catch (mpesaErr: unknown) {
+        toast.error(`M-Pesa error: ${mpesaErr instanceof Error ? mpesaErr.message : "Unknown error"}`);
+        setMpesaWaiting(false);
+        return; // Do NOT create order
+      }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // Now create the orders (payment already confirmed for mpesa/wallet validated)
+    // ══════════════════════════════════════════════════════════════
     setIsProcessing(true);
     try {
       const mtaaLoopMartItems = items.filter(i => i.vendorId === MTAALOOP_MART_VENDOR_ID);
@@ -175,7 +223,7 @@ const Checkout = () => {
       if (mtaaLoopManagedItems.length > 0) { const id = await placeOrder("mtaaloop", mtaaLoopManagedItems); if (id) allOrderIds.push(id); }
       if (otherItems.length > 0) { const id = await placeOrder("regular", otherItems); if (id) allOrderIds.push(id); }
 
-      // ── Wallet payment ──
+      // ── Wallet payment (debit after order creation) ──
       if (paymentMethod === "wallet" && allOrderIds.length > 0) {
         try {
           await debitWallet(total, allOrderIds[0], `Payment for order${allOrderIds.length > 1 ? 's' : ''}`);
@@ -190,48 +238,29 @@ const Checkout = () => {
         }
       }
 
-      // ── M-Pesa STK Push payment ──
+      // ── M-Pesa: mark orders as paid (payment already confirmed above) ──
       if (paymentMethod === "mpesa" && allOrderIds.length > 0) {
-        const phone = formatPhoneNumber(mpesaPhone);
-        if (!phone || phone.length < 12) {
-          toast.error("Please enter a valid M-Pesa phone number");
-          return;
+        for (const oid of allOrderIds) {
+          await supabase.from("orders").update({
+            payment_status: "paid",
+            payment_channel: "mpesa",
+            payment_provider: "megapay",
+            payment_reference: mpesaReceipt || null,
+            paid_at: new Date().toISOString(),
+          }).eq("id", oid);
+          // Also try premium_orders
+          await supabase.from("premium_orders").update({
+            payment_status: "paid",
+            payment_method: "mpesa",
+          }).eq("id", oid);
         }
-
-        setMpesaWaiting(true);
-        try {
-          const stkResult = await initiateMpesaPayment(phone, Math.ceil(total), allOrderIds[0]);
-          if (!stkResult.success) {
-            toast.error(stkResult.error || "Failed to send STK push. Please try again.");
-            setMpesaWaiting(false);
-            return;
-          }
-
-          toast.success("STK push sent! Check your phone and enter your M-Pesa PIN.");
-
-          // Poll for payment completion
-          const result = await pollPaymentStatus(allOrderIds[0], 40, 3000);
-
-          if (result === "paid") {
-            toast.success("M-Pesa payment successful!");
-            setMpesaWaiting(false);
-          } else if (result === "failed") {
-            toast.error("M-Pesa payment was cancelled or failed. You can pay on delivery instead.");
-            setMpesaWaiting(false);
-            // Don't return — order is already created, they can pay on delivery
-          } else {
-            toast.error("Payment timed out. Your order is placed — you can pay via M-Pesa or on delivery.");
-            setMpesaWaiting(false);
-          }
-        } catch (mpesaErr: unknown) {
-          toast.error(`M-Pesa payment error: ${mpesaErr instanceof Error ? mpesaErr.message : "Unknown error"}`);
-          setMpesaWaiting(false);
-        }
+        setMpesaWaiting(false);
       }
     } catch (e) {
       console.error("Order error:", e);
     } finally {
       setIsProcessing(false);
+      setMpesaWaiting(false);
     }
   };
 
