@@ -28,6 +28,7 @@ import {
   sanitizeCheckoutData,
 } from "@/lib/schemas/checkoutSchema";
 import { getWalletBalance, debitWallet } from "@/lib/customerWallet";
+import { initiateMpesaPayment, pollPaymentStatus, formatPhoneNumber } from "@/lib/megapay";
 
 interface TimeSlot { date: string; time: string; available: boolean; }
 interface PromoCode { code: string; discount: number; type: "percentage" | "fixed"; description: string; }
@@ -63,6 +64,8 @@ const Checkout = () => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [walletLoading, setWalletLoading] = useState(true);
+  const [mpesaPhone, setMpesaPhone] = useState("");
+  const [mpesaWaiting, setMpesaWaiting] = useState(false);
 
   // ── Fetch user preferences & wallet ─────────────────────────────
   useEffect(() => {
@@ -76,7 +79,7 @@ const Checkout = () => {
 
         const { data: prefs } = await supabase
           .from("user_preferences")
-          .select("estate_id, apartment_name, house_name")
+          .select("estate_id, apartment_name, house_name, mpesa_number")
           .eq("user_id", authUser.id)
           .maybeSingle();
 
@@ -84,6 +87,7 @@ const Checkout = () => {
           if (prefs.estate_id) setEstateId(prefs.estate_id);
           if (prefs.apartment_name) setDeliveryAddress(p => ({ ...p, estate_name: prefs.apartment_name }));
           if (prefs.house_name) setDeliveryAddress(p => ({ ...p, house_number: prefs.house_name }));
+          if ((prefs as any).mpesa_number) setMpesaPhone((prefs as any).mpesa_number);
         }
       } catch (e) {
         console.error("Error fetching user data:", e);
@@ -148,6 +152,15 @@ const Checkout = () => {
       }
     }
 
+    // M-Pesa phone check
+    if (paymentMethod === "mpesa") {
+      const cleaned = mpesaPhone.replace(/\D/g, '');
+      if (cleaned.length < 9) {
+        toast.error("Please enter a valid M-Pesa phone number");
+        return;
+      }
+    }
+
     setIsProcessing(true);
     try {
       const mtaaLoopMartItems = items.filter(i => i.vendorId === MTAALOOP_MART_VENDOR_ID);
@@ -162,11 +175,10 @@ const Checkout = () => {
       if (mtaaLoopManagedItems.length > 0) { const id = await placeOrder("mtaaloop", mtaaLoopManagedItems); if (id) allOrderIds.push(id); }
       if (otherItems.length > 0) { const id = await placeOrder("regular", otherItems); if (id) allOrderIds.push(id); }
 
-      // Debit wallet after all orders placed
+      // ── Wallet payment ──
       if (paymentMethod === "wallet" && allOrderIds.length > 0) {
         try {
           await debitWallet(total, allOrderIds[0], `Payment for order${allOrderIds.length > 1 ? 's' : ''}`);
-          // Update all orders to paid
           for (const oid of allOrderIds) {
             await supabase.from("orders").update({ payment_status: "paid", payment_channel: "wallet", paid_at: new Date().toISOString() }).eq("id", oid);
           }
@@ -175,6 +187,45 @@ const Checkout = () => {
         } catch (walletErr: unknown) {
           toast.error(`Wallet payment failed: ${walletErr instanceof Error ? walletErr.message : "Unknown error"}`);
           return;
+        }
+      }
+
+      // ── M-Pesa STK Push payment ──
+      if (paymentMethod === "mpesa" && allOrderIds.length > 0) {
+        const phone = formatPhoneNumber(mpesaPhone);
+        if (!phone || phone.length < 12) {
+          toast.error("Please enter a valid M-Pesa phone number");
+          return;
+        }
+
+        setMpesaWaiting(true);
+        try {
+          const stkResult = await initiateMpesaPayment(phone, Math.ceil(total), allOrderIds[0]);
+          if (!stkResult.success) {
+            toast.error(stkResult.error || "Failed to send STK push. Please try again.");
+            setMpesaWaiting(false);
+            return;
+          }
+
+          toast.success("STK push sent! Check your phone and enter your M-Pesa PIN.");
+
+          // Poll for payment completion
+          const result = await pollPaymentStatus(allOrderIds[0], 40, 3000);
+
+          if (result === "paid") {
+            toast.success("M-Pesa payment successful!");
+            setMpesaWaiting(false);
+          } else if (result === "failed") {
+            toast.error("M-Pesa payment was cancelled or failed. You can pay on delivery instead.");
+            setMpesaWaiting(false);
+            // Don't return — order is already created, they can pay on delivery
+          } else {
+            toast.error("Payment timed out. Your order is placed — you can pay via M-Pesa or on delivery.");
+            setMpesaWaiting(false);
+          }
+        } catch (mpesaErr: unknown) {
+          toast.error(`M-Pesa payment error: ${mpesaErr instanceof Error ? mpesaErr.message : "Unknown error"}`);
+          setMpesaWaiting(false);
         }
       }
     } catch (e) {
@@ -437,7 +488,7 @@ const Checkout = () => {
               <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-3">
                 {[
                   { value: "wallet", icon: Wallet, title: "MtaaLoop Wallet", desc: walletLoading ? "Loading balance..." : `Balance: KSh ${walletBalance?.toLocaleString() ?? 0}`, badge: "Instant", disabled: false },
-                  { value: "mpesa", icon: Smartphone, title: "M-Pesa", desc: "Pay via M-Pesa STK push", badge: "Coming Soon", disabled: true },
+                  { value: "mpesa", icon: Smartphone, title: "M-Pesa", desc: "Pay via M-Pesa STK push", badge: "Instant", disabled: false },
                   { value: "pay_on_delivery", icon: Truck, title: "Pay on Delivery", desc: "Cash or M-Pesa when delivered", badge: null, disabled: false },
                 ].map(opt => (
                   <div
@@ -462,6 +513,21 @@ const Checkout = () => {
                   </div>
                 ))}
               </RadioGroup>
+
+              {paymentMethod === "mpesa" && (
+                <div className="space-y-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <Label htmlFor="mpesa-phone" className="text-sm font-medium">M-Pesa Phone Number</Label>
+                  <Input
+                    id="mpesa-phone"
+                    type="tel"
+                    placeholder="e.g. 0712345678 or 254712345678"
+                    value={mpesaPhone}
+                    onChange={e => setMpesaPhone(e.target.value)}
+                    className="bg-white"
+                  />
+                  <p className="text-xs text-muted-foreground">You will receive an STK push on this number to complete payment.</p>
+                </div>
+              )}
 
               {paymentMethod === "wallet" && walletBalance !== null && walletBalance < total && (
                 <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive">
@@ -593,9 +659,11 @@ const Checkout = () => {
               className="flex-1 h-12 text-base font-bold rounded-lg bg-[#2563EB] text-white hover:bg-[#1E40AF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-300 shadow-lg disabled:opacity-60"
               size="lg"
               onClick={handlePlaceOrder}
-              disabled={isProcessing || !agreedToTerms}
+              disabled={isProcessing || mpesaWaiting || !agreedToTerms}
             >
-              {isProcessing ? (
+              {mpesaWaiting ? (
+                <span className="flex items-center gap-2"><span className="animate-spin">⏳</span> Waiting for M-Pesa...</span>
+              ) : isProcessing ? (
                 <span className="flex items-center gap-2"><span className="animate-spin">⏳</span> Processing...</span>
               ) : (
                 `Place Order — KSh ${total}`

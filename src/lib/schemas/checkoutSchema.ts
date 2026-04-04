@@ -25,7 +25,7 @@ export const checkoutFormSchema = z.object({
   deliveryAddress: deliveryAddressSchema,
   instructions: deliveryInstructionsSchema,
   deliveryType: z.enum(["asap", "schedule"]),
-  paymentMethod: z.enum(["wallet", "pay_on_delivery"]),
+  paymentMethod: z.enum(["wallet", "pay_on_delivery", "mpesa"]),
   agreedToTerms: z.literal(true, {
     errorMap: () => ({ message: "You must agree to Terms & Conditions" }),
   }),
@@ -42,6 +42,7 @@ export const deliveryStepSchema = z.object({
 export const paymentStepSchema = z.discriminatedUnion("paymentMethod", [
   z.object({ paymentMethod: z.literal("wallet") }),
   z.object({ paymentMethod: z.literal("pay_on_delivery") }),
+  z.object({ paymentMethod: z.literal("mpesa") }),
 ]);
 
 // Types inferred from schemas
