@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
+import { exportToCSV } from '@/lib/exportCSV';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -114,7 +116,7 @@ export default function MinimartAnalytics() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3"><Button variant="ghost" size="icon" onClick={() => navigate('/vendor/portal')}><ArrowLeft className="h-5 w-5" /></Button><h1 className="text-2xl font-bold text-gray-900">MINIMART ANALYTICS</h1></div>
-            <div className="flex gap-2"><Select value={timeRange} onValueChange={setTimeRange}><SelectTrigger className="w-40"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="today">Today</SelectItem><SelectItem value="week">Last 7 Days</SelectItem><SelectItem value="month">Last 30 Days</SelectItem><SelectItem value="year">Last Year</SelectItem></SelectContent></Select><Button variant="outline"><Download className="h-4 w-4 mr-2" />Export Report</Button></div>
+            <div className="flex gap-2"><Select value={timeRange} onValueChange={setTimeRange}><SelectTrigger className="w-40"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="today">Today</SelectItem><SelectItem value="week">Last 7 Days</SelectItem><SelectItem value="month">Last 30 Days</SelectItem><SelectItem value="year">Last Year</SelectItem></SelectContent></Select><Button variant="outline" onClick={() => { exportToCSV([{ period: timeRange, revenue: analytics.revenue.current, orders: analytics.orders.current, customers: analytics.customers.current, avgOrder: analytics.avgOrderValue.current }], 'minimart-analytics'); toast.success("Report exported"); }}><Download className="h-4 w-4 mr-2" />Export Report</Button></div>
           </div>
         </div>
       </header>

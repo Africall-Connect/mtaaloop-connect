@@ -191,7 +191,7 @@ export default function RiderActiveOrders({ riderId }: RiderActiveOrdersProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Active Deliveries ({orders.length})</h2>
-        <Button variant="outline">
+        <Button variant="outline" onClick={() => { if (orders.length > 0) { const addr = orders[0].delivery_address; window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`, '_blank'); } }}>
           <Navigation className="h-4 w-4 mr-2" />
           Open in Maps
         </Button>
@@ -239,7 +239,7 @@ export default function RiderActiveOrders({ riderId }: RiderActiveOrdersProps) {
                           <div className="flex items-center gap-2">
                             <span className="font-medium">Customer:</span>
                             <span>{customerName}</span>
-                            <Button variant="ghost" size="icon" className="h-6 w-6">
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { const phone = order.customer?.phone; if (phone) window.location.href = `tel:${phone}`; }}>
                               <Phone className="h-3 w-3" />
                             </Button>
                           </div>
@@ -328,17 +328,17 @@ export default function RiderActiveOrders({ riderId }: RiderActiveOrdersProps) {
                       </Button>
                     )}
 
-                    <Button size="sm" variant="outline" className="gap-1">
+                    <Button size="sm" variant="outline" className="gap-1" onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.delivery_address)}`, '_blank')}>
                       <Navigation className="h-4 w-4" />
                       Navigate
                     </Button>
 
-                    <Button size="sm" variant="outline" className="gap-1">
+                    <Button size="sm" variant="outline" className="gap-1" onClick={() => { const phone = order.customer?.phone; if (phone) window.location.href = `sms:${phone}`; }}>
                       <MessageSquare className="h-4 w-4" />
                       Message Customer
                     </Button>
 
-                    <Button size="sm" variant="outline" className="gap-1">
+                    <Button size="sm" variant="outline" className="gap-1" onClick={() => toast.info(`Order #${order.order_number}: ${order.order_items.map(i => `${i.product_name} x${i.quantity}`).join(', ')} - Total: KES ${Number(order.total_amount).toLocaleString()}`)}>
                       <Eye className="h-4 w-4" />
                       View Details
                     </Button>

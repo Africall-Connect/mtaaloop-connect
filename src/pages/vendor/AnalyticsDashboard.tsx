@@ -10,6 +10,8 @@ import {
   TrendingUp, DollarSign, ShoppingBag, Users, Star,
   Download, Calendar, BarChart3, PieChart, Activity, ArrowLeft
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { exportToCSV } from '@/lib/exportCSV';
 
 interface TopProduct {
   id?: string;
@@ -229,7 +231,7 @@ export default function AnalyticsDashboard() {
                   <SelectItem value="year">Last Year</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="sm" className="hidden sm:flex">
+              <Button variant="outline" size="sm" className="hidden sm:flex" onClick={() => { exportToCSV([{ period: timeRange, revenue: analytics.revenue.current, orders: analytics.orders.current, customers: analytics.customers.current, avgOrder: analytics.avgOrderValue.current }], 'analytics-export'); toast.success("Analytics exported"); }}>
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
@@ -332,7 +334,7 @@ export default function AnalyticsDashboard() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Revenue Over Time</CardTitle>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => setTimeRange('month')}>
                     <Calendar className="h-4 w-4 mr-2" />
                     Custom Range
                   </Button>

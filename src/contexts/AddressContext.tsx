@@ -61,7 +61,7 @@ export const AddressProvider: React.FC<AddressProviderProps> = ({ children }) =>
       // If apartment_name exists, create an address from it
       if (userPrefs?.apartment_name) {
         const apartmentAddress: Address = {
-          id: '1',
+          id: crypto.randomUUID(),
           user_id: user.id,
           label: 'Home',
           estate_name: userPrefs.apartment_name,

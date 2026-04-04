@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -252,11 +253,11 @@ export default function RiderCustomerManagement() {
                       </div>
 
                       <div className="flex flex-wrap gap-2">
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => { const phone = customer.phone; if (phone) window.location.href = `sms:${phone}`; else toast.info("No phone number available"); }}>
                           <MessageSquare className="h-4 w-4 mr-1" />
                           Message
                         </Button>
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => toast.info(`${customer.name} has ${customer.total_orders} orders totalling KES ${customer.total_spent.toLocaleString()}`)}>
                           Order History
                         </Button>
                       </div>

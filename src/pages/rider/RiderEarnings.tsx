@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { TrendingUp, DollarSign, Calendar, Target, Download } from 'lucide-react';
+import { toast } from 'sonner';
+import { exportToCSV } from '@/lib/exportCSV';
 
 interface EarningsData {
   date: string;
@@ -160,7 +162,7 @@ export default function RiderEarnings({ riderId }: RiderEarningsProps) {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Daily Earnings</CardTitle>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => { exportToCSV(earningsData.map(e => ({ date: e.date, earnings: e.earnings, deliveries: e.deliveries, tips: e.tips })), 'rider-earnings'); toast.success("Earnings exported"); }}>
                   <Download className="h-4 w-4 mr-2" />
                   Export
                 </Button>

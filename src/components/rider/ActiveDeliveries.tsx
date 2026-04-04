@@ -307,12 +307,12 @@ export function ActiveDeliveries({ riderId }: ActiveDeliveriesProps) {
                       </Button>
                     )}
 
-                    <Button size="sm" variant="outline" className="gap-1">
+                    <Button size="sm" variant="outline" className="gap-1" onClick={() => { const addr = delivery.order?.delivery_address; if (addr) window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`, '_blank'); }}>
                       <Navigation className="h-4 w-4" />
                       Navigate
                     </Button>
 
-                    <Button size="sm" variant="outline" className="gap-1">
+                    <Button size="sm" variant="outline" className="gap-1" onClick={() => { const phone = delivery.order?.customer_phone; if (phone) window.location.href = `sms:${phone}`; }}>
                       <MessageSquare className="h-4 w-4" />
                       Message Customer
                     </Button>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useRiderStore } from '@/store/riderStore';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { config } from '@/config/env';
 import { useAuth } from '@/hooks/useAuth';
 

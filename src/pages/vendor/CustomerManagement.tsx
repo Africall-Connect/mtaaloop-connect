@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -370,15 +371,15 @@ export default function CustomerManagement() {
                   <Eye className="h-4 w-4 mr-1" />
                   View Details
                 </Button>
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" onClick={() => navigate('/vendor/communications')}>
                   <MessageSquare className="h-4 w-4 mr-1" />
                   Message
                 </Button>
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" onClick={() => window.location.href = `mailto:${customer.email || ''}`}>
                   <Mail className="h-4 w-4 mr-1" />
                   Email
                 </Button>
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" onClick={() => navigate('/vendor/orders')}>
                   Order History
                 </Button>
               </div>
@@ -413,7 +414,7 @@ export default function CustomerManagement() {
                 <Users className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Segments</span>
               </Button>
-              <Button size="sm">
+              <Button size="sm" onClick={() => navigate('/vendor/marketing')}>
                 <Mail className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Campaign</span>
               </Button>

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { X, Settings, ShoppingBag, Star, AlertTriangle, DollarSign, Megaphone, CheckCheck, Bell } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Notification {
   id: string;
@@ -178,11 +179,11 @@ export default function RiderNotifications() {
                                 </p>
                                 {notif.related_id && (
                                   <div className="flex gap-2 mt-2">
-                                    <Button size="sm" variant="outline" className="h-7 text-xs">
+                                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => toast.info(notif.message)}>
                                       View Details
                                     </Button>
                                     {notif.type === 'delivery' && (
-                                      <Button size="sm" variant="outline" className="h-7 text-xs">
+                                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={async () => { try { await (supabase as any).from('rider_notifications').update({ is_read: true }).eq('id', notif.id); toast.success("Delivery accepted"); } catch (e) { toast.error("Failed to accept"); } }}>
                                         Accept
                                       </Button>
                                     )}

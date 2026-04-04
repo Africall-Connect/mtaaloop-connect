@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { exportToCSV } from '@/lib/exportCSV';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -319,16 +321,16 @@ export default function AdvancedOrdersManagement() {
                 />
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="icon" onClick={() => toast.info("Use the search bar and tabs to filter orders")}>
                   <Filter className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="icon" onClick={() => { exportToCSV(orders.map(o => ({ id: o.id, status: o.status, total: o.total_amount, created: o.created_at })), 'orders-export'); toast.success("Orders exported"); }}>
                   <Download className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="icon" onClick={() => window.print()}>
                   <Printer className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="icon" onClick={() => navigate('/vendor/settings')}>
                   <Settings className="h-4 w-4" />
                 </Button>
               </div>
@@ -656,10 +658,10 @@ export default function AdvancedOrdersManagement() {
                               
                             </SheetContent>
                           </Sheet>
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" onClick={() => navigate('/vendor/communications')}>
                             Message Customer
                           </Button>
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" onClick={() => window.print()}>
                             Print Receipt
                           </Button>
                         </div>

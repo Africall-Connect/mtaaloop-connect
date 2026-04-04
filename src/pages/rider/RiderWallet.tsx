@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Wallet, CreditCard, Smartphone, TrendingUp, Clock, CheckCircle, AlertCircle, Download } from 'lucide-react';
+import { toast } from 'sonner';
+import { exportToCSV } from '@/lib/exportCSV';
 
 interface Transaction {
   id: string;
@@ -119,7 +121,7 @@ export default function RiderWallet({ riderId }: RiderWalletProps) {
                 <Smartphone className="h-4 w-4 mr-2" />
                 Withdraw to MPesa
               </Button>
-              <Button variant="outline" className="border-green-300 text-green-700">
+              <Button variant="outline" className="border-green-300 text-green-700" onClick={() => { exportToCSV(transactions.map(t => ({ description: t.description, type: t.type, amount: t.amount, status: t.status, date: t.date })), 'wallet-statement'); toast.success("Statement downloaded"); }}>
                 <Download className="h-4 w-4 mr-2" />
                 View Statement
               </Button>
@@ -228,7 +230,7 @@ export default function RiderWallet({ riderId }: RiderWalletProps) {
               <div>
                 <h4 className="font-medium mb-2">MPesa Number</h4>
                 <p className="text-sm text-gray-600 mb-2">+254 712 345 678</p>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => toast.info("Contact support to update your M-Pesa number")}>
                   Update Number
                 </Button>
               </div>
@@ -238,7 +240,7 @@ export default function RiderWallet({ riderId }: RiderWalletProps) {
                 <p className="text-sm text-gray-600 mb-2">
                   Automatically withdraw earnings above KES 5,000 every Friday
                 </p>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => toast.info("Auto withdrawal configuration coming soon")}>
                   Configure Auto Withdrawal
                 </Button>
               </div>
