@@ -29,7 +29,7 @@ const typeIcons: Record<string, React.ReactNode> = {
 
 export function NotificationPopup({ notifications, onDismiss }: NotificationPopupProps) {
   return (
-    <div className="fixed top-4 right-4 z-[100] flex flex-col gap-3 max-w-sm w-full pointer-events-none">
+    <div className="fixed z-[100] flex flex-col gap-2 pointer-events-none bottom-20 left-3 right-3 sm:bottom-auto sm:top-4 sm:left-auto sm:right-4 sm:max-w-sm sm:w-full" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       <AnimatePresence>
         {notifications.slice(0, 3).map((notif) => (
           <NotificationItem key={notif.id} notification={notif} onDismiss={onDismiss} />
@@ -47,13 +47,13 @@ function NotificationItem({ notification, onDismiss }: { notification: PopupNoti
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 300, scale: 0.9 }}
-      animate={{ opacity: 1, x: 0, scale: 1 }}
-      exit={{ opacity: 0, x: 300, scale: 0.9 }}
+      initial={{ opacity: 0, y: 50, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 50, scale: 0.95 }}
       transition={{ type: 'spring', damping: 25, stiffness: 300 }}
       className="pointer-events-auto bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
     >
-      <div className="p-4">
+      <div className="p-3 sm:p-4">
         <div className="flex items-start gap-3">
           <div className="shrink-0 mt-0.5">
             {typeIcons[notification.type] || <Bell className="h-5 w-5 text-gray-500" />}
@@ -69,7 +69,7 @@ function NotificationItem({ notification, onDismiss }: { notification: PopupNoti
           <Button
             variant="ghost"
             size="icon"
-            className="shrink-0 h-6 w-6 -mr-1 -mt-1"
+            className="shrink-0 h-7 w-7 -mr-1 -mt-1"
             onClick={() => onDismiss(notification.id)}
           >
             <X className="h-3.5 w-3.5" />

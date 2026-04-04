@@ -14,6 +14,20 @@ const NotificationContext = createContext<NotificationContextType>({
 
 export const useNotifications = () => useContext(NotificationContext);
 
+// Friendly messages for every order status the customer can see
+const ORDER_STATUS_MESSAGES: Record<string, { title: string; message: string }> = {
+  accepted: { title: 'Order Confirmed! 🎉', message: 'Your order has been accepted by the vendor.' },
+  preparing: { title: 'Preparing Your Order 👨‍🍳', message: 'The vendor has started preparing your order.' },
+  ready: { title: 'Order Ready! 📦', message: 'Your order is ready and waiting for pickup.' },
+  out_for_delivery: { title: 'Rider On The Way! 🏍️', message: 'A rider has picked up your order and is heading to you.' },
+  in_transit: { title: 'Almost There! 🚴', message: 'Your order is on its way to your location.' },
+  picked_up: { title: 'Order Picked Up 📦', message: 'The rider has picked up your order from the vendor.' },
+  enroute: { title: 'On The Way! 🏍️', message: 'Your rider is en route to your delivery address.' },
+  delivered: { title: 'Delivered! 🎊', message: 'Your order has been delivered. Enjoy!' },
+  cancelled: { title: 'Order Cancelled ❌', message: 'Your order has been cancelled.' },
+  rejected: { title: 'Order Rejected', message: 'Unfortunately, the vendor could not fulfill your order.' },
+};
+
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const { user, roles } = useAuth();
   const { playSound } = useNotificationSound();
@@ -36,16 +50,17 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     setPopups(prev => [notif, ...prev].slice(0, 5));
     playSound();
 
-    // Browser notification
+    // Browser notification (works on mobile when tab is in background)
     if ('Notification' in window && Notification.permission === 'granted') {
       try {
         new Notification(title, {
           body: message,
           icon: '/logo.png',
           tag: id,
-        });
+          renotify: true,
+        } as NotificationOptions);
       } catch {
-        // Fallback: some browsers don't support Notification constructor
+        // Fallback for browsers that don't support Notification constructor
       }
     }
   }, [playSound]);
@@ -54,7 +69,92 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     setPopups(prev => prev.filter(n => n.id !== id));
   }, []);
 
-  // Subscribe to general notifications table
+  // ─── CUSTOMER: Subscribe to order status changes ───
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`order-updates-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `customer_id=eq.${user.id}`,
+        },
+        (payload: any) => {
+          const row = payload.new;
+          const old = payload.old;
+          // Only notify if status actually changed
+          if (row.status && row.status !== old?.status) {
+            const info = ORDER_STATUS_MESSAGES[row.status];
+            if (info) {
+              pushNotification(info.title, info.message, 'order');
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, pushNotification]);
+
+  // ─── CUSTOMER: Subscribe to delivery status changes ───
+  // This covers rider-side updates (picked_up, in_transit, delivered)
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`delivery-updates-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'deliveries',
+        },
+        async (payload: any) => {
+          const row = payload.new;
+          const old = payload.old;
+          if (!row.order_id || row.status === old?.status) return;
+
+          // Check if this delivery belongs to the customer's order
+          const { data: order } = await supabase
+            .from('orders')
+            .select('customer_id')
+            .eq('id', row.order_id)
+            .single();
+
+          if (order?.customer_id === user.id) {
+            const deliveryMessages: Record<string, { title: string; message: string }> = {
+              assigned: { title: 'Rider Assigned! 🏍️', message: 'A rider has been assigned to deliver your order.' },
+              heading_to_pickup: { title: 'Rider En Route to Vendor 🏍️', message: 'Your rider is heading to the vendor to pick up your order.' },
+              at_vendor: { title: 'Rider at Vendor 📍', message: 'Your rider has arrived at the vendor.' },
+              picked: { title: 'Order Picked Up! 📦', message: 'The rider has picked up your order.' },
+              picked_up: { title: 'Order Picked Up! 📦', message: 'The rider has picked up your order.' },
+              enroute: { title: 'On The Way! 🚴', message: 'Your rider is heading to your location now.' },
+              in_transit: { title: 'Almost There! 🚴', message: 'Your order is on its way to you.' },
+              delivered: { title: 'Delivered! 🎊', message: 'Your order has been delivered. Enjoy!' },
+              cancelled: { title: 'Delivery Cancelled ❌', message: 'The delivery has been cancelled.' },
+            };
+            const info = deliveryMessages[row.status];
+            if (info) {
+              pushNotification(info.title, info.message, 'delivery');
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, pushNotification]);
+
+  // ─── GENERAL: Subscribe to notifications table ───
   useEffect(() => {
     if (!user) return;
 
@@ -80,7 +180,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     };
   }, [user, pushNotification]);
 
-  // Subscribe to vendor order notifications
+  // ─── VENDOR: Subscribe to order notifications ───
   useEffect(() => {
     if (!user || !roles.includes('vendor')) return;
 
@@ -96,7 +196,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         },
         (payload: any) => {
           const row = payload.new;
-          pushNotification('New Order', row.message || 'You have a new order!', 'order');
+          pushNotification('New Order! 🛒', row.message || 'You have a new order!', 'order');
         }
       )
       .subscribe();
@@ -106,7 +206,43 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     };
   }, [user, roles, pushNotification]);
 
-  // Subscribe to rider notifications
+  // ─── VENDOR: Subscribe to order status changes on vendor's orders ───
+  useEffect(() => {
+    if (!user || !roles.includes('vendor')) return;
+
+    const channel = supabase
+      .channel(`vendor-orders-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `vendor_id=eq.${user.id}`,
+        },
+        (payload: any) => {
+          const row = payload.new;
+          const old = payload.old;
+          if (row.status && row.status !== old?.status) {
+            const vendorMessages: Record<string, string> = {
+              cancelled: 'A customer cancelled their order.',
+              delivered: 'An order has been delivered!',
+            };
+            const msg = vendorMessages[row.status];
+            if (msg) {
+              pushNotification('Order Update', msg, 'order');
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, roles, pushNotification]);
+
+  // ─── RIDER: Subscribe to rider notifications ───
   useEffect(() => {
     if (!user || !roles.includes('rider')) return;
 
@@ -132,33 +268,32 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     };
   }, [user, roles, pushNotification]);
 
-  // Subscribe to order status changes (for customers tracking orders)
+  // ─── RIDER: Subscribe to new delivery assignments ───
   useEffect(() => {
-    if (!user) return;
+    if (!user || !roles.includes('rider')) return;
 
     const channel = supabase
-      .channel(`order-updates-${user.id}`)
+      .channel(`rider-deliveries-${user.id}`)
       .on(
         'postgres_changes',
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'orders',
-          filter: `customer_id=eq.${user.id}`,
+          table: 'deliveries',
+          filter: `rider_id=eq.${user.id}`,
         },
         (payload: any) => {
           const row = payload.new;
-          const statusMessages: Record<string, string> = {
-            accepted: 'Your order has been accepted!',
-            preparing: 'Your order is being prepared',
-            ready: 'Your order is ready for pickup',
-            out_for_delivery: 'Your order is on its way!',
-            delivered: 'Your order has been delivered!',
-            cancelled: 'Your order has been cancelled',
-          };
-          const msg = statusMessages[row.status];
-          if (msg) {
-            pushNotification('Order Update', msg, 'order');
+          const old = payload.old;
+          if (row.status !== old?.status) {
+            const riderMessages: Record<string, string> = {
+              assigned: 'You have a new delivery assignment!',
+              cancelled: 'A delivery has been cancelled.',
+            };
+            const msg = riderMessages[row.status];
+            if (msg) {
+              pushNotification('Delivery Update 🏍️', msg, 'delivery');
+            }
           }
         }
       )
@@ -167,7 +302,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, pushNotification]);
+  }, [user, roles, pushNotification]);
 
   return (
     <NotificationContext.Provider value={{ pushNotification }}>

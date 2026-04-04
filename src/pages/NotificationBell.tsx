@@ -32,7 +32,7 @@ export default function NotificationBell({ vendorId }: Props) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!audioRef.current) {
-      audioRef.current = new Audio("/sounds/notification.mp3");
+      audioRef.current = new Audio("/sounds/notification.wav");
       audioRef.current.volume = 0.7; // not too loud
     }
   }, []);
