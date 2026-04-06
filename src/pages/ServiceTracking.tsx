@@ -8,79 +8,28 @@ import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
+import { SERVICE_TYPE_META, ServiceType } from "@/types/subscription";
 
-// Service-specific waiting bay messaging
-interface ServiceMessaging {
-  icon: string;
-  waitingHeadline: string;
-  waitingSubtext: string;
-  waitingTip: string;
-  agentLabel: string;
-}
-
-const SERVICE_MESSAGING: Record<string, ServiceMessaging> = {
-  "Trash Collection": {
-    icon: "🗑️",
-    waitingHeadline: "Your pickup is being arranged...",
-    waitingSubtext: "A waste collection agent will be assigned shortly",
-    waitingTip: "💡 Place your waste bags outside your door for easy pickup!",
-    agentLabel: "Collection Agent",
-  },
-  "Quick Cleaning": {
-    icon: "🧹",
-    waitingHeadline: "Your space is about to sparkle...",
-    waitingSubtext: "A cleaning specialist is gearing up",
-    waitingTip: "💡 Clear personal items from surfaces for the best clean possible!",
-    agentLabel: "Cleaning Specialist",
-  },
-  "Laundry Sorting": {
-    icon: "👕",
-    waitingHeadline: "Fresh laundry coming your way...",
-    waitingSubtext: "A laundry handler is being assigned to your request",
-    waitingTip: "💡 Separate delicates in a different bag for best results!",
-    agentLabel: "Laundry Handler",
-  },
-  "Quick Meal Prep": {
-    icon: "🍳",
-    waitingHeadline: "A chef is warming up for you...",
-    waitingSubtext: "Your personal meal prep assistant will be ready soon",
-    waitingTip: "💡 Make sure your kitchen is accessible and ingredients are out!",
-    agentLabel: "Meal Prep Chef",
-  },
-  "Package Collection": {
-    icon: "📦",
-    waitingHeadline: "Your package run is queued...",
-    waitingSubtext: "An errand runner is being matched to your request",
-    waitingTip: "💡 Share any gate codes or access info in the notes!",
-    agentLabel: "Errand Runner",
-  },
-  "Errands": {
-    icon: "🏃",
-    waitingHeadline: "Your personal assistant is on standby...",
-    waitingSubtext: "We're matching you with the best available runner",
-    waitingTip: "💡 Be as specific as possible in your instructions for faster service!",
-    agentLabel: "Errand Runner",
-  },
-  "Osha Viombo": {
-    icon: "🧹",
-    waitingHeadline: "Deep cleaning crew assembling...",
-    waitingSubtext: "Our osha viombo specialists are preparing equipment",
-    waitingTip: "💡 Clear the area for the team to work efficiently!",
-    agentLabel: "Cleaning Crew",
-  },
-};
-
-const DEFAULT_SERVICE_MSG: ServiceMessaging = {
-  icon: "⚡",
+// Resolve display metadata from canonical service_type (with fallback to service_name)
+const DEFAULT_SERVICE_MSG = {
+  displayName: "Quick Service",
+  emoji: "⚡",
+  agentLabel: "Service Agent",
   waitingHeadline: "Your request is being processed...",
   waitingSubtext: "An agent will be assigned to you shortly",
   waitingTip: "💡 You'll be notified when your agent is on the way!",
-  agentLabel: "Service Agent",
 };
 
-const getServiceMessaging = (name: string | null): ServiceMessaging => {
-  if (!name) return DEFAULT_SERVICE_MSG;
-  return SERVICE_MESSAGING[name] || DEFAULT_SERVICE_MSG;
+const getServiceMessaging = (serviceType: string | null, serviceName: string | null) => {
+  if (serviceType && SERVICE_TYPE_META[serviceType as ServiceType]) {
+    return SERVICE_TYPE_META[serviceType as ServiceType];
+  }
+  // Backwards compatibility: legacy rows that only have service_name
+  if (serviceName) {
+    const match = Object.values(SERVICE_TYPE_META).find(m => m.displayName === serviceName);
+    if (match) return match;
+  }
+  return DEFAULT_SERVICE_MSG;
 };
 
 // Status steps
@@ -110,6 +59,7 @@ const getProgressValue = (status: string) => {
 interface ServiceRequest {
   id: string;
   service_name: string;
+  service_type?: string | null;
   status: string;
   house_number: string;
   customer_notes: string | null;
@@ -201,7 +151,7 @@ const ServiceTracking = () => {
     );
   }
 
-  const messaging = getServiceMessaging(request.service_name);
+  const messaging = getServiceMessaging(request.service_type ?? null, request.service_name);
   const currentStep = getStepIndex(request.status);
   const progressVal = getProgressValue(request.status);
   const isCompleted = request.status === "completed";
@@ -241,7 +191,7 @@ const ServiceTracking = () => {
                     animate={{ scale: [1, 1.15, 1] }}
                     transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
                   >
-                    {messaging.icon}
+                    {messaging.emoji}
                   </motion.span>
                   <h2 className="text-lg font-bold">{messaging.waitingHeadline}</h2>
                   <p className="text-sm text-muted-foreground">{messaging.waitingSubtext}</p>
@@ -314,7 +264,7 @@ const ServiceTracking = () => {
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <div className="flex items-center gap-2">
-              <span className="text-lg">{messaging.icon}</span>
+              <span className="text-lg">{messaging.emoji}</span>
               <span className="font-medium">{request.service_name}</span>
             </div>
 
