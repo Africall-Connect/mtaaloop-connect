@@ -3,7 +3,7 @@
 export const config = {
   supabase: {
     url: import.meta.env.VITE_SUPABASE_URL || 'https://oxehayneipjiozpuxlnv.supabase.co',
-    anonKey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94ZWhheW5laXBqaW96cHV4bG52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2NDU0NTgsImV4cCI6MjA3NzIyMTQ1OH0.y3K9yTkJ0EMlqtxb_qUStRntsywv14fB-pDLN4w84jk',
+    anonKey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94ZWhheW5laXBqaW96cHV4bG52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0OTM2NzcsImV4cCI6MjA5MDg1MzY3N30.GaYFjUGx79W3B_3V4nZ6Iwzx3gTZVjahg7t9ePGBUHM',
   },
   pusher: {
     key: import.meta.env.VITE_PUSHER_KEY || '92acec48c588575d855e',
