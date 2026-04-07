@@ -52,7 +52,7 @@ export const EstateList: React.FC = () => {
             <p className="text-sm text-muted-foreground">{estate.location}</p>
             <div className="mt-2 flex justify-between items-center">
               <span className={`px-2 py-1 rounded-full text-xs ${
-                estate.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                estate.is_active ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
               }`}>
                 {estate.is_active ? 'active' : 'inactive'}
               </span>

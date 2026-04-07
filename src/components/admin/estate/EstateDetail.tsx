@@ -146,7 +146,7 @@ export const EstateDetail: React.FC = () => {
   const statusLabel = estate.is_active ? 'active' : 'inactive';
 
   return (
-    <div className="p-6">
+    <div className="p-6 text-foreground">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">{estate.name}</h1>
@@ -184,7 +184,7 @@ export const EstateDetail: React.FC = () => {
         <TabsContent value="overview">
           <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="p-4 border rounded-lg">
+              <div className="p-4 border rounded-lg bg-card text-card-foreground">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="font-semibold">Estate Details</h3>
                   {!isEditing ? (
@@ -272,7 +272,7 @@ export const EstateDetail: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-4 border rounded-lg">
+              <div className="p-4 border rounded-lg bg-card text-card-foreground">
                 <h3 className="font-semibold mb-3">Estate Status</h3>
                 <div className="space-y-2">
                   <p><span className="font-medium">Status:</span> <Badge variant={estate.is_active ? 'default' : 'secondary'}>{statusLabel}</Badge></p>
