@@ -1,56 +1,45 @@
 
 
-# Fix Order Creation Bug + Build Vendor Onboarding Pipeline
+# Fix Signature Field + Order Again Button
 
-## Part 1: Fix "Failed to create order" Error
+## 1. Vendor Onboarding — Replace text input with a canvas signature pad
 
-**Root Cause**: In `Checkout.tsx` line 267, the "regular" order type uses `total` (the global cart total including delivery fee and discounts for ALL items) instead of `totalAmount` (the per-group subtotal computed on line 190 for just that group's items). When earlier order groups call `removeItem()`, the cart state changes and `total` can become stale or incorrect. Additionally, the insert on line 265 lacks `.select().single()` so DB errors aren't properly surfaced.
+**File: `src/pages/VendorOnboarding.tsx`**
 
-**Fix in `src/pages/Checkout.tsx`**:
-- Line 267: Change `total_amount: total` to `total_amount: totalAmount + deliveryFee`
-- Add proper error handling with `.select().single()` and extract the Supabase error message
-- Also fix the error catch block (line 284) to handle PostgrestError properly
+Replace the `<Input>` at line 874 with an HTML5 `<canvas>` signature pad component built inline using `useRef` and touch/mouse events.
 
----
+- Add a `signatureCanvasRef` and state `signatureDataUrl`
+- Canvas handles `mousedown/mousemove/mouseup` + `touchstart/touchmove/touchend` for drawing
+- "Clear Signature" button resets the canvas
+- On form submit, convert canvas to base64 PNG via `canvas.toDataURL()` and store in `formData.vendorSignature`
+- Canvas styled with border, rounded corners, ~200px height, full width
+- Works on both desktop (mouse) and mobile (touch)
 
-## Part 2: Public Vendor Onboarding Form
+## 2. Fix HomeProductCard build error
 
-### New file: `src/pages/VendorOnboarding.tsx`
+**File: `src/components/home/HomeProductCard.tsx`** (line 69-76)
 
-A public, shareable page at `/vendor-onboarding` (no login required) with MtaaLoop branding:
+The `<Button>` tag on line 69 has no closing tag. Add `</Button>` after the `<Plus>` icon (before the closing `</div>`).
 
-- MtaaLoop logo at top + tagline
-- Collects: Full Name, Email, Phone, Business Name, Business Type (from `MAIN_CATEGORIES`), Business Description, Business Phone, Business Address, Estate selection (inside/outside), optional ID/permit upload reference
-- Zod validation before submission
-- On submit: calls `supabase.auth.signUp()` to create user, then inserts `vendor_profiles` with `is_approved: false`
-- Success screen: "Application submitted and under review"
-- Mobile-friendly, clean card-based layout
+## 3. "Order Again" button — make it functional
 
-### Route registration in `src/App.tsx`
+**File: `src/pages/MyOrders.tsx`** (line 182-185)
 
-- Add lazy import for `VendorOnboarding`
-- Add public route: `<Route path="/vendor-onboarding" element={<VendorOnboarding />} />`
+Currently the button has no `onClick` handler. Fix:
 
-### Admin Approval (Already Exists)
+- Import `useCart` and `useNavigate`
+- On click: iterate `order.order_items`, call `addItem()` for each item with available data (name, price, quantity, vendor info)
+- Then navigate to `/cart`
+- Show toast: "Items added to cart"
+- For items missing price data (e.g. from older orders), skip them and show a warning
 
-The existing `VendorApprovals` page at `/admin/vendor-approvals` already handles:
-- Listing pending vendors (is_approved=false, no rejection_reason)
-- Approve button (calls `approve_vendor` RPC)
-- Reject button with reason
+The `addItem` call will use: `id` (generate new), `name: item.product_name`, `price: item.price || item.subtotal/item.quantity`, `quantity: item.quantity`, `vendorId` and `vendorName` from `order.vendor_profiles`.
 
-No changes needed to admin approval — just verify the existing flow works with the new onboarding form's data.
-
----
-
-## Files to Create/Edit
+## Files to Edit
 
 | File | Change |
 |------|--------|
-| `src/pages/Checkout.tsx` | Fix line 267: `total` → `totalAmount + deliveryFee`; add `.select().single()`; fix error extraction |
-| `src/pages/VendorOnboarding.tsx` | **New** — Public vendor onboarding form with MtaaLoop branding |
-| `src/App.tsx` | Add lazy import + public route for `/vendor-onboarding` |
-
-## Shareable Link
-
-The vendor onboarding link will be: `https://mtaaloop.lovable.app/vendor-onboarding`
+| `src/pages/VendorOnboarding.tsx` | Replace signature `<Input>` with canvas drawing pad |
+| `src/components/home/HomeProductCard.tsx` | Fix missing `</Button>` closing tag |
+| `src/pages/MyOrders.tsx` | Wire up "Order Again" with `useCart().addItem` + navigate to cart |
 

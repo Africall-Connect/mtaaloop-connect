@@ -1899,6 +1899,50 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string | null
+          read_at: string | null
+          reference_id: string | null
+          reference_type: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          read_at?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          read_at?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_disputes: {
         Row: {
           created_at: string | null
@@ -4206,8 +4250,17 @@ export type Database = {
       }
       vendor_profiles: {
         Row: {
+          account_name: string | null
+          additional_documents: string | null
+          additional_information: string | null
+          alternate_phone: string | null
+          application_date: string | null
+          average_preparation_time: string | null
+          bank_account_name: string | null
           bank_account_number: string | null
+          bank_branch: string | null
           bank_code: string | null
+          bank_name: string | null
           banner_url: string | null
           business_address: string
           business_description: string | null
@@ -4215,21 +4268,36 @@ export type Database = {
           business_name: string
           business_phone: string
           business_type: string
+          can_handle_bulk: boolean | null
           certifications: Json | null
           cover_image_url: string | null
           created_at: string
           delivery_fee: number | null
+          delivery_preferences: string[] | null
           delivery_time: string | null
+          document_support: string[] | null
           estate_id: string | null
+          estate_or_building_name: string | null
+          facebook_page: string | null
+          has_fixed_menu: boolean | null
+          has_packaging: boolean | null
           id: string
+          instagram_handle: string | null
           is_active: boolean | null
           is_approved: boolean | null
           is_open: boolean | null
           logo_url: string | null
+          max_delivery_distance: string | null
+          min_order_amount: number | null
+          mpesa_number: string | null
+          nearest_landmark: string | null
           open_hours: string | null
           operational_category: string | null
+          owner_id_number: string | null
+          paybill_number: string | null
           payout_method: string | null
           paystack_recipient_code: string | null
+          products_and_services: string | null
           rating: number | null
           rejection_reason: string | null
           review_count: number | null
@@ -4238,11 +4306,23 @@ export type Database = {
           total_orders: number | null
           updated_at: string
           user_id: string
+          vendor_signature: string | null
+          website: string | null
+          whatsapp_business: string | null
           years_in_business: number | null
         }
         Insert: {
+          account_name?: string | null
+          additional_documents?: string | null
+          additional_information?: string | null
+          alternate_phone?: string | null
+          application_date?: string | null
+          average_preparation_time?: string | null
+          bank_account_name?: string | null
           bank_account_number?: string | null
+          bank_branch?: string | null
           bank_code?: string | null
+          bank_name?: string | null
           banner_url?: string | null
           business_address: string
           business_description?: string | null
@@ -4250,21 +4330,36 @@ export type Database = {
           business_name: string
           business_phone: string
           business_type: string
+          can_handle_bulk?: boolean | null
           certifications?: Json | null
           cover_image_url?: string | null
           created_at?: string
           delivery_fee?: number | null
+          delivery_preferences?: string[] | null
           delivery_time?: string | null
+          document_support?: string[] | null
           estate_id?: string | null
+          estate_or_building_name?: string | null
+          facebook_page?: string | null
+          has_fixed_menu?: boolean | null
+          has_packaging?: boolean | null
           id?: string
+          instagram_handle?: string | null
           is_active?: boolean | null
           is_approved?: boolean | null
           is_open?: boolean | null
           logo_url?: string | null
+          max_delivery_distance?: string | null
+          min_order_amount?: number | null
+          mpesa_number?: string | null
+          nearest_landmark?: string | null
           open_hours?: string | null
           operational_category?: string | null
+          owner_id_number?: string | null
+          paybill_number?: string | null
           payout_method?: string | null
           paystack_recipient_code?: string | null
+          products_and_services?: string | null
           rating?: number | null
           rejection_reason?: string | null
           review_count?: number | null
@@ -4273,11 +4368,23 @@ export type Database = {
           total_orders?: number | null
           updated_at?: string
           user_id: string
+          vendor_signature?: string | null
+          website?: string | null
+          whatsapp_business?: string | null
           years_in_business?: number | null
         }
         Update: {
+          account_name?: string | null
+          additional_documents?: string | null
+          additional_information?: string | null
+          alternate_phone?: string | null
+          application_date?: string | null
+          average_preparation_time?: string | null
+          bank_account_name?: string | null
           bank_account_number?: string | null
+          bank_branch?: string | null
           bank_code?: string | null
+          bank_name?: string | null
           banner_url?: string | null
           business_address?: string
           business_description?: string | null
@@ -4285,21 +4392,36 @@ export type Database = {
           business_name?: string
           business_phone?: string
           business_type?: string
+          can_handle_bulk?: boolean | null
           certifications?: Json | null
           cover_image_url?: string | null
           created_at?: string
           delivery_fee?: number | null
+          delivery_preferences?: string[] | null
           delivery_time?: string | null
+          document_support?: string[] | null
           estate_id?: string | null
+          estate_or_building_name?: string | null
+          facebook_page?: string | null
+          has_fixed_menu?: boolean | null
+          has_packaging?: boolean | null
           id?: string
+          instagram_handle?: string | null
           is_active?: boolean | null
           is_approved?: boolean | null
           is_open?: boolean | null
           logo_url?: string | null
+          max_delivery_distance?: string | null
+          min_order_amount?: number | null
+          mpesa_number?: string | null
+          nearest_landmark?: string | null
           open_hours?: string | null
           operational_category?: string | null
+          owner_id_number?: string | null
+          paybill_number?: string | null
           payout_method?: string | null
           paystack_recipient_code?: string | null
+          products_and_services?: string | null
           rating?: number | null
           rejection_reason?: string | null
           review_count?: number | null
@@ -4308,6 +4430,9 @@ export type Database = {
           total_orders?: number | null
           updated_at?: string
           user_id?: string
+          vendor_signature?: string | null
+          website?: string | null
+          whatsapp_business?: string | null
           years_in_business?: number | null
         }
         Relationships: [
@@ -4911,8 +5036,17 @@ export type Database = {
           slug_query?: string
         }
         Returns: {
+          account_name: string | null
+          additional_documents: string | null
+          additional_information: string | null
+          alternate_phone: string | null
+          application_date: string | null
+          average_preparation_time: string | null
+          bank_account_name: string | null
           bank_account_number: string | null
+          bank_branch: string | null
           bank_code: string | null
+          bank_name: string | null
           banner_url: string | null
           business_address: string
           business_description: string | null
@@ -4920,21 +5054,36 @@ export type Database = {
           business_name: string
           business_phone: string
           business_type: string
+          can_handle_bulk: boolean | null
           certifications: Json | null
           cover_image_url: string | null
           created_at: string
           delivery_fee: number | null
+          delivery_preferences: string[] | null
           delivery_time: string | null
+          document_support: string[] | null
           estate_id: string | null
+          estate_or_building_name: string | null
+          facebook_page: string | null
+          has_fixed_menu: boolean | null
+          has_packaging: boolean | null
           id: string
+          instagram_handle: string | null
           is_active: boolean | null
           is_approved: boolean | null
           is_open: boolean | null
           logo_url: string | null
+          max_delivery_distance: string | null
+          min_order_amount: number | null
+          mpesa_number: string | null
+          nearest_landmark: string | null
           open_hours: string | null
           operational_category: string | null
+          owner_id_number: string | null
+          paybill_number: string | null
           payout_method: string | null
           paystack_recipient_code: string | null
+          products_and_services: string | null
           rating: number | null
           rejection_reason: string | null
           review_count: number | null
@@ -4943,6 +5092,9 @@ export type Database = {
           total_orders: number | null
           updated_at: string
           user_id: string
+          vendor_signature: string | null
+          website: string | null
+          whatsapp_business: string | null
           years_in_business: number | null
         }[]
         SetofOptions: {
