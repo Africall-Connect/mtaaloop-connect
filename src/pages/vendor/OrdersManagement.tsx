@@ -73,6 +73,29 @@ export default function OrdersManagement({ vendorId }: OrdersManagementProps) {
         .eq('id', orderId);
 
       if (error) throw error;
+
+      // When vendor accepts an order, create a delivery row so riders can claim it
+      if (newStatus === 'accepted') {
+        const { data: existingDel } = await supabase
+          .from('deliveries')
+          .select('id')
+          .eq('order_id', orderId)
+          .maybeSingle();
+        if (!existingDel) {
+          const { data: ord } = await supabase
+            .from('orders')
+            .select('estate_id')
+            .eq('id', orderId)
+            .maybeSingle();
+          await supabase.from('deliveries').insert({
+            order_id: orderId,
+            estate_id: (ord as any)?.estate_id ?? null,
+            status: 'pending',
+            delivery_fee: 50,
+          });
+        }
+      }
+
       toast.success(`Order ${newStatus}`);
       fetchOrders();
     } catch (error: unknown) {

@@ -457,15 +457,34 @@ export default function AdvancedOrdersManagement() {
                               size="sm"
                               onClick={async () => {
                                 try {
-                                  // Update order status to accepted
+                                  // 1. Update order status to accepted
                                   const { error: orderError } = await supabase
                                     .from('orders')
                                     .update({ status: 'accepted' })
                                     .eq('id', order.id);
-
                                   if (orderError) throw orderError;
 
-                                  // Refresh orders
+                                  // 2. Create delivery row immediately so a rider can claim it
+                                  // (idempotent: skip if one already exists for this order)
+                                  const { data: existingDel } = await supabase
+                                    .from('deliveries')
+                                    .select('id')
+                                    .eq('order_id', order.id)
+                                    .maybeSingle();
+                                  if (!existingDel) {
+                                    const { error: deliveryError } = await supabase
+                                      .from('deliveries')
+                                      .insert({
+                                        order_id: order.id,
+                                        estate_id: order.estate_id,
+                                        status: 'pending',
+                                        delivery_fee: 50,
+                                      });
+                                    if (deliveryError) {
+                                      console.error('Error creating delivery on accept:', deliveryError);
+                                    }
+                                  }
+
                                   fetchOrders();
                                 } catch (error) {
                                   console.error('Error accepting order:', error);
@@ -485,21 +504,23 @@ export default function AdvancedOrdersManagement() {
                                     newStatus = 'preparing';
                                   } else if (order.status === 'preparing') {
                                     newStatus = 'ready';
-
-                                    // Create delivery record when order becomes ready
-                                    const { error: deliveryError } = await supabase
+                                    // Delivery row is created at Accept step now;
+                                    // ensure one exists in case of legacy rows.
+                                    const { data: existingDel } = await supabase
                                       .from('deliveries')
-                                      .insert({
-                                        order_id: order.id,
-                                        estate_id: order.estate_id,
-                                        status: 'pending',
-                                        delivery_fee: 50, // Default delivery fee, can be adjusted
-                                      });
-
-                                    if (deliveryError) {
-                                      console.error('Error creating delivery:', deliveryError);
-                                      // Continue even if delivery creation fails
-                                      // The order status is already updated to ready
+                                      .select('id')
+                                      .eq('order_id', order.id)
+                                      .maybeSingle();
+                                    if (!existingDel) {
+                                      const { error: deliveryError } = await supabase
+                                        .from('deliveries')
+                                        .insert({
+                                          order_id: order.id,
+                                          estate_id: order.estate_id,
+                                          status: 'pending',
+                                          delivery_fee: 50,
+                                        });
+                                      if (deliveryError) console.error('Error creating delivery:', deliveryError);
                                     }
                                   }
 
@@ -662,19 +683,42 @@ export default function AdvancedOrdersManagement() {
                           </Sheet>
                           <Button size="sm" variant="outline" onClick={async () => {
                             try {
-                              const { findOrCreateChatWithCustomer } = await import('@/lib/csrChat');
                               const { data: { user } } = await supabase.auth.getUser();
-                              if (!user || !order.customer_id) {
-                                toast.error('Cannot start chat');
-                                return;
+                              if (!user) { toast.error('Not signed in'); return; }
+                              // Vendors message customers via CSR (moderated). Open or create
+                              // a vendor → CSR queue chat, with the order context.
+                              const { data: existing } = await (supabase.from('private_chats') as any)
+                                .select('chat_id')
+                                .eq('initiator_id', user.id)
+                                .eq('initiator_role', 'vendor')
+                                .eq('recipient_role', 'customer_rep')
+                                .eq('is_closed', false)
+                                .order('created_at', { ascending: false })
+                                .limit(1);
+                              let chatId: string;
+                              if (existing && existing.length > 0) {
+                                chatId = (existing[0] as any).chat_id;
+                              } else {
+                                const { data: created, error } = await (supabase.from('private_chats') as any)
+                                  .insert({
+                                    initiator_id: user.id,
+                                    initiator_role: 'vendor',
+                                    recipient_id: null,
+                                    recipient_role: 'customer_rep',
+                                    is_closed: false,
+                                  })
+                                  .select('chat_id')
+                                  .single();
+                                if (error) throw error;
+                                chatId = (created as any).chat_id;
                               }
-                              const chatId = await findOrCreateChatWithCustomer(user.id, order.customer_id, 'vendor');
-                              navigate(`/inbox?chat=${chatId}`);
+                              toast.info('Your message will be reviewed by support before reaching the customer.');
+                              navigate(`/inbox?chat=${chatId}&context=order:${order.id}`);
                             } catch (e: any) {
                               toast.error('Failed: ' + (e?.message || 'Unknown'));
                             }
                           }}>
-                            Message Customer
+                            Message Customer (via Support)
                           </Button>
                           <Button size="sm" variant="outline" onClick={() => window.print()}>
                             Print Receipt

@@ -24,13 +24,13 @@ export function ProtectedRoute({
 
     try {
       let approved = false;
-      
+
       if (requiredRole === 'vendor') {
         const { data } = await supabase
           .from('vendor_profiles')
           .select('is_approved')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
         approved = data?.is_approved || false;
       } else if (requiredRole === 'estate_manager') {
         const { data } = await supabase
@@ -44,7 +44,7 @@ export function ProtectedRoute({
           .from('rider_profiles')
           .select('is_approved')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
         approved = data?.is_approved || false;
       }
 
@@ -57,14 +57,24 @@ export function ProtectedRoute({
     }
   }, [user, requiredRole]);
 
+  // Reset approval state whenever the user changes (account switch / sign-in / sign-out).
+  // Without this we'd carry stale "approved=false" from the previous user and
+  // bounce them to /pending-approval incorrectly.
   useEffect(() => {
+    setApprovalStatus(null);
+    setCheckingApproval(requireApproval);
+  }, [user?.id, requireApproval]);
+
+  useEffect(() => {
+    // Wait until roles are loaded so we know whether to skip the check (admin).
+    if (loading) return;
     // Admins skip approval checks entirely
-    if (requireApproval && user && requiredRole && !hasRole('admin')) {
+    if (requireApproval && user && requiredRole && hasRole(requiredRole) && !hasRole('admin')) {
       checkApprovalStatus();
     } else {
       setCheckingApproval(false);
     }
-  }, [requireApproval, user, requiredRole, checkApprovalStatus, hasRole]);
+  }, [requireApproval, user, requiredRole, checkApprovalStatus, hasRole, loading]);
 
   if (loading || checkingApproval) {
     return (

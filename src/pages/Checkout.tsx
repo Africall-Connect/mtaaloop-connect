@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useCart, CartItem } from "@/contexts/CartContext";
@@ -66,6 +67,14 @@ const Checkout = () => {
   const [walletLoading, setWalletLoading] = useState(true);
   const [mpesaPhone, setMpesaPhone] = useState("");
   const [mpesaWaiting, setMpesaWaiting] = useState(false);
+  const [estatesList, setEstatesList] = useState<Array<{ id: string; name: string }>>([]);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from('estates').select('id, name').eq('is_active', true).order('name');
+      setEstatesList(((data as any) || []) as Array<{ id: string; name: string }>);
+    })();
+  }, []);
 
   // ── Fetch user preferences & wallet ─────────────────────────────
   useEffect(() => {
@@ -435,8 +444,29 @@ const Checkout = () => {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="estate">Estate Name</Label>
-                <Input id="estate" value={deliveryAddress.estate_name} readOnly className="bg-muted" />
+                <Label htmlFor="estate">Estate</Label>
+                <Select
+                  value={estateId ?? ""}
+                  onValueChange={(val) => {
+                    clearFieldError("deliveryAddress.estate_name");
+                    setEstateId(val);
+                    const est = estatesList.find(e => e.id === val);
+                    if (est) setDeliveryAddress(p => ({ ...p, estate_name: est.name }));
+                  }}
+                >
+                  <SelectTrigger id="estate" className={formErrors["deliveryAddress.estate_name"] ? "border-destructive" : ""}>
+                    <SelectValue placeholder="Select your estate" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {estatesList.length === 0 ? (
+                      <div className="px-2 py-1.5 text-xs text-muted-foreground">No estates available</div>
+                    ) : (
+                      estatesList.map(e => (
+                        <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
                 {formErrors["deliveryAddress.estate_name"] && (
                   <p className="text-sm text-destructive flex items-center gap-1"><AlertCircle className="h-3 w-3" />{formErrors["deliveryAddress.estate_name"]}</p>
                 )}

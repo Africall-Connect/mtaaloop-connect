@@ -296,7 +296,7 @@ function AdminTicketDetail({ ticket, onUpdate }: { ticket: Ticket; onUpdate: () 
       {/* Description */}
       <div>
         <div className="text-xs font-semibold text-slate-500 uppercase mb-1">Description</div>
-        <div className="text-sm bg-slate-50 dark:bg-slate-900 p-3 rounded-lg whitespace-pre-wrap">
+        <div className="text-sm bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-3 rounded-lg whitespace-pre-wrap">
           {ticket.description}
         </div>
       </div>

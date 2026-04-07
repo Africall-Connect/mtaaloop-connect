@@ -43,7 +43,10 @@ export function useAuth() {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        // Skip when admin is creating a user on someone else's behalf
+        const { suppressAuthListener } = await import('@/lib/adminAuth');
+        if (suppressAuthListener) return;
         if (event === 'SIGNED_OUT') {
           rolesFetchedForUser.current = null;
           setState({
