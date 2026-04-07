@@ -229,7 +229,7 @@ export default function CSRServiceRequests() {
                     )}
                     <div className="flex flex-wrap gap-3 text-xs text-slate-500 mt-1">
                       <span className="flex items-center gap-1 font-mono">
-                        <User className="h-3 w-3" /> {req.user_id.slice(0, 8)}…
+                        <User className="h-3 w-3" /> {req.user_id ? `${req.user_id.slice(0, 8)}…` : 'Unknown'}
                       </span>
                       {req.house_number && <span>House: {req.house_number}</span>}
                       {req.location_scope && (
@@ -246,7 +246,7 @@ export default function CSRServiceRequests() {
                     </div>
                     {req.assigned_to && (
                       <div className="text-xs text-slate-500 mt-2">
-                        <span className="font-mono">Assigned to: {agents.find(a => a.id === req.assigned_to)?.label || req.assigned_to.slice(0, 8)}</span>
+                        <span className="font-mono">Assigned to: {agents.find(a => a.id === req.assigned_to)?.label || (req.assigned_to ? req.assigned_to.slice(0, 8) : 'Unknown')}</span>
                       </div>
                     )}
                   </div>
