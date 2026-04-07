@@ -268,6 +268,115 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     };
   }, [user, roles, pushNotification]);
 
+  // ─── CSR: Subscribe to new unassigned chats ───
+  useEffect(() => {
+    if (!user || !roles.includes('customer_rep')) return;
+
+    const channel = supabase
+      .channel(`csr-new-chats-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'private_chats',
+        },
+        (payload: any) => {
+          const row = payload.new;
+          // Only notify for unassigned chats (no recipient yet)
+          if (!row.recipient_id) {
+            pushNotification('New customer chat 💬', 'A customer is waiting in the queue', 'system');
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, roles, pushNotification]);
+
+  // ─── ADMIN: Subscribe to ticket escalations ───
+  useEffect(() => {
+    if (!user || !roles.includes('admin')) return;
+
+    const channel = supabase
+      .channel(`admin-escalations-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'support_tickets',
+        },
+        (payload: any) => {
+          const row = payload.new;
+          const old = payload.old;
+          // Only notify when escalated_to_admin transitions to true
+          if (row.escalated_to_admin === true && old?.escalated_to_admin !== true) {
+            pushNotification(
+              '🚨 Ticket escalated to admin',
+              row.subject || 'A CSR escalated a support ticket',
+              'alert'
+            );
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'support_tickets',
+        },
+        (payload: any) => {
+          const row = payload.new;
+          // Tickets created already-escalated (e.g. CSR uses "Escalate" on an order)
+          if (row.escalated_to_admin === true || row.status === 'escalated') {
+            pushNotification(
+              '🚨 New escalation',
+              row.subject || 'A new escalated ticket needs review',
+              'alert'
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, roles, pushNotification]);
+
+  // ─── CSR: Subscribe to new support tickets ───
+  useEffect(() => {
+    if (!user || !roles.includes('customer_rep')) return;
+
+    const channel = supabase
+      .channel(`csr-new-tickets-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'support_tickets',
+        },
+        (payload: any) => {
+          const row = payload.new;
+          pushNotification(
+            `New ticket: ${row.severity === 'urgent' ? '🚨 ' : ''}${row.subject}`,
+            row.description?.slice(0, 100) || 'New support ticket filed',
+            'alert'
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, roles, pushNotification]);
+
   // ─── RIDER: Subscribe to new delivery assignments ───
   useEffect(() => {
     if (!user || !roles.includes('rider')) return;

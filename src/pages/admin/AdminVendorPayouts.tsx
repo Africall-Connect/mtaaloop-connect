@@ -1,5 +1,5 @@
 // src/pages/admin/AdminVendorPayouts.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,12 +7,17 @@ import { toast } from "sonner";
 import { Loader2, CheckCircle2, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-interface VendorPayout {
+interface PayoutRow {
   id: string;
   vendor_id: string;
-  amount: number;
   status: string;
-  order_id: string;
+  // Schema variants — pick whichever exists
+  amount?: number | null;
+  net_amount?: number | null;
+  platform_fee?: number | null;
+  order_id?: string | null;
+  payout_reference?: string | null;
+  created_at: string;
 }
 
 interface VendorSummary {
@@ -20,53 +25,101 @@ interface VendorSummary {
   vendor_name: string | null;
   contact_phone: string | null;
   total_pending: number;
-  payouts: VendorPayout[];
+  payouts: PayoutRow[];
 }
+
+const PENDING_STATUSES = ["pending", "scheduled", "processing"];
 
 const AdminVendorPayouts = () => {
   const [vendors, setVendors] = useState<VendorSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [processingVendor, setProcessingVendor] = useState<string | null>(null);
 
-  const fetchPayouts = async () => {
+  const fetchPayouts = useCallback(async () => {
     setLoading(true);
     try {
-      // Use supabase.functions.invoke which auto-attaches the JWT
-      const { data, error } = await supabase.functions.invoke("admin-vendor-payouts", {
-        method: "GET",
-      });
+      // Query vendor_payouts directly — admin has full RLS access
+      const { data: payouts, error } = await (supabase.from("vendor_payouts") as any)
+        .select("*")
+        .in("status", PENDING_STATUSES)
+        .order("created_at", { ascending: true });
 
-      if (error) throw new Error(error.message);
-      setVendors(data?.vendors || []);
+      if (error) {
+        // Table might not exist or no permissions — fail gracefully
+        if (error.code === "42P01" || error.message?.includes("does not exist")) {
+          setVendors([]);
+          return;
+        }
+        throw new Error(error.message);
+      }
+
+      const rows = (payouts as PayoutRow[]) || [];
+
+      // Fetch vendor names in a single query for the unique vendor IDs
+      const vendorIds = Array.from(new Set(rows.map(r => r.vendor_id).filter(Boolean)));
+      let vendorMap: Record<string, { business_name: string | null; contact_phone: string | null }> = {};
+
+      if (vendorIds.length > 0) {
+        const { data: vendorData } = await (supabase.from("vendor_profiles") as any)
+          .select("id, business_name, contact_phone")
+          .in("id", vendorIds);
+        if (vendorData) {
+          vendorMap = (vendorData as any[]).reduce((acc, v) => {
+            acc[v.id] = { business_name: v.business_name, contact_phone: v.contact_phone };
+            return acc;
+          }, {} as typeof vendorMap);
+        }
+      }
+
+      // Group by vendor
+      const byVendor: Record<string, VendorSummary> = {};
+      for (const row of rows) {
+        const key = row.vendor_id;
+        if (!key) continue;
+        if (!byVendor[key]) {
+          byVendor[key] = {
+            vendor_id: key,
+            vendor_name: vendorMap[key]?.business_name ?? null,
+            contact_phone: vendorMap[key]?.contact_phone ?? null,
+            total_pending: 0,
+            payouts: [],
+          };
+        }
+        const amt = Number(row.net_amount ?? row.amount ?? 0);
+        byVendor[key].total_pending += amt;
+        byVendor[key].payouts.push(row);
+      }
+
+      setVendors(Object.values(byVendor));
     } catch (error: unknown) {
       console.error("Error fetching payouts", error);
       toast.error((error as Error).message || "Failed to load payouts");
+      setVendors([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const handleMarkVendorPaid = async (vendor: VendorSummary) => {
-    if (!confirm(`Mark KSh ${vendor.total_pending} as paid for this vendor?`)) {
+    if (!confirm(`Mark KSh ${vendor.total_pending.toLocaleString()} as paid for this vendor?`)) {
       return;
     }
 
     setProcessingVendor(vendor.vendor_id);
     try {
-      const { data, error } = await supabase.functions.invoke("admin-vendor-payouts", {
-        method: "POST",
-        body: {
-          vendor_id: vendor.vendor_id,
-          mark_all_for_vendor: true,
-          paid_by: "admin-console",
-          note: "Manual settlement via M-PESA / bank",
-        },
-      });
+      const { data, error } = await (supabase.from("vendor_payouts") as any)
+        .update({
+          status: "completed",
+          payout_date: new Date().toISOString(),
+        })
+        .eq("vendor_id", vendor.vendor_id)
+        .in("status", PENDING_STATUSES)
+        .select("id");
 
       if (error) throw new Error(error.message);
 
       toast.success(
-        `Marked ${data.updated_count} payout(s) as paid for ${vendor.vendor_name || vendor.vendor_id}`
+        `Marked ${data?.length || 0} payout(s) as paid for ${vendor.vendor_name || "vendor"}`
       );
 
       await fetchPayouts();
@@ -80,12 +133,12 @@ const AdminVendorPayouts = () => {
 
   useEffect(() => {
     fetchPayouts();
-  }, []);
+  }, [fetchPayouts]);
 
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Vendor Payouts (Simulation)</h1>
+        <h1 className="text-2xl font-bold">Vendor Payouts</h1>
         <Button variant="outline" size="sm" onClick={fetchPayouts} disabled={loading}>
           {loading ? (
             <span className="flex items-center gap-2">
@@ -171,12 +224,14 @@ const AdminVendorPayouts = () => {
                     className="flex items-center justify-between border-b last:border-0 py-1"
                   >
                     <span>
-                      Order: {payout.order_id}
+                      {payout.payout_reference || payout.order_id || payout.id.slice(0, 8)}
                       <span className="ml-2 text-[10px] uppercase text-muted-foreground">
                         {payout.status}
                       </span>
                     </span>
-                    <span>KSh {Number(payout.amount).toLocaleString()}</span>
+                    <span>
+                      KSh {Number(payout.net_amount ?? payout.amount ?? 0).toLocaleString()}
+                    </span>
                   </div>
                 ))}
               </div>

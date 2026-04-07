@@ -13,6 +13,7 @@ import { ApartmentSwitcher } from "@/components/ApartmentSwitcher";
 import { useApartment } from "@/contexts/ApartmentContext";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
+import { SUBCATEGORY_OPTIONS } from "@/constants/categories";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { VendorProfile } from "@/types/database";
@@ -216,18 +217,41 @@ const Home = () => {
         if (error) throw error;
         const vendorIds = (data || []).map(v => v.id);
         const { data: allProducts } = await supabase.from("products")
-          .select("id, vendor_id, name, image_url, price, is_available")
+          .select("id, vendor_id, name, image_url, price, is_available, category, subcategory")
           .eq("is_available", true).in("vendor_id", vendorIds)
           .order("created_at", { ascending: false }).limit(1000);
+
+        // Build a quick vendor lookup so we know each product's vendor business_type
+        const vendorById = new Map<string, any>();
+        (data || []).forEach(v => vendorById.set(v.id, v));
+
         const countMap: Record<string, number> = {};
         const featuredMap: Record<string, { id: string; name: string; image_url: string | null; price: number }[]> = {};
-        (allProducts || []).forEach(p => {
+
+        (allProducts || []).forEach((p: any) => {
           countMap[p.vendor_id] = (countMap[p.vendor_id] || 0) + 1;
+
+          const vendor = vendorById.get(p.vendor_id);
+          const businessType: string | undefined = vendor?.business_type;
+
+          // Filter: only feature products that actually match this vendor's business
+          let matches = true;
+          if (businessType) {
+            // Allowed subcategories for this vendor's business type (display-name keys)
+            const allowedSubs = SUBCATEGORY_OPTIONS[businessType] || [];
+            matches =
+              p.category === businessType ||
+              (p.subcategory && allowedSubs.includes(p.subcategory)) ||
+              (!p.category && !p.subcategory); // legacy products with no category — show by default
+          }
+          if (!matches) return;
+
           if (!featuredMap[p.vendor_id]) featuredMap[p.vendor_id] = [];
           if (featuredMap[p.vendor_id].length < 8 && p.image_url) {
             featuredMap[p.vendor_id].push({ id: p.id, name: p.name, image_url: p.image_url, price: p.price });
           }
         });
+
         setVendors((data || []).map(v => ({ ...v, product_count: countMap[v.id] || 0, featured_products: featuredMap[v.id] || [] })));
       } catch (error) { console.error("Error fetching vendors:", error); }
       finally { setLoadingVendors(false); }

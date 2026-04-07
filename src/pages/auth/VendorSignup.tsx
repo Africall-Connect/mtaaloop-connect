@@ -268,6 +268,8 @@ const VendorSignup = () => {
                       <SelectItem value="restaurant">Restaurant</SelectItem>
                       <SelectItem value="liquor-store">Liquor Store</SelectItem>
                       <SelectItem value="flowers-gifts">Flowers & Gifts</SelectItem>
+                      <SelectItem value="butchery">Butchery</SelectItem>
+                      <SelectItem value="mobile-accessories">Mobile Accessories</SelectItem>
                       <SelectItem value="utilities-services">Utilities & Services</SelectItem>
                       <SelectItem value="home-services">Home Services</SelectItem>
                       <SelectItem value="beauty-spa">Beauty & Spa</SelectItem>

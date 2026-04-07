@@ -9,6 +9,8 @@ export const INVENTORY_CATEGORIES = [
   "Restaurant",
   "Liquor Store",
   "Flowers & Gifts",
+  "Butchery",
+  "Mobile Accessories",
 ] as const;
 
 // ============= Service Categories (2) =============
@@ -37,6 +39,8 @@ export const MAIN_CATEGORIES = [
   "Restaurant",
   "Liquor Store",
   "Flowers & Gifts",
+  "Butchery",
+  "Mobile Accessories",
   // Service
   "Utilities & Services",
   "Home Services",

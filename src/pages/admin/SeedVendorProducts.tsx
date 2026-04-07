@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { SUBCATEGORY_OPTIONS } from "@/constants/categories";
+import { SEED_TEMPLATES } from "@/lib/seedTemplates";
 
 interface VendorProfile {
   id: string;
@@ -255,6 +256,23 @@ export default function SeedVendorProducts() {
     }
   };
 
+  // Load a curated template (replaces the products list with the template contents)
+  const loadTemplate = (templateName: string) => {
+    const template = SEED_TEMPLATES[templateName];
+    if (!template) return;
+    const rows: ProductRow[] = template.products.map(p => ({
+      id: crypto.randomUUID(),
+      name: p.name,
+      subcategory: p.subcategory,
+      price: p.price,
+      stock: p.stock,
+      description: p.description,
+      image_url: p.image_url,
+    }));
+    setProducts(rows);
+    toast.success(`Loaded ${rows.length} products from "${templateName}" template`);
+  };
+
   // Prefill from subcategory (quick-add templates)
   const quickAddFromSubcategory = (subcategory: string, count: number = 5) => {
     const newProducts = Array.from({ length: count }, (_, i) =>
@@ -338,6 +356,37 @@ export default function SeedVendorProducts() {
 
         {selectedVendor && (
           <>
+            {/* Load curated template */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Sparkles className="h-5 w-5" /> Load curated template
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Pick a template to pre-populate the product list with realistic items + matching photos.
+                  You can edit or remove rows before seeding.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {Object.keys(SEED_TEMPLATES).map(name => {
+                    const t = SEED_TEMPLATES[name];
+                    return (
+                      <Button
+                        key={name}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => loadTemplate(name)}
+                      >
+                        <Upload className="h-3 w-3 mr-2" />
+                        {name} ({t.products.length})
+                      </Button>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Quick Add by Subcategory */}
             {subcategories.length > 0 && (
               <Card>

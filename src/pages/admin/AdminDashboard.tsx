@@ -1,506 +1,329 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
-  Users,
-  Store,
-  Building2,
-  Bike,
-  Clock,
-  LogOut,
-  UserCog,
-  CheckCircle,
-  XCircle,
-  MessageSquare,
-  ShoppingCart,
-  Activity,
-  DollarSign,
-  UserPlus,
-  Flower2,
-  Package,
-  ClipboardList
-} from 'lucide-react';
+  Users, Store, Building2, Bike, ShoppingCart, DollarSign,
+  Truck, ClipboardList, CalendarDays, AlertCircle, ArrowRight, TrendingUp, AlertTriangle,
+} from "lucide-react";
+
+interface Stats {
+  totalUsers: number;
+  activeVendors: number;
+  approvedEstates: number;
+  activeRiders: number;
+  pendingVendors: number;
+  pendingEstates: number;
+  pendingRiders: number;
+  ordersToday: number;
+  ordersThisWeek: number;
+  ordersThisMonth: number;
+  revenueThisMonth: number;
+  activeDeliveries: number;
+  openServiceRequests: number;
+  pendingBookings: number;
+  escalatedTickets: number;
+}
+
+const startOfToday = () => {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+};
+const startOfWeek = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 7);
+  return d.toISOString();
+};
+const startOfMonth = () => {
+  const d = new Date();
+  d.setDate(1);
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+};
 
 export default function AdminDashboard() {
-  const { signOut, user } = useAuth();
-  const navigate = useNavigate();
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    activeVendors: 0,
-    approvedEstates: 0,
-    activeRiders: 0,
-    pendingVendors: 0,
-    pendingEstates: 0,
-    pendingRiders: 0,
+  const [stats, setStats] = useState<Stats>({
+    totalUsers: 0, activeVendors: 0, approvedEstates: 0, activeRiders: 0,
+    pendingVendors: 0, pendingEstates: 0, pendingRiders: 0,
+    ordersToday: 0, ordersThisWeek: 0, ordersThisMonth: 0, revenueThisMonth: 0,
+    activeDeliveries: 0, openServiceRequests: 0, pendingBookings: 0,
+    escalatedTickets: 0,
   });
+  const [loading, setLoading] = useState(true);
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchStats();
+    fetchAll();
   }, []);
 
-  const fetchStats = async () => {
+  const fetchAll = async () => {
+    setLoading(true);
     try {
-      // Get total unique users from user_roles
-      const { data: userRolesData } = await supabase
-        .from('user_roles')
-        .select('user_id');
-      const totalUsers = new Set(userRolesData?.map(r => r.user_id)).size;
+      const [
+        userRoles, activeVendors, pendingVendors, approvedEstates, pendingEstates,
+        activeRiders, pendingRiders,
+        ordersToday, ordersThisWeek, ordersThisMonth, paidThisMonth,
+        activeDeliveries, openServiceReqs, pendingBookings, recentOrdersData,
+        escalatedTickets,
+      ] = await Promise.all([
+        supabase.from("user_roles").select("user_id"),
+        supabase.from("vendor_profiles").select("*", { count: "exact", head: true }).eq("is_approved", true).eq("is_active", true),
+        supabase.from("vendor_profiles").select("*", { count: "exact", head: true }).eq("is_approved", false),
+        supabase.from("estates").select("*", { count: "exact", head: true }).eq("is_approved", true),
+        supabase.from("estates").select("*", { count: "exact", head: true }).eq("is_approved", false),
+        supabase.from("rider_profiles").select("*", { count: "exact", head: true }).eq("is_approved", true).eq("is_active", true),
+        supabase.from("rider_profiles").select("*", { count: "exact", head: true }).eq("is_approved", false),
+        supabase.from("orders").select("*", { count: "exact", head: true }).gte("created_at", startOfToday()),
+        supabase.from("orders").select("*", { count: "exact", head: true }).gte("created_at", startOfWeek()),
+        supabase.from("orders").select("*", { count: "exact", head: true }).gte("created_at", startOfMonth()),
+        supabase.from("orders").select("total_amount").eq("payment_status", "paid").gte("created_at", startOfMonth()),
+        supabase.from("deliveries").select("*", { count: "exact", head: true }).in("status", ["assigned", "picked_up", "in_transit", "heading_to_pickup"]),
+        (supabase.from("service_requests") as any).select("*", { count: "exact", head: true }).in("status", ["pending", "assigned", "in_progress"]),
+        (supabase.from("booking_reservations") as any).select("*", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("orders").select("id, order_number, full_name, total_amount, status, created_at").order("created_at", { ascending: false }).limit(5),
+        (supabase.from("support_tickets") as any).select("*", { count: "exact", head: true }).eq("escalated_to_admin", true),
+      ]);
 
-      // Get vendor stats
-      const { count: activeVendors } = await supabase
-        .from('vendor_profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_approved', true)
-        .eq('is_active', true);
-
-      const { count: pendingVendors } = await supabase
-        .from('vendor_profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_approved', false);
-
-      // Get estate stats
-      const { count: approvedEstates } = await supabase
-        .from('estates')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_approved', true)
-        .eq('is_active', true);
-
-      const { count: pendingEstates } = await supabase
-        .from('estates')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_approved', false);
-
-      // Get rider stats
-      const { count: activeRiders } = await supabase
-        .from('rider_profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_approved', true)
-        .eq('is_active', true);
-
-      const { count: pendingRiders } = await supabase
-        .from('rider_profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_approved', false);
+      const totalUsers = new Set((userRoles.data || []).map((r: any) => r.user_id)).size;
+      const revenueThisMonth = ((paidThisMonth.data as any[]) || []).reduce((s, o) => s + Number(o.total_amount || 0), 0);
 
       setStats({
-        totalUsers: totalUsers || 0,
-        activeVendors: activeVendors || 0,
-        approvedEstates: approvedEstates || 0,
-        activeRiders: activeRiders || 0,
-        pendingVendors: pendingVendors || 0,
-        pendingEstates: pendingEstates || 0,
-        pendingRiders: pendingRiders || 0,
+        totalUsers,
+        activeVendors: activeVendors.count || 0,
+        pendingVendors: pendingVendors.count || 0,
+        approvedEstates: approvedEstates.count || 0,
+        pendingEstates: pendingEstates.count || 0,
+        activeRiders: activeRiders.count || 0,
+        pendingRiders: pendingRiders.count || 0,
+        ordersToday: ordersToday.count || 0,
+        ordersThisWeek: ordersThisWeek.count || 0,
+        ordersThisMonth: ordersThisMonth.count || 0,
+        revenueThisMonth,
+        activeDeliveries: activeDeliveries.count || 0,
+        openServiceRequests: openServiceReqs.count || 0,
+        pendingBookings: pendingBookings.count || 0,
+        escalatedTickets: escalatedTickets.count || 0,
       });
-    } catch (error) {
-      console.error('Error fetching stats:', error);
+      setRecentOrders((recentOrdersData.data as any[]) || []);
+    } catch (e) {
+      console.error("Stats error", e);
     }
+    setLoading(false);
   };
 
   const totalPending = stats.pendingVendors + stats.pendingEstates + stats.pendingRiders;
 
+  const statusColor = (s: string | null) => {
+    switch (s) {
+      case "delivered": return "bg-green-100 text-green-800";
+      case "cancelled": return "bg-red-100 text-red-800";
+      case "pending": return "bg-yellow-100 text-yellow-800";
+      default: return "bg-blue-100 text-blue-800";
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      <header className="relative overflow-hidden border-b bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 dark:from-blue-800 dark:via-purple-800 dark:to-indigo-800 shadow-lg">
-        <div className="absolute inset-0 bg-black/10 dark:bg-black/20"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-pulse"></div>
-        <div className="relative container mx-auto px-4 py-6 flex items-center justify-between">
-          <div className="animate-fade-in">
-            <h1 className="text-3xl font-bold text-white drop-shadow-lg">Admin Panel</h1>
-            <p className="text-sm text-blue-100">{user?.email}</p>
-          </div>
-          <div className="flex items-center gap-3 animate-fade-in animation-delay-200">
-            <Button onClick={() => navigate('/admin/inbox')} className="bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm">
-              <MessageSquare className="mr-2 h-4 w-4" />
-              Inbox
+    <div className="p-4 md:p-6 space-y-6">
+      {/* Hero stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard icon={DollarSign} label="Revenue this month" value={`KSh ${stats.revenueThisMonth.toLocaleString()}`} color="green" loading={loading} />
+        <StatCard icon={ShoppingCart} label="Orders this month" value={stats.ordersThisMonth.toLocaleString()} sub={`${stats.ordersToday} today · ${stats.ordersThisWeek} this week`} color="blue" loading={loading} />
+        <StatCard icon={Truck} label="Active deliveries" value={stats.activeDeliveries.toLocaleString()} color="purple" loading={loading} />
+        <StatCard icon={TrendingUp} label="Total users" value={stats.totalUsers.toLocaleString()} color="slate" loading={loading} />
+      </div>
+
+      {/* Community stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard icon={Store} label="Active vendors" value={stats.activeVendors.toLocaleString()} color="emerald" loading={loading} />
+        <StatCard icon={Building2} label="Approved estates" value={stats.approvedEstates.toLocaleString()} color="purple" loading={loading} />
+        <StatCard icon={Bike} label="Active riders" value={stats.activeRiders.toLocaleString()} color="orange" loading={loading} />
+        <StatCard icon={ClipboardList} label="Open service requests" value={stats.openServiceRequests.toLocaleString()} color="amber" loading={loading} />
+      </div>
+
+      {/* Escalated tickets alert */}
+      {stats.escalatedTickets > 0 && (
+        <Card className="border-red-300 bg-red-50 dark:bg-red-950/30 dark:border-red-800">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-red-900 dark:text-red-200">
+              <AlertTriangle className="h-5 w-5" />
+              {stats.escalatedTickets} ticket{stats.escalatedTickets === 1 ? "" : "s"} escalated by CSR
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Link to="/admin/tickets">
+              <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-red-200 dark:border-red-800 hover:border-red-500 transition-colors flex items-center justify-between">
+                <div>
+                  <div className="text-xs text-slate-500">Needs your attention</div>
+                  <div className="text-sm font-medium">Open the support tickets queue</div>
+                </div>
+                <ArrowRight className="h-4 w-4 text-slate-400" />
+              </div>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Pending approvals alert */}
+      {totalPending > 0 && (
+        <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
+              <AlertCircle className="h-5 w-5" />
+              {totalPending} pending {totalPending === 1 ? "approval" : "approvals"} need attention
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {stats.pendingVendors > 0 && (
+                <Link to="/admin/vendor-approvals">
+                  <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-amber-200 dark:border-amber-800 hover:border-amber-500 transition-colors flex items-center justify-between">
+                    <div>
+                      <div className="text-xs text-slate-500">Vendors</div>
+                      <div className="text-xl font-bold">{stats.pendingVendors}</div>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-slate-400" />
+                  </div>
+                </Link>
+              )}
+              {stats.pendingEstates > 0 && (
+                <Link to="/admin/estate-approvals">
+                  <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-amber-200 dark:border-amber-800 hover:border-amber-500 transition-colors flex items-center justify-between">
+                    <div>
+                      <div className="text-xs text-slate-500">Estates</div>
+                      <div className="text-xl font-bold">{stats.pendingEstates}</div>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-slate-400" />
+                  </div>
+                </Link>
+              )}
+              {stats.pendingRiders > 0 && (
+                <Link to="/admin/rider-approvals">
+                  <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-amber-200 dark:border-amber-800 hover:border-amber-500 transition-colors flex items-center justify-between">
+                    <div>
+                      <div className="text-xs text-slate-500">Riders</div>
+                      <div className="text-xl font-bold">{stats.pendingRiders}</div>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-slate-400" />
+                  </div>
+                </Link>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Recent activity + quick links */}
+      <div className="grid lg:grid-cols-3 gap-4">
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-base">Recent orders</CardTitle>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/admin/orders">View all <ArrowRight className="h-3 w-3 ml-1" /></Link>
             </Button>
-            <Button onClick={() => navigate('/admin/live-chat-assign')} variant="outline" className="bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm">
-              <Activity className="mr-2 h-4 w-4" />
-              Assign Chats
-            </Button>
-            <Button onClick={signOut} variant="outline" className="bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm">
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Card className="group hover:shadow-xl hover:scale-105 transition-all duration-300 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-700 animate-fade-in">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <CardTitle className="text-sm font-medium text-blue-900 dark:text-blue-100">Total Users</CardTitle>
-              <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300">
-                <Users className="h-6 w-6 text-white" />
+          </CardHeader>
+          <CardContent className="p-0">
+            {loading ? (
+              <div className="p-6 text-center text-slate-500">Loading...</div>
+            ) : recentOrders.length === 0 ? (
+              <div className="p-6 text-center text-slate-500">No orders yet</div>
+            ) : (
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                {recentOrders.map(o => (
+                  <div key={o.id} className="flex items-center justify-between px-4 py-3">
+                    <div className="min-w-0">
+                      <div className="font-mono text-xs text-slate-500">{o.order_number || o.id.slice(0, 8)}</div>
+                      <div className="font-medium text-sm truncate">{o.full_name || "—"}</div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <div className="text-sm font-semibold">KSh {Number(o.total_amount || 0).toLocaleString()}</div>
+                      <Badge className={statusColor(o.status)}>{o.status}</Badge>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">{stats.totalUsers.toLocaleString()}</div>
-              <div className="text-xs text-blue-600 dark:text-blue-300 font-medium">Registered accounts</div>
-            </CardContent>
-          </Card>
+            )}
+          </CardContent>
+        </Card>
 
-          <Card className="group hover:shadow-xl hover:scale-105 transition-all duration-300 bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900 border-emerald-200 dark:border-emerald-700 animate-fade-in animation-delay-100">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <CardTitle className="text-sm font-medium text-emerald-900 dark:text-emerald-100">Active Vendors</CardTitle>
-              <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300">
-                <Store className="h-6 w-6 text-white" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400 mb-2">{stats.activeVendors.toLocaleString()}</div>
-              <div className="text-xs text-emerald-600 dark:text-emerald-300 font-medium">Approved & active</div>
-            </CardContent>
-          </Card>
-
-          <Card className="group hover:shadow-xl hover:scale-105 transition-all duration-300 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-700 animate-fade-in animation-delay-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <CardTitle className="text-sm font-medium text-purple-900 dark:text-purple-100">Approved Estates</CardTitle>
-              <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300">
-                <Building2 className="h-6 w-6 text-white" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-2">{stats.approvedEstates.toLocaleString()}</div>
-              <div className="text-xs text-purple-600 dark:text-purple-300 font-medium">Verified locations</div>
-            </CardContent>
-          </Card>
-
-          <Card className="group hover:shadow-xl hover:scale-105 transition-all duration-300 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 border-orange-200 dark:border-orange-700 animate-fade-in animation-delay-300">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <CardTitle className="text-sm font-medium text-orange-900 dark:text-orange-100">Active Riders</CardTitle>
-              <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300">
-                <Bike className="h-6 w-6 text-white" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-orange-600 dark:text-orange-400 mb-2">{stats.activeRiders.toLocaleString()}</div>
-              <div className="text-xs text-orange-600 dark:text-orange-300 font-medium">Available for delivery</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {totalPending > 0 && (
-          <Card className="mb-8 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950 border-amber-300 dark:border-amber-700 shadow-lg animate-fade-in animation-delay-400">
-            <CardHeader className="bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-t-lg">
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-6 w-6" />
-                Pending Approvals
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="text-4xl font-bold text-amber-600 dark:text-amber-400 mb-4">{totalPending}</div>
-              <div className="grid gap-3 md:grid-cols-3">
-                {stats.pendingVendors > 0 && (
-                  <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-amber-900 dark:text-amber-100">Vendors</span>
-                      <span className="text-lg font-bold text-amber-600 dark:text-amber-400">{stats.pendingVendors}</span>
-                    </div>
-                    <div className="w-full bg-amber-200 dark:bg-amber-800 rounded-full h-2 mt-2">
-                      <div className="bg-amber-500 h-2 rounded-full" style={{width: `${Math.min((stats.pendingVendors / totalPending) * 100, 100)}%`}}></div>
-                    </div>
-                  </div>
-                )}
-                {stats.pendingEstates > 0 && (
-                  <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-amber-900 dark:text-amber-100">Estates</span>
-                      <span className="text-lg font-bold text-amber-600 dark:text-amber-400">{stats.pendingEstates}</span>
-                    </div>
-                    <div className="w-full bg-amber-200 dark:bg-amber-800 rounded-full h-2 mt-2">
-                      <div className="bg-amber-500 h-2 rounded-full" style={{width: `${Math.min((stats.pendingEstates / totalPending) * 100, 100)}%`}}></div>
-                    </div>
-                  </div>
-                )}
-                {stats.pendingRiders > 0 && (
-                  <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-amber-900 dark:text-amber-100">Riders</span>
-                      <span className="text-lg font-bold text-amber-600 dark:text-amber-400">{stats.pendingRiders}</span>
-                    </div>
-                    <div className="w-full bg-amber-200 dark:bg-amber-800 rounded-full h-2 mt-2">
-                      <div className="bg-amber-500 h-2 rounded-full" style={{width: `${Math.min((stats.pendingRiders / totalPending) * 100, 100)}%`}}></div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 border-slate-200 dark:border-slate-600 animate-fade-in animation-delay-500">
-            <Link to="/admin/users" className="block h-full">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
-                  <div className="p-3 bg-slate-500 rounded-xl group-hover:bg-slate-600 transition-colors">
-                    <UserCog className="h-6 w-6 text-white" />
-                  </div>
-                  <span className="text-lg font-semibold">User Management</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                  Manage user accounts and role assignments across the platform
-                </p>
-              </CardContent>
-            </Link>
-          </Card>
-
-          <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 border-amber-200 dark:border-amber-700 animate-fade-in animation-delay-600">
-            <Link to="/admin/vendor-approvals" className="block h-full">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-3 text-amber-900 dark:text-amber-100">
-                  <div className="p-3 bg-amber-500 rounded-xl group-hover:bg-amber-600 transition-colors">
-                    <Store className="h-6 w-6 text-white" />
-                  </div>
-                  <span className="text-lg font-semibold">Vendor Approvals</span>
-                  {stats.pendingVendors > 0 && (
-                    <span className="ml-auto text-sm bg-amber-500 text-white px-3 py-1 rounded-full font-bold animate-pulse">
-                      {stats.pendingVendors}
-                    </span>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-sm text-amber-700 dark:text-amber-200 leading-relaxed">
-                  Review and approve new vendor applications for the marketplace
-                </p>
-              </CardContent>
-            </Link>
-          </Card>
-
-          <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-950 dark:to-yellow-900 border-yellow-200 dark:border-yellow-700 animate-fade-in animation-delay-650">
-            <Link to="/admin/vendor-management" className="block h-full">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-3 text-yellow-900 dark:text-yellow-100">
-                  <div className="p-3 bg-yellow-500 rounded-xl group-hover:bg-yellow-600 transition-colors">
-                    <Store className="h-6 w-6 text-white" />
-                  </div>
-                  <span className="text-lg font-semibold">Vendor Management</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-sm text-yellow-700 dark:text-yellow-200 leading-relaxed">
-                  View and edit all vendor business details and settings
-                </p>
-              </CardContent>
-            </Link>
-          </Card>
-
-          <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-700 animate-fade-in animation-delay-700">
-            <Link to="/admin/estate-approvals" className="block h-full">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-3 text-purple-900 dark:text-purple-100">
-                  <div className="p-3 bg-purple-500 rounded-xl group-hover:bg-purple-600 transition-colors">
-                    <Building2 className="h-6 w-6 text-white" />
-                  </div>
-                  <span className="text-lg font-semibold">Estate Approvals</span>
-                  {stats.pendingEstates > 0 && (
-                    <span className="ml-auto text-sm bg-purple-500 text-white px-3 py-1 rounded-full font-bold animate-pulse">
-                      {stats.pendingEstates}
-                    </span>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-sm text-purple-700 dark:text-purple-200 leading-relaxed">
-                  Review and approve estate registrations and location data
-                </p>
-              </CardContent>
-            </Link>
-          </Card>
-
-          <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-950 dark:to-indigo-900 border-indigo-200 dark:border-indigo-700 animate-fade-in animation-delay-800">
-            <Link to="/admin/estates" className="block h-full">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-3 text-indigo-900 dark:text-indigo-100">
-                  <div className="p-3 bg-indigo-500 rounded-xl group-hover:bg-indigo-600 transition-colors">
-                    <Building2 className="h-6 w-6 text-white" />
-                  </div>
-                  <span className="text-lg font-semibold">Estate Management</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-sm text-indigo-700 dark:text-indigo-200 leading-relaxed">
-                  Manage approved estates and their operational settings
-                </p>
-              </CardContent>
-            </Link>
-          </Card>
-
-          <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 border-orange-200 dark:border-orange-700 animate-fade-in animation-delay-900">
-            <Link to="/admin/rider-approvals" className="block h-full">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-3 text-orange-900 dark:text-orange-100">
-                  <div className="p-3 bg-orange-500 rounded-xl group-hover:bg-orange-600 transition-colors">
-                    <Bike className="h-6 w-6 text-white" />
-                  </div>
-                  <span className="text-lg font-semibold">Rider Approvals</span>
-                  {stats.pendingRiders > 0 && (
-                    <span className="ml-auto text-sm bg-orange-500 text-white px-3 py-1 rounded-full font-bold animate-pulse">
-                      {stats.pendingRiders}
-                    </span>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-sm text-orange-700 dark:text-orange-200 leading-relaxed">
-                  Review and approve rider applications for delivery services
-                </p>
-              </CardContent>
-            </Link>
-          </Card>
-
-          <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-cyan-50 to-cyan-100 dark:from-cyan-950 dark:to-cyan-900 border-cyan-200 dark:border-cyan-700 animate-fade-in animation-delay-1000">
-            <Link to="/admin/live-chat-assign" className="block h-full">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-3 text-cyan-900 dark:text-cyan-100">
-                  <div className="p-3 bg-cyan-500 rounded-xl group-hover:bg-cyan-600 transition-colors">
-                    <MessageSquare className="h-6 w-6 text-white" />
-                  </div>
-                  <span className="text-lg font-semibold">Chat Assignment</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-sm text-cyan-700 dark:text-cyan-200 leading-relaxed">
-                  Assign unassigned support chats to available administrators
-                </p>
-              </CardContent>
-            </Link>
-          </Card>
-
-          <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900 border-emerald-200 dark:border-emerald-700 animate-fade-in animation-delay-1100">
-            <Link to="/admin/manage-mtaaloop-mart" className="block h-full">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-3 text-emerald-900 dark:text-emerald-100">
-                  <div className="p-3 bg-emerald-500 rounded-xl group-hover:bg-emerald-600 transition-colors">
-                    <ShoppingCart className="h-6 w-6 text-white" />
-                  </div>
-                  <span className="text-lg font-semibold">MtaaLoop Mart</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-sm text-emerald-700 dark:text-emerald-200 leading-relaxed">
-                  Manage products and inventory in the MtaaLoop marketplace
-                </p>
-              </CardContent>
-            </Link>
-          </Card>
-
-          <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-700 animate-fade-in animation-delay-1200">
-            <Link to="/admin/payouts" className="block h-full">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-3 text-green-900 dark:text-green-100">
-                  <div className="p-3 bg-green-500 rounded-xl group-hover:bg-green-600 transition-colors">
-                    <DollarSign className="h-6 w-6 text-white" />
-                  </div>
-                  <span className="text-lg font-semibold">Vendor Payouts</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-sm text-green-700 dark:text-green-200 leading-relaxed">
-                  Simulate and record vendor payouts that are pending settlement.
-                </p>
-              </CardContent>
-            </Link>
-          </Card>
-
-          <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-950 dark:to-rose-900 border-rose-200 dark:border-rose-700 animate-fade-in animation-delay-1300">
-            <Link to="/admin/onboarding" className="block h-full">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-3 text-rose-900 dark:text-rose-100">
-                  <div className="p-3 bg-rose-500 rounded-xl group-hover:bg-rose-600 transition-colors">
-                    <UserPlus className="h-6 w-6 text-white" />
-                  </div>
-                  <span className="text-lg font-semibold">Onboard Users</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-sm text-rose-700 dark:text-rose-200 leading-relaxed">
-                  Manually create vendor or customer accounts on their behalf
-                </p>
-              </CardContent>
-            </Link>
-          </Card>
-
-          <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-sky-50 to-sky-100 dark:from-sky-950 dark:to-sky-900 border-sky-200 dark:border-sky-700 animate-fade-in animation-delay-1350">
-            <Link to="/admin/service-requests" className="block h-full">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-3 text-sky-900 dark:text-sky-100">
-                  <div className="p-3 bg-sky-500 rounded-xl group-hover:bg-sky-600 transition-colors">
-                    <ClipboardList className="h-6 w-6 text-white" />
-                  </div>
-                  <span className="text-lg font-semibold">Service Requests</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-sm text-sky-700 dark:text-sky-200 leading-relaxed">
-                  View, assign, and manage all service requests (errands, cleaning, trash, etc.)
-                </p>
-              </CardContent>
-            </Link>
-          </Card>
-
-          <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-950 dark:to-teal-900 border-teal-200 dark:border-teal-700 animate-fade-in animation-delay-1400">
-            <Link to="/admin/compliance" className="block h-full">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-3 text-teal-900 dark:text-teal-100">
-                  <div className="p-3 bg-teal-500 rounded-xl group-hover:bg-teal-600 transition-colors">
-                    <CheckCircle className="h-6 w-6 text-white" />
-                  </div>
-                  <span className="text-lg font-semibold">Business Compliance</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-sm text-teal-700 dark:text-teal-200 leading-relaxed">
-                  Monitor and manage compliance across all MtaaLoop business categories.
-                </p>
-              </CardContent>
-            </Link>
-          </Card>
-
-          <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-950 dark:to-pink-900 border-pink-200 dark:border-pink-700 animate-fade-in animation-delay-1500">
-            <Link to="/admin/seed-ilora" className="block h-full">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-3 text-pink-900 dark:text-pink-100">
-                  <div className="p-3 bg-pink-500 rounded-xl group-hover:bg-pink-600 transition-colors">
-                    <Flower2 className="h-6 w-6 text-white" />
-                  </div>
-                  <span className="text-lg font-semibold">Seed Ilora Flowers</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-sm text-pink-700 dark:text-pink-200 leading-relaxed">
-                  Bulk seed 140 products with AI-generated images for Ilora Flowers
-                </p>
-              </CardContent>
-            </Link>
-          </Card>
-
-          <Card className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-950 dark:to-violet-900 border-violet-200 dark:border-violet-700 animate-fade-in animation-delay-1600">
-            <Link to="/admin/seed-products" className="block h-full">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-3 text-violet-900 dark:text-violet-100">
-                  <div className="p-3 bg-violet-500 rounded-xl group-hover:bg-violet-600 transition-colors">
-                    <Package className="h-6 w-6 text-white" />
-                  </div>
-                  <span className="text-lg font-semibold">Seed Vendor Products</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-sm text-violet-700 dark:text-violet-200 leading-relaxed">
-                  Add seed products with AI images for any vendor on the platform
-                </p>
-              </CardContent>
-            </Link>
-          </Card>
-        </div>
-      </main>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Quick access</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <QuickLink to="/admin/orders" icon={ShoppingCart} label="All orders" count={stats.ordersThisMonth} />
+            <QuickLink to="/admin/deliveries" icon={Truck} label="Deliveries" count={stats.activeDeliveries} />
+            <QuickLink to="/admin/bookings" icon={CalendarDays} label="Bookings" count={stats.pendingBookings} />
+            <QuickLink to="/admin/service-requests" icon={ClipboardList} label="Service requests" count={stats.openServiceRequests} />
+            <QuickLink to="/admin/analytics" icon={TrendingUp} label="Analytics" />
+            <QuickLink to="/admin/users" icon={Users} label="Users" count={stats.totalUsers} />
+          </CardContent>
+        </Card>
+      </div>
     </div>
+  );
+}
+
+// ───────────── Stat Card ─────────────
+const COLOR_MAP: Record<string, string> = {
+  green: "from-emerald-500 to-emerald-600",
+  blue: "from-blue-500 to-blue-600",
+  purple: "from-purple-500 to-purple-600",
+  slate: "from-slate-500 to-slate-600",
+  emerald: "from-emerald-500 to-emerald-600",
+  orange: "from-orange-500 to-orange-600",
+  amber: "from-amber-500 to-amber-600",
+};
+
+function StatCard({
+  icon: Icon, label, value, sub, color = "slate", loading = false,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string | number;
+  sub?: string;
+  color?: string;
+  loading?: boolean;
+}) {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className={`p-2 rounded-lg bg-gradient-to-br ${COLOR_MAP[color] || COLOR_MAP.slate}`}>
+            <Icon className="h-4 w-4 text-white" />
+          </div>
+        </div>
+        <div className="text-xs text-slate-500 mb-1">{label}</div>
+        <div className="text-2xl font-bold">
+          {loading ? <span className="text-slate-300">...</span> : value}
+        </div>
+        {sub && <div className="text-[11px] text-slate-500 mt-1">{sub}</div>}
+      </CardContent>
+    </Card>
+  );
+}
+
+function QuickLink({
+  to, icon: Icon, label, count,
+}: {
+  to: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  count?: number;
+}) {
+  return (
+    <Link
+      to={to}
+      className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+    >
+      <Icon className="h-4 w-4 text-slate-500" />
+      <span className="text-sm flex-1">{label}</span>
+      {typeof count === "number" && (
+        <Badge variant="outline" className="text-xs">{count}</Badge>
+      )}
+      <ArrowRight className="h-3 w-3 text-slate-400" />
+    </Link>
   );
 }

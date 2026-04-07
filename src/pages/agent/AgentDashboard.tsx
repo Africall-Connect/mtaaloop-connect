@@ -232,6 +232,19 @@ export default function AgentDashboard() {
                                 <CheckCircle2 className="w-3 h-3" /> Mark Complete
                               </Button>
                             )}
+                            <Button size="sm" variant="outline" className="gap-1" onClick={async () => {
+                              try {
+                                const { findOrCreateChatWithCustomer } = await import('@/lib/csrChat');
+                                const { data: { user } } = await supabase.auth.getUser();
+                                if (!user || !req.user_id) { toast.error('Cannot start chat'); return; }
+                                const chatId = await findOrCreateChatWithCustomer(user.id, req.user_id, 'agent');
+                                window.location.href = `/inbox?chat=${chatId}`;
+                              } catch (e: any) {
+                                toast.error('Failed: ' + (e?.message || 'Unknown'));
+                              }
+                            }}>
+                              <MessageSquare className="w-3 h-3" /> Message Customer
+                            </Button>
                           </div>
                         )}
 

@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { checkClientRateLimit, resetClientRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
 import { logSecurityEvent } from "@/lib/securityLogger";
+import { getRoleHomeRoute } from "@/lib/roleRoutes";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -40,22 +41,26 @@ const Login = () => {
       return navigate("/vendor/dashboard");
     }
 
-    if (roles?.includes("vendor")) return navigate("/vendor/dashboard");
-    if (roles?.includes("rider")) return navigate("/rider/dashboard");
-    if (roles?.includes("agent")) return navigate("/agent/dashboard");
-    if (roles?.includes("estate") || roles?.includes("estate_manager"))
-      return navigate("/estate/dashboard");
+    // Use the shared role-routing helper so ProtectedRoute and Login agree
+    const homeRoute = getRoleHomeRoute(roles);
 
-    const { data: prefs, error: prefsErr } = await supabase
-      .from("user_preferences")
-      .select("estate_id")
-      .eq("user_id", userId)
-      .maybeSingle();
+    // Customers without an estate need to pick one first
+    if (homeRoute === "/home") {
+      const { data: prefs, error: prefsErr } = await supabase
+        .from("user_preferences")
+        .select("estate_id")
+        .eq("user_id", userId)
+        .maybeSingle();
 
-    if (!prefsErr && prefs?.estate_id) {
-      return navigate("/home");
+      if (!prefsErr && prefs?.estate_id) {
+        return navigate("/home");
+      }
+      return navigate("/apartment-selection");
     }
 
+    if (homeRoute) return navigate(homeRoute);
+
+    // No recognised role — fall back to apartment selection (will show as a guest customer)
     return navigate("/apartment-selection");
   };
 

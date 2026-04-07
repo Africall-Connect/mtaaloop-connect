@@ -13,8 +13,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { ArrowLeft, CheckCircle, XCircle, Building2, MapPin, Phone, Mail, Home } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Building2, MapPin, Phone, Mail, Home, Eye, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { ApplicationDetailsDialog } from '@/components/admin/ApplicationDetailsDialog';
 
 interface Estate {
   id: string;
@@ -37,6 +38,22 @@ export default function EstateApprovals() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [viewEstate, setViewEstate] = useState<Estate | null>(null);
+
+  const downloadEstate = (estate: Estate) => {
+    try {
+      const blob = new Blob([JSON.stringify(estate, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `estate-${estate.name.replace(/\s+/g, '-')}-${estate.id.slice(0, 8)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Downloaded');
+    } catch {
+      toast.error('Download failed');
+    }
+  };
 
   useEffect(() => {
     fetchEstates();
@@ -188,11 +205,28 @@ export default function EstateApprovals() {
                       </div>
                     </div>
 
-                    <div className="flex gap-2 pt-4">
+                    <div className="flex flex-wrap gap-2 pt-4">
+                      <Button
+                        onClick={() => setViewEstate(estate)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Eye className="mr-2 h-4 w-4" />
+                        View
+                      </Button>
+                      <Button
+                        onClick={() => downloadEstate(estate)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Download
+                      </Button>
                       <Button
                         onClick={() => handleApprove(estate.id)}
                         disabled={processing}
-                        className="flex-1"
+                        size="sm"
+                        className="flex-1 min-w-[120px]"
                       >
                         <CheckCircle className="mr-2 h-4 w-4" />
                         Approve
@@ -204,7 +238,8 @@ export default function EstateApprovals() {
                         }}
                         disabled={processing}
                         variant="destructive"
-                        className="flex-1"
+                        size="sm"
+                        className="flex-1 min-w-[120px]"
                       >
                         <XCircle className="mr-2 h-4 w-4" />
                         Reject
@@ -217,6 +252,14 @@ export default function EstateApprovals() {
           </div>
         )}
       </main>
+
+      <ApplicationDetailsDialog
+        open={!!viewEstate}
+        onOpenChange={(o) => !o && setViewEstate(null)}
+        title={viewEstate?.name || 'Estate Application'}
+        data={viewEstate}
+        documentFields={['logo_url', 'cover_image_url', 'registration_document_url']}
+      />
 
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <DialogContent>

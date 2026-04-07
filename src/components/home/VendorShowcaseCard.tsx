@@ -4,7 +4,10 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-const FALLBACK_IMG = "https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=400&h=300&fit=crop";
+// Neutral fallback (used only when a vendor has no logo, no cover image, and no
+// matching products). Avoids the old generic-supermarket Unsplash photo that
+// looked wrong on flower / butchery / pharmacy stores.
+const FALLBACK_IMG = "/placeholder.svg";
 
 interface ProductPreview {
   id: string;

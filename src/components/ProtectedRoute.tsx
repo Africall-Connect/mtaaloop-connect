@@ -2,6 +2,7 @@ import { ReactNode, useCallback, useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { getRoleHomeRoute } from '@/lib/roleRoutes';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -14,7 +15,7 @@ export function ProtectedRoute({
   requiredRole,
   requireApproval = false 
 }: ProtectedRouteProps) {
-  const { user, hasRole, loading } = useAuth();
+  const { user, hasRole, loading, roles } = useAuth();
   const [approvalStatus, setApprovalStatus] = useState<boolean | null>(null);
   const [checkingApproval, setCheckingApproval] = useState(requireApproval);
 
@@ -57,12 +58,13 @@ export function ProtectedRoute({
   }, [user, requiredRole]);
 
   useEffect(() => {
-    if (requireApproval && user && requiredRole) {
+    // Admins skip approval checks entirely
+    if (requireApproval && user && requiredRole && !hasRole('admin')) {
       checkApprovalStatus();
     } else {
       setCheckingApproval(false);
     }
-  }, [requireApproval, user, requiredRole, checkApprovalStatus]);
+  }, [requireApproval, user, requiredRole, checkApprovalStatus, hasRole]);
 
   if (loading || checkingApproval) {
     return (
@@ -76,11 +78,16 @@ export function ProtectedRoute({
     return <Navigate to="/auth/login" replace />;
   }
 
-  if (requiredRole && !hasRole(requiredRole)) {
-    return <Navigate to="/home" replace />;
+  // Admin bypasses all role and approval checks — they see and operate everything.
+  const isAdmin = hasRole('admin');
+
+  if (requiredRole && !hasRole(requiredRole) && !isAdmin) {
+    // Send the user to THEIR own home, not a customer page they may not belong to.
+    const fallback = getRoleHomeRoute(roles) || '/auth/login';
+    return <Navigate to={fallback} replace />;
   }
 
-  if (requireApproval && approvalStatus === false) {
+  if (requireApproval && approvalStatus === false && !isAdmin) {
     return <Navigate to="/pending-approval" replace />;
   }
 

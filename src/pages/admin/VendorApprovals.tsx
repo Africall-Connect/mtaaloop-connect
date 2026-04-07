@@ -13,8 +13,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { ArrowLeft, CheckCircle, XCircle, Store, MapPin, Phone, Mail } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Store, MapPin, Phone, Mail, Eye, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { ApplicationDetailsDialog } from '@/components/admin/ApplicationDetailsDialog';
 
 interface VendorProfile {
   id: string;
@@ -41,6 +42,22 @@ export default function VendorApprovals() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [viewVendor, setViewVendor] = useState<VendorProfile | null>(null);
+
+  const downloadVendor = (vendor: VendorProfile) => {
+    try {
+      const blob = new Blob([JSON.stringify(vendor, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `vendor-${vendor.business_name.replace(/\s+/g, '-')}-${vendor.id.slice(0, 8)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Downloaded');
+    } catch {
+      toast.error('Download failed');
+    }
+  };
 
   useEffect(() => {
     fetchVendors();
@@ -210,11 +227,28 @@ export default function VendorApprovals() {
                       </div>
                     </div>
 
-                    <div className="flex gap-2 pt-4">
+                    <div className="flex flex-wrap gap-2 pt-4">
+                      <Button
+                        onClick={() => setViewVendor(vendor)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Eye className="mr-2 h-4 w-4" />
+                        View
+                      </Button>
+                      <Button
+                        onClick={() => downloadVendor(vendor)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Download
+                      </Button>
                       <Button
                         onClick={() => handleApprove(vendor.id)}
                         disabled={processing}
-                        className="flex-1"
+                        size="sm"
+                        className="flex-1 min-w-[120px]"
                       >
                         <CheckCircle className="mr-2 h-4 w-4" />
                         Approve
@@ -226,7 +260,8 @@ export default function VendorApprovals() {
                         }}
                         disabled={processing}
                         variant="destructive"
-                        className="flex-1"
+                        size="sm"
+                        className="flex-1 min-w-[120px]"
                       >
                         <XCircle className="mr-2 h-4 w-4" />
                         Reject
@@ -239,6 +274,14 @@ export default function VendorApprovals() {
           </div>
         )}
       </main>
+
+      <ApplicationDetailsDialog
+        open={!!viewVendor}
+        onOpenChange={(o) => !o && setViewVendor(null)}
+        title={viewVendor?.business_name || 'Vendor Application'}
+        data={viewVendor}
+        documentFields={['business_document_url', 'logo_url', 'cover_image_url']}
+      />
 
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <DialogContent>

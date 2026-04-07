@@ -15,13 +15,15 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { ArrowLeft, Search, Edit, Store, Loader2 } from 'lucide-react';
+import { ArrowLeft, Search, Edit, Store, Loader2, Eye, Download, Plus, Send, RefreshCw, Copy, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { MAIN_CATEGORIES } from '@/constants/categories';
+import { ApplicationDetailsDialog } from '@/components/admin/ApplicationDetailsDialog';
+import { signUpAsAdmin, generateTempPassword } from '@/lib/adminAuth';
 
 interface VendorProfile {
   id: string;
-  user_id: string;
+  user_id: string | null;
   business_name: string;
   business_type: string;
   business_description: string;
@@ -44,6 +46,143 @@ export default function AdminVendorManagement() {
   const [editVendor, setEditVendor] = useState<VendorProfile | null>(null);
   const [editForm, setEditForm] = useState<Partial<VendorProfile>>({});
   const [saving, setSaving] = useState(false);
+  const [viewVendor, setViewVendor] = useState<VendorProfile | null>(null);
+
+  // Add vendor (business-only) dialog
+  const [addOpen, setAddOpen] = useState(false);
+  const [addForm, setAddForm] = useState({
+    business_name: "",
+    business_type: "",
+    business_phone: "",
+    business_email: "",
+    business_address: "",
+    business_description: "",
+  });
+
+  // Invite credentials dialog
+  const [inviteVendor, setInviteVendor] = useState<VendorProfile | null>(null);
+  const [inviteForm, setInviteForm] = useState({ email: "", password: "" });
+  const [inviting, setInviting] = useState(false);
+
+  // Credentials reveal dialog (one-time copy)
+  const [credentials, setCredentials] = useState<{ vendor: string; email: string; password: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const slugify = (s: string) =>
+    s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
+  const createVendor = async () => {
+    if (!addForm.business_name.trim() || !addForm.business_type || !addForm.business_phone.trim()) {
+      toast.error("Business name, type and phone are required");
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase.from("vendor_profiles").insert({
+      business_name: addForm.business_name.trim(),
+      business_type: addForm.business_type,
+      business_phone: addForm.business_phone.trim(),
+      business_email: addForm.business_email.trim() || null,
+      business_address: addForm.business_address.trim() || null,
+      business_description: addForm.business_description.trim() || null,
+      slug: slugify(addForm.business_name),
+      is_approved: true,
+      is_active: true,
+      user_id: null,
+    } as any);
+    if (error) {
+      toast.error("Create failed: " + error.message);
+    } else {
+      toast.success(`${addForm.business_name} added — invite the owner from the actions menu`);
+      setAddOpen(false);
+      setAddForm({
+        business_name: "",
+        business_type: "",
+        business_phone: "",
+        business_email: "",
+        business_address: "",
+        business_description: "",
+      });
+      fetchVendors();
+    }
+    setSaving(false);
+  };
+
+  const openInvite = (vendor: VendorProfile) => {
+    setInviteVendor(vendor);
+    setInviteForm({
+      email: vendor.business_email || "",
+      password: generateTempPassword(),
+    });
+  };
+
+  const sendInvite = async () => {
+    if (!inviteVendor) return;
+    if (!inviteForm.email.trim() || !inviteForm.password.trim()) {
+      toast.error("Email and password are required");
+      return;
+    }
+    setInviting(true);
+    try {
+      const newUser = await signUpAsAdmin(
+        inviteForm.email.trim(),
+        inviteForm.password,
+        { full_name: inviteVendor.business_name, phone: inviteVendor.business_phone }
+      );
+
+      // Link the auth user to the existing vendor profile
+      const { error: linkError } = await supabase
+        .from("vendor_profiles")
+        .update({ user_id: newUser.id, business_email: inviteForm.email.trim() })
+        .eq("id", inviteVendor.id);
+      if (linkError) throw linkError;
+
+      // Insert vendor role
+      const { error: roleError } = await supabase
+        .from("user_roles")
+        .insert({ user_id: newUser.id, role: "vendor" });
+      if (roleError) throw roleError;
+
+      // Show one-time credentials dialog
+      setCredentials({
+        vendor: inviteVendor.business_name,
+        email: inviteForm.email.trim(),
+        password: inviteForm.password,
+      });
+      setInviteVendor(null);
+      fetchVendors();
+    } catch (e: any) {
+      toast.error("Invite failed: " + (e?.message || "Unknown error"));
+    }
+    setInviting(false);
+  };
+
+  const copyCredentials = async () => {
+    if (!credentials) return;
+    const text = `MtaaLoop Vendor Login\n\nBusiness: ${credentials.vendor}\nEmail: ${credentials.email}\nTemporary password: ${credentials.password}\n\nLogin at: ${window.location.origin}/auth/login`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      toast.success("Copied to clipboard");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Copy failed");
+    }
+  };
+
+  const downloadVendor = (vendor: VendorProfile) => {
+    try {
+      const blob = new Blob([JSON.stringify(vendor, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `vendor-${vendor.business_name.replace(/\s+/g, '-')}-${vendor.id.slice(0, 8)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Downloaded');
+    } catch {
+      toast.error('Download failed');
+    }
+  };
 
   useEffect(() => {
     fetchVendors();
@@ -136,12 +275,16 @@ export default function AdminVendorManagement() {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
-            <div>
+            <div className="flex-1">
               <h1 className="text-2xl font-bold">Vendor Management</h1>
               <p className="text-sm text-muted-foreground">
-                View and edit all vendor profiles
+                View, add, and invite vendors
               </p>
             </div>
+            <Button onClick={() => setAddOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add vendor
+            </Button>
           </div>
         </div>
       </header>
@@ -212,17 +355,31 @@ export default function AdminVendorManagement() {
                           {vendor.estates?.name || '—'}
                         </TableCell>
                         <TableCell>
-                          {vendor.is_approved ? (
+                          {!vendor.user_id ? (
+                            <Badge className="bg-amber-500/10 text-amber-700 border-amber-200">Awaiting invite</Badge>
+                          ) : vendor.is_approved ? (
                             <Badge className="bg-green-500/10 text-green-600 border-green-200">Approved</Badge>
                           ) : (
                             <Badge variant="secondary">Pending</Badge>
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" onClick={() => openEdit(vendor)}>
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
-                          </Button>
+                          <div className="flex justify-end gap-1">
+                            <Button variant="ghost" size="sm" onClick={() => setViewVendor(vendor)} title="View details">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => downloadVendor(vendor)} title="Download">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => openEdit(vendor)} title="Edit">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            {!vendor.user_id && (
+                              <Button variant="ghost" size="sm" onClick={() => openInvite(vendor)} title="Invite credentials">
+                                <Send className="h-4 w-4 text-emerald-600" />
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -342,6 +499,174 @@ export default function AdminVendorManagement() {
               {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
               Save Changes
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ApplicationDetailsDialog
+        open={!!viewVendor}
+        onOpenChange={(o) => !o && setViewVendor(null)}
+        title={viewVendor?.business_name || 'Vendor'}
+        data={viewVendor}
+        documentFields={['business_document_url', 'logo_url', 'cover_image_url']}
+      />
+
+      {/* Add Vendor (business-only) Dialog */}
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" /> Add new vendor
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Create a business record now. You can invite the owner with credentials later from the vendor's row.
+            </p>
+            <div>
+              <Label>Business name *</Label>
+              <Input
+                value={addForm.business_name}
+                onChange={e => setAddForm(f => ({ ...f, business_name: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Business type *</Label>
+              <Select
+                value={addForm.business_type}
+                onValueChange={v => setAddForm(f => ({ ...f, business_type: v }))}
+              >
+                <SelectTrigger><SelectValue placeholder="Pick a category" /></SelectTrigger>
+                <SelectContent>
+                  {MAIN_CATEGORIES.map(c => (
+                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Phone *</Label>
+                <Input
+                  value={addForm.business_phone}
+                  onChange={e => setAddForm(f => ({ ...f, business_phone: e.target.value }))}
+                  placeholder="+254..."
+                />
+              </div>
+              <div>
+                <Label>Email (optional)</Label>
+                <Input
+                  type="email"
+                  value={addForm.business_email}
+                  onChange={e => setAddForm(f => ({ ...f, business_email: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Address (optional)</Label>
+              <Input
+                value={addForm.business_address}
+                onChange={e => setAddForm(f => ({ ...f, business_address: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Description (optional)</Label>
+              <Textarea
+                value={addForm.business_description}
+                onChange={e => setAddForm(f => ({ ...f, business_description: e.target.value }))}
+                rows={2}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
+            <Button onClick={createVendor} disabled={saving}>
+              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Create vendor
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite Credentials Dialog */}
+      <Dialog open={!!inviteVendor} onOpenChange={(o) => !o && setInviteVendor(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-emerald-600" /> Invite {inviteVendor?.business_name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Enter an email and an auto-generated password. The vendor will use these to log in for the first time.
+            </p>
+            <div>
+              <Label>Owner email</Label>
+              <Input
+                type="email"
+                value={inviteForm.email}
+                onChange={e => setInviteForm(f => ({ ...f, email: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Temporary password</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  value={inviteForm.password}
+                  onChange={e => setInviteForm(f => ({ ...f, password: e.target.value }))}
+                  className="font-mono text-xs"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setInviteForm(f => ({ ...f, password: generateTempPassword() }))}
+                  title="Regenerate"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setInviteVendor(null)}>Cancel</Button>
+            <Button onClick={sendInvite} disabled={inviting}>
+              {inviting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Create account
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Credentials Reveal Dialog (one-time) */}
+      <Dialog open={!!credentials} onOpenChange={(o) => !o && setCredentials(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-emerald-700">
+              <Check className="h-5 w-5" /> Vendor invited successfully
+            </DialogTitle>
+          </DialogHeader>
+          {credentials && (
+            <div className="space-y-3">
+              <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-3 text-xs text-amber-800 dark:text-amber-200">
+                ⚠️ This is the only time you'll see this password. Copy it now and send it to the vendor via WhatsApp / SMS / email.
+              </div>
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-2 font-mono text-xs">
+                <div><span className="text-muted-foreground">Business:</span> <strong>{credentials.vendor}</strong></div>
+                <div><span className="text-muted-foreground">Email:</span> <strong>{credentials.email}</strong></div>
+                <div><span className="text-muted-foreground">Password:</span> <strong>{credentials.password}</strong></div>
+                <div className="text-[10px] text-muted-foreground pt-1">
+                  Login URL: {window.location.origin}/auth/login
+                </div>
+              </div>
+              <Button onClick={copyCredentials} className="w-full">
+                {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+                {copied ? "Copied!" : "Copy all credentials"}
+              </Button>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCredentials(null)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
