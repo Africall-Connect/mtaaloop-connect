@@ -60,6 +60,7 @@ interface Order {
   order_items: OrderItem[];
   deliveries?: Delivery[];
   estate_id: string | null;
+  customer_id: string | null;
 }
 
 export default function AdvancedOrdersManagement() {
@@ -101,6 +102,7 @@ export default function AdvancedOrdersManagement() {
           payment_status,
           created_at,
           estate_id,
+          customer_id,
           order_items (*),
           deliveries (
             id,
@@ -658,7 +660,20 @@ export default function AdvancedOrdersManagement() {
                               
                             </SheetContent>
                           </Sheet>
-                          <Button size="sm" variant="outline" onClick={() => navigate('/vendor/communications')}>
+                          <Button size="sm" variant="outline" onClick={async () => {
+                            try {
+                              const { findOrCreateChatWithCustomer } = await import('@/lib/csrChat');
+                              const { data: { user } } = await supabase.auth.getUser();
+                              if (!user || !order.customer_id) {
+                                toast.error('Cannot start chat');
+                                return;
+                              }
+                              const chatId = await findOrCreateChatWithCustomer(user.id, order.customer_id, 'vendor');
+                              navigate(`/inbox?chat=${chatId}`);
+                            } catch (e: any) {
+                              toast.error('Failed: ' + (e?.message || 'Unknown'));
+                            }
+                          }}>
                             Message Customer
                           </Button>
                           <Button size="sm" variant="outline" onClick={() => window.print()}>

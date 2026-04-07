@@ -13,8 +13,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { ArrowLeft, CheckCircle, XCircle, Bike, Phone, Mail, CreditCard, Car } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Bike, Phone, Mail, CreditCard, Car, Eye, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { ApplicationDetailsDialog } from '@/components/admin/ApplicationDetailsDialog';
 
 interface RiderProfile {
   id: string;
@@ -42,6 +43,22 @@ export default function RiderApprovals() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [viewRider, setViewRider] = useState<RiderProfile | null>(null);
+
+  const downloadRider = (rider: RiderProfile) => {
+    try {
+      const blob = new Blob([JSON.stringify(rider, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rider-${rider.full_name.replace(/\s+/g, '-')}-${rider.id.slice(0, 8)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Downloaded');
+    } catch {
+      toast.error('Download failed');
+    }
+  };
 
   useEffect(() => {
     fetchRiders();
@@ -210,11 +227,28 @@ export default function RiderApprovals() {
                       </div>
                     </div>
 
-                    <div className="flex gap-2 pt-4">
+                    <div className="flex flex-wrap gap-2 pt-4">
+                      <Button
+                        onClick={() => setViewRider(rider)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Eye className="mr-2 h-4 w-4" />
+                        View
+                      </Button>
+                      <Button
+                        onClick={() => downloadRider(rider)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Download
+                      </Button>
                       <Button
                         onClick={() => handleApprove(rider.id)}
                         disabled={processing}
-                        className="flex-1"
+                        size="sm"
+                        className="flex-1 min-w-[120px]"
                       >
                         <CheckCircle className="mr-2 h-4 w-4" />
                         Approve
@@ -226,7 +260,8 @@ export default function RiderApprovals() {
                         }}
                         disabled={processing}
                         variant="destructive"
-                        className="flex-1"
+                        size="sm"
+                        className="flex-1 min-w-[120px]"
                       >
                         <XCircle className="mr-2 h-4 w-4" />
                         Reject
@@ -239,6 +274,14 @@ export default function RiderApprovals() {
           </div>
         )}
       </main>
+
+      <ApplicationDetailsDialog
+        open={!!viewRider}
+        onOpenChange={(o) => !o && setViewRider(null)}
+        title={viewRider?.full_name || 'Rider Application'}
+        data={viewRider}
+        documentFields={['id_document_url', 'license_document_url', 'vehicle_photo_url', 'profile_photo_url']}
+      />
 
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <DialogContent>

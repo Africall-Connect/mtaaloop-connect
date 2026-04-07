@@ -10,6 +10,8 @@ export const MAIN_CATEGORIES = [
   { value: "Restaurant", label: "Restaurant" },
   { value: "Liquor Store", label: "Liquor Store" },
   { value: "Flowers & Gifts", label: "Flowers & Gifts" },
+  { value: "Butchery", label: "Butchery" },
+  { value: "Mobile Accessories", label: "Mobile Accessories" },
   // Service
   { value: "Utilities & Services", label: "Utilities & Services" },
   { value: "Home Services", label: "Home Services" },
@@ -84,6 +86,30 @@ export const SUBCATEGORY_OPTIONS: Record<string, string[]> = {
     "Cake & Pastries",
     "Custom Arrangements",
     "Event Decorations",
+  ],
+
+  "Butchery": [
+    "Goat & Mutton",
+    "Beef",
+    "Pork",
+    "Chicken (Broiler)",
+    "Minced Meat",
+    "Offal & Specialty",
+    "Soup Bones",
+    "Sausages & Smoked",
+  ],
+
+  "Mobile Accessories": [
+    "Phone Cases",
+    "Screen Protectors",
+    "Chargers & Cables",
+    "Power Banks",
+    "Headphones & Earbuds",
+    "Bluetooth Speakers",
+    "Memory Cards",
+    "Phone Holders & Mounts",
+    "SIM Adapters",
+    "Replacement Batteries",
   ],
 
   // Service Subcategories

@@ -333,7 +333,20 @@ export default function RiderActiveOrders({ riderId }: RiderActiveOrdersProps) {
                       Navigate
                     </Button>
 
-                    <Button size="sm" variant="outline" className="gap-1" onClick={() => { const phone = order.customer?.phone; if (phone) window.location.href = `sms:${phone}`; }}>
+                    <Button size="sm" variant="outline" className="gap-1" onClick={async () => {
+                      try {
+                        const { findOrCreateChatWithCustomer } = await import('@/lib/csrChat');
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (!user || !order.customer_id) {
+                          toast.error('Cannot start chat');
+                          return;
+                        }
+                        const chatId = await findOrCreateChatWithCustomer(user.id, order.customer_id, 'rider');
+                        window.location.href = `/inbox?chat=${chatId}`;
+                      } catch (e: any) {
+                        toast.error('Failed: ' + (e?.message || 'Unknown'));
+                      }
+                    }}>
                       <MessageSquare className="h-4 w-4" />
                       Message Customer
                     </Button>

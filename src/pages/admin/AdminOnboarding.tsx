@@ -10,8 +10,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ArrowLeft, UserPlus, Store, User, Bike, Shield } from 'lucide-react';
+import { ArrowLeft, UserPlus, Store, User, Bike, Shield, Headphones } from 'lucide-react';
 import { toast } from 'sonner';
+import { signUpAsAdmin } from '@/lib/adminAuth';
 
 // --- Zod Schemas ---
 const phoneSchema = z.string().regex(/^(\+254|07)\d{8,13}$/, 'Enter a valid Kenyan phone number (+254… or 07…)');
@@ -41,6 +42,8 @@ const customerSchema = baseSchema;
 const agentSchema = baseSchema.extend({
   estateId: z.string().optional(),
 });
+
+const csrSchema = baseSchema;
 
 const riderSchema = baseSchema.extend({
   idNumber: z.string().trim().min(1, 'ID number is required'),
@@ -95,6 +98,11 @@ export default function AdminOnboarding() {
     fullName: '', email: '', phone: '', password: '', estateId: '',
   });
 
+  // CSR form
+  const [csrForm, setCsrForm] = useState({
+    fullName: '', email: '', phone: '', password: '',
+  });
+
   useEffect(() => { fetchEstates(); }, []);
 
   const fetchEstates = async () => {
@@ -131,15 +139,13 @@ export default function AdminOnboarding() {
     setLoading(true);
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: vendorForm.email,
-        password: vendorForm.password,
-        options: { data: { full_name: vendorForm.fullName, phone: vendorForm.phone } },
-      });
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('User creation failed');
+      const newUser = await signUpAsAdmin(
+        vendorForm.email,
+        vendorForm.password,
+        { full_name: vendorForm.fullName, phone: vendorForm.phone }
+      );
 
-      const userId = authData.user.id;
+      const userId = newUser.id;
       const slug = vendorForm.businessName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
       const { error: profileError } = await supabase.from('vendor_profiles').insert({
@@ -175,16 +181,13 @@ export default function AdminOnboarding() {
     setLoading(true);
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: customerForm.email,
-        password: customerForm.password,
-        options: { data: { full_name: customerForm.fullName, phone: customerForm.phone } },
-      });
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('User creation failed');
+      const newUser = await signUpAsAdmin(
+        customerForm.email,
+        customerForm.password,
+        { full_name: customerForm.fullName, phone: customerForm.phone }
+      );
 
-      const userId = authData.user.id;
-      const nameParts = customerForm.fullName.trim().split(' ');
+      const userId = newUser.id;
       await supabase.from('customer_profiles').upsert({
         user_id: userId,
         full_name: customerForm.fullName,
@@ -211,15 +214,13 @@ export default function AdminOnboarding() {
     setLoading(true);
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: riderForm.email,
-        password: riderForm.password,
-        options: { data: { full_name: riderForm.fullName, phone: riderForm.phone } },
-      });
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('User creation failed');
+      const newUser = await signUpAsAdmin(
+        riderForm.email,
+        riderForm.password,
+        { full_name: riderForm.fullName, phone: riderForm.phone }
+      );
 
-      const userId = authData.user.id;
+      const userId = newUser.id;
 
       const { error: profileError } = await supabase.from('rider_profiles').insert({
         user_id: userId,
@@ -255,15 +256,13 @@ export default function AdminOnboarding() {
     setLoading(true);
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: agentForm.email,
-        password: agentForm.password,
-        options: { data: { full_name: agentForm.fullName, phone: agentForm.phone } },
-      });
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('User creation failed');
+      const newUser = await signUpAsAdmin(
+        agentForm.email,
+        agentForm.password,
+        { full_name: agentForm.fullName, phone: agentForm.phone }
+      );
 
-      const userId = authData.user.id;
+      const userId = newUser.id;
 
       const { error: roleError } = await supabase.from('user_roles').insert({ user_id: userId, role: 'agent' });
       if (roleError) throw roleError;
@@ -277,11 +276,39 @@ export default function AdminOnboarding() {
     }
   };
 
+  const handleCsrSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsed = parseZod(csrSchema, csrForm);
+    if (!parsed.success) return;
+    setLoading(true);
+
+    try {
+      const newUser = await signUpAsAdmin(
+        csrForm.email,
+        csrForm.password,
+        { full_name: csrForm.fullName, phone: csrForm.phone }
+      );
+
+      const userId = newUser.id;
+
+      const { error: roleError } = await supabase.from('user_roles').insert({ user_id: userId, role: 'customer_rep' });
+      if (roleError) throw roleError;
+
+      toast.success(`CSR "${csrForm.fullName}" onboarded! They can log in at /csr/dashboard`);
+      setCsrForm({ fullName: '', email: '', phone: '', password: '' });
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to onboard CSR');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // --- Helper to update form and clear error ---
   const updateVendor = (field: string, value: string) => { clearFieldError(field); setVendorForm((p) => ({ ...p, [field]: value })); };
   const updateCustomer = (field: string, value: string) => { clearFieldError(field); setCustomerForm((p) => ({ ...p, [field]: value })); };
   const updateRider = (field: string, value: string) => { clearFieldError(field); setRiderForm((p) => ({ ...p, [field]: value })); };
   const updateAgent = (field: string, value: string) => { clearFieldError(field); setAgentForm((p) => ({ ...p, [field]: value })); };
+  const updateCsr = (field: string, value: string) => { clearFieldError(field); setCsrForm((p) => ({ ...p, [field]: value })); };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
@@ -305,7 +332,7 @@ export default function AdminOnboarding() {
 
       <main className="container mx-auto px-4 py-8 max-w-2xl">
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setErrors({}); }}>
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
             <TabsTrigger value="vendor" className="flex items-center gap-2">
               <Store className="h-4 w-4" /> Vendor
             </TabsTrigger>
@@ -317,6 +344,9 @@ export default function AdminOnboarding() {
             </TabsTrigger>
             <TabsTrigger value="agent" className="flex items-center gap-2">
               <Shield className="h-4 w-4" /> Agent
+            </TabsTrigger>
+            <TabsTrigger value="csr" className="flex items-center gap-2">
+              <Headphones className="h-4 w-4" /> CSR
             </TabsTrigger>
           </TabsList>
 
@@ -375,6 +405,9 @@ export default function AdminOnboarding() {
                             <SelectItem value="groceries-food">Groceries & Food</SelectItem>
                             <SelectItem value="restaurant">Restaurant</SelectItem>
                             <SelectItem value="liquor-store">Liquor Store</SelectItem>
+                            <SelectItem value="flowers-gifts">Flowers & Gifts</SelectItem>
+                            <SelectItem value="butchery">Butchery</SelectItem>
+                            <SelectItem value="mobile-accessories">Mobile Accessories</SelectItem>
                             <SelectItem value="utilities-services">Utilities & Services</SelectItem>
                             <SelectItem value="home-services">Home Services</SelectItem>
                             <SelectItem value="beauty-spa">Beauty & Spa</SelectItem>
@@ -633,6 +666,61 @@ export default function AdminOnboarding() {
 
                   <Button type="submit" disabled={loading} className="w-full">
                     {loading ? 'Creating Agent…' : 'Create Agent Account'}
+                  </Button>
+                </CardContent>
+              </form>
+            </Card>
+          </TabsContent>
+
+          {/* ===== CSR TAB ===== */}
+          <TabsContent value="csr">
+            <Card>
+              <CardHeader>
+                <CardTitle>New Customer Representative (CSR)</CardTitle>
+                <CardDescription>
+                  Create a CSR account. CSRs handle live customer chats, support tickets,
+                  vendor marketing campaigns, customer feedback, and outbound reminders.
+                </CardDescription>
+              </CardHeader>
+              <form onSubmit={handleCsrSubmit}>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Personal Information</h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="csr-fullName">Full Name</Label>
+                        <Input id="csr-fullName" value={csrForm.fullName} onChange={(e) => updateCsr('fullName', e.target.value)} />
+                        <FieldError errors={errors} field="fullName" />
+                      </div>
+                      <div>
+                        <Label htmlFor="csr-phone">Phone Number</Label>
+                        <Input id="csr-phone" type="tel" placeholder="+254…" value={csrForm.phone} onChange={(e) => updateCsr('phone', e.target.value)} />
+                        <FieldError errors={errors} field="phone" />
+                      </div>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="csr-email">Email</Label>
+                        <Input id="csr-email" type="email" value={csrForm.email} onChange={(e) => updateCsr('email', e.target.value)} />
+                        <FieldError errors={errors} field="email" />
+                      </div>
+                      <div>
+                        <Label htmlFor="csr-password">Temporary Password</Label>
+                        <Input id="csr-password" type="password" value={csrForm.password} onChange={(e) => updateCsr('password', e.target.value)} />
+                        <FieldError errors={errors} field="password" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground">
+                    <strong>What this CSR will be able to do:</strong> Live chat with customers, manage support tickets,
+                    look up customer accounts, draft marketing campaigns on behalf of vendors, send review prompts,
+                    and run reminder/win-back campaigns. They <strong>cannot</strong> cancel orders, refund money,
+                    or modify customer accounts — those require admin escalation.
+                  </div>
+
+                  <Button type="submit" disabled={loading} className="w-full">
+                    {loading ? 'Creating CSR…' : 'Create CSR Account'}
                   </Button>
                 </CardContent>
               </form>

@@ -47,6 +47,29 @@ const AdminOnboarding = lazy(() => import("./pages/admin/AdminOnboarding"));
 const SeedIloraFlowers = lazy(() => import("./pages/admin/SeedIloraFlowers"));
 const SeedVendorProducts = lazy(() => import("./pages/admin/SeedVendorProducts"));
 const AdminVendorManagement = lazy(() => import("./pages/admin/AdminVendorManagement"));
+const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
+const AdminDeliveries = lazy(() => import("./pages/admin/AdminDeliveries"));
+const AdminBookings = lazy(() => import("./pages/admin/AdminBookings"));
+const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
+const AdminWallets = lazy(() => import("./pages/admin/AdminWallets"));
+const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
+const AdminTickets = lazy(() => import("./pages/admin/AdminTickets"));
+const AdminLayout = lazy(() => import("./components/admin/AdminLayout").then(m => ({ default: m.AdminLayout })));
+
+// CSR (Customer Representative) workspace
+const CSRLayout = lazy(() => import("./components/csr/CSRLayout").then(m => ({ default: m.CSRLayout })));
+const CSRDashboard = lazy(() => import("./pages/csr/CSRDashboard"));
+const CSRChatQueue = lazy(() => import("./pages/csr/CSRChatQueue"));
+const CSRInbox = lazy(() => import("./pages/csr/CSRInbox"));
+const CSRTickets = lazy(() => import("./pages/csr/CSRTickets"));
+const CSRCustomerLookup = lazy(() => import("./pages/csr/CSRCustomerLookup"));
+const CSRCustomerDetail = lazy(() => import("./pages/csr/CSRCustomerDetail"));
+const CSRCannedResponses = lazy(() => import("./pages/csr/CSRCannedResponses"));
+const CSROrders = lazy(() => import("./pages/csr/CSROrders"));
+const CSRVendorCampaigns = lazy(() => import("./pages/csr/CSRVendorCampaigns"));
+const CSRReviews = lazy(() => import("./pages/csr/CSRReviews"));
+const CSRCampaigns = lazy(() => import("./pages/csr/CSRCampaigns"));
+const CSRServiceRequests = lazy(() => import("./pages/csr/CSRServiceRequests"));
 
 // Agent
 const AgentDashboard = lazy(() => import("./pages/agent/AgentDashboard"));
@@ -572,106 +595,56 @@ const App = () => (
                 </ProtectedRoute>
               } />
               
-              {/* Admin routes */}
-              <Route path="/admin/dashboard" element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminDashboard />
-                  <div style={{marginTop:20}}>
-                    <a href="/admin/inbox" style={{color:'#2563eb',fontWeight:'bold',textDecoration:'underline'}}>Open Inbox</a>
-                  </div>
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/inbox" element={
-                <ProtectedRoute requiredRole="admin">
-                  <Inbox />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/users" element={
-                <ProtectedRoute requiredRole="admin">
-                  <UserManagement />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/vendor-approvals" element={
-                <ProtectedRoute requiredRole="admin">
-                  <VendorApprovals />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/vendor-management" element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminVendorManagement />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/estate-approvals" element={
-                <ProtectedRoute requiredRole="admin">
-                  <EstateApprovals />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/estates/*" element={
-                <ProtectedRoute requiredRole="admin">
-                  <EstateManagement />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/rider-approvals" element={
-                <ProtectedRoute requiredRole="admin">
-                  <RiderApprovals />
-                </ProtectedRoute>
-              } />
+              {/* Admin routes — all wrapped in persistent AdminLayout (sidebar + topbar) */}
+              <Route element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route path="/admin/inbox" element={<Inbox />} />
+                <Route path="/admin/users" element={<UserManagement />} />
+                <Route path="/admin/vendor-approvals" element={<VendorApprovals />} />
+                <Route path="/admin/vendor-management" element={<AdminVendorManagement />} />
+                <Route path="/admin/estate-approvals" element={<EstateApprovals />} />
+                <Route path="/admin/estates/*" element={<EstateManagement />} />
+                <Route path="/admin/rider-approvals" element={<RiderApprovals />} />
+                <Route path="/admin/manage-mtaaloop-mart" element={<ManageMtaaLoopMart />} />
+                <Route path="/admin/payouts" element={<AdminVendorPayouts />} />
+                <Route path="/admin/live-chat-assign" element={<AdminLiveChatAssign />} />
+                <Route path="/admin/service-requests" element={<AdminServiceRequests />} />
+                <Route path="/admin/compliance" element={<ComplianceDashboard />} />
+                <Route path="/admin/onboarding" element={<AdminOnboarding />} />
+                <Route path="/admin/seed-ilora" element={<SeedIloraFlowers />} />
+                <Route path="/admin/seed-products" element={<SeedVendorProducts />} />
+                {/* New admin pages */}
+                <Route path="/admin/orders" element={<AdminOrders />} />
+                <Route path="/admin/deliveries" element={<AdminDeliveries />} />
+                <Route path="/admin/bookings" element={<AdminBookings />} />
+                <Route path="/admin/reviews" element={<AdminReviews />} />
+                <Route path="/admin/wallets" element={<AdminWallets />} />
+                <Route path="/admin/analytics" element={<AdminAnalytics />} />
+                <Route path="/admin/tickets" element={<AdminTickets />} />
+              </Route>
 
-              <Route path="/admin/manage-mtaaloop-mart" element={
-                <ProtectedRoute requiredRole="admin">
-                  <ManageMtaaLoopMart />
-                </ProtectedRoute>
-              } />
-
-              <Route path="/admin/payouts" element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminVendorPayouts />
-                </ProtectedRoute>
-              } />
-
-              {/* Admin live chat assignment route */}
-              <Route path="/admin/live-chat-assign" element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminLiveChatAssign />
-                </ProtectedRoute>
-              } />
-
-              {/* Admin service requests management */}
-              <Route path="/admin/service-requests" element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminServiceRequests />
-                </ProtectedRoute>
-              } />
-
-              {/* Agent dashboard */}
+              {/* Agent dashboard (outside admin layout) */}
               <Route path="/agent/dashboard" element={
                 <ProtectedRoute requiredRole="agent">
                   <AgentDashboard />
                 </ProtectedRoute>
               } />
 
-              {/* Admin compliance dashboard route */}
-              <Route path="/admin/compliance" element={
-                <ProtectedRoute requiredRole="admin">
-                  <ComplianceDashboard />
-                </ProtectedRoute>
-              } />
-
-              <Route path="/admin/onboarding" element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminOnboarding />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/seed-ilora" element={
-                <ProtectedRoute requiredRole="admin">
-                  <SeedIloraFlowers />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/seed-products" element={
-                <ProtectedRoute requiredRole="admin">
-                  <SeedVendorProducts />
-                </ProtectedRoute>
-              } />
+              {/* CSR (Customer Representative) workspace */}
+              <Route element={<ProtectedRoute requiredRole="customer_rep"><CSRLayout /></ProtectedRoute>}>
+                <Route path="/csr/dashboard" element={<CSRDashboard />} />
+                <Route path="/csr/queue" element={<CSRChatQueue />} />
+                <Route path="/csr/inbox" element={<CSRInbox />} />
+                <Route path="/csr/tickets" element={<CSRTickets />} />
+                <Route path="/csr/customers" element={<CSRCustomerLookup />} />
+                <Route path="/csr/customers/:customerId" element={<CSRCustomerDetail />} />
+                <Route path="/csr/canned-responses" element={<CSRCannedResponses />} />
+                <Route path="/csr/orders" element={<CSROrders />} />
+                <Route path="/csr/vendor-campaigns" element={<CSRVendorCampaigns />} />
+                <Route path="/csr/reviews" element={<CSRReviews />} />
+                <Route path="/csr/campaigns" element={<CSRCampaigns />} />
+                <Route path="/csr/service-requests" element={<CSRServiceRequests />} />
+              </Route>
 
               {/* Vendor routes */}
               <Route path="/vendor/dashboard" element={
