@@ -84,10 +84,21 @@ export interface SubscriptionState {
 }
 
 // Micro-Service Types
+export type ServiceType =
+  | 'trash_collection'
+  | 'package_collection'
+  | 'osha_viombo'
+  | 'cleaning'
+  | 'laundry'
+  | 'meal_prep'
+  | 'errand';
+
 export interface MicroService {
   id: string;
   name: string;
   slug: string;
+  /** Canonical service type stored on service_requests.service_type — single source of truth */
+  service_type: ServiceType;
   description: string | null;
   icon: string;
   base_price: number;
@@ -209,6 +220,7 @@ export const MICRO_SERVICES_CATALOG: Omit<MicroService, 'id' | 'created_at'>[] =
   {
     name: 'Trash Collection',
     slug: 'trash-collection',
+    service_type: 'trash_collection',
     description: 'Quick doorstep trash pickup - our #1 service',
     icon: 'trash-collection',
     base_price: 30,
@@ -222,6 +234,7 @@ export const MICRO_SERVICES_CATALOG: Omit<MicroService, 'id' | 'created_at'>[] =
   {
     name: 'Package Collection',
     slug: 'package-collection',
+    service_type: 'package_collection',
     description: 'Pick up packages from your gate or reception',
     icon: 'package-collection',
     base_price: 20,
@@ -235,6 +248,7 @@ export const MICRO_SERVICES_CATALOG: Omit<MicroService, 'id' | 'created_at'>[] =
   {
     name: 'Osha Viombo',
     slug: 'osha-viombo',
+    service_type: 'osha_viombo',
     description: 'Dish washing service (up to 15 items)',
     icon: 'osha-viombo',
     base_price: 80,
@@ -248,6 +262,7 @@ export const MICRO_SERVICES_CATALOG: Omit<MicroService, 'id' | 'created_at'>[] =
   {
     name: 'Quick Cleaning',
     slug: 'quick-cleaning',
+    service_type: 'cleaning',
     description: '30-min bedroom or sitting room tidy-up',
     icon: 'quick-cleaning',
     base_price: 150,
@@ -261,6 +276,7 @@ export const MICRO_SERVICES_CATALOG: Omit<MicroService, 'id' | 'created_at'>[] =
   {
     name: 'Laundry Sorting',
     slug: 'laundry-sorting',
+    service_type: 'laundry',
     description: 'Sort, fold, and organize your clean clothes',
     icon: 'laundry-sorting',
     base_price: 50,
@@ -274,6 +290,7 @@ export const MICRO_SERVICES_CATALOG: Omit<MicroService, 'id' | 'created_at'>[] =
   {
     name: 'Quick Meal Prep',
     slug: 'quick-meal-prep',
+    service_type: 'meal_prep',
     description: 'Simple meal preparation (ingredients provided by you)',
     icon: 'quick-meal-prep',
     base_price: 200,
@@ -287,6 +304,7 @@ export const MICRO_SERVICES_CATALOG: Omit<MicroService, 'id' | 'created_at'>[] =
   {
     name: 'Run Errands',
     slug: 'errands',
+    service_type: 'errand',
     description: 'General errands within or outside the estate',
     icon: 'errands',
     base_price: 100,
@@ -298,3 +316,73 @@ export const MICRO_SERVICES_CATALOG: Omit<MicroService, 'id' | 'created_at'>[] =
     requires_scheduling: false,
   },
 ];
+
+/**
+ * Single source of truth for service display metadata.
+ * Keyed by canonical service_type (matches service_requests.service_type column).
+ */
+export const SERVICE_TYPE_META: Record<ServiceType, {
+  displayName: string;
+  emoji: string;
+  agentLabel: string;
+  waitingHeadline: string;
+  waitingSubtext: string;
+  waitingTip: string;
+}> = {
+  trash_collection: {
+    displayName: 'Trash Collection',
+    emoji: '🗑️',
+    agentLabel: 'Collection Agent',
+    waitingHeadline: 'Your pickup is being arranged...',
+    waitingSubtext: 'A waste collection agent will be assigned shortly',
+    waitingTip: '💡 Place your waste bags outside your door for easy pickup!',
+  },
+  package_collection: {
+    displayName: 'Package Collection',
+    emoji: '📦',
+    agentLabel: 'Errand Runner',
+    waitingHeadline: 'Your package run is queued...',
+    waitingSubtext: 'An errand runner is being matched to your request',
+    waitingTip: '💡 Share any gate codes or access info in the notes!',
+  },
+  osha_viombo: {
+    displayName: 'Osha Viombo',
+    emoji: '🧽',
+    agentLabel: 'Dish Washing Specialist',
+    waitingHeadline: 'Your dishes will sparkle soon...',
+    waitingSubtext: 'A dish washing specialist is on the way',
+    waitingTip: '💡 Stack the dishes near the sink for faster service!',
+  },
+  cleaning: {
+    displayName: 'Quick Cleaning',
+    emoji: '🧹',
+    agentLabel: 'Cleaning Specialist',
+    waitingHeadline: 'Your space is about to sparkle...',
+    waitingSubtext: 'A cleaning specialist is gearing up',
+    waitingTip: '💡 Clear personal items from surfaces for the best clean possible!',
+  },
+  laundry: {
+    displayName: 'Laundry Sorting',
+    emoji: '👕',
+    agentLabel: 'Laundry Handler',
+    waitingHeadline: 'Fresh laundry coming your way...',
+    waitingSubtext: 'A laundry handler is being assigned to your request',
+    waitingTip: '💡 Separate delicates in a different bag for best results!',
+  },
+  meal_prep: {
+    displayName: 'Quick Meal Prep',
+    emoji: '🍳',
+    agentLabel: 'Meal Prep Chef',
+    waitingHeadline: 'A chef is warming up for you...',
+    waitingSubtext: 'Your personal meal prep assistant will be ready soon',
+    waitingTip: '💡 Make sure your kitchen is accessible and ingredients are out!',
+  },
+  errand: {
+    displayName: 'Run Errands',
+    emoji: '🏃',
+    agentLabel: 'Errand Runner',
+    waitingHeadline: 'Your personal assistant is on standby...',
+    waitingSubtext: "We're matching you with the best available runner",
+    waitingTip: '💡 Be as specific as possible in your instructions for faster service!',
+  },
+};

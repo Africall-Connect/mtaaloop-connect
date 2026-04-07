@@ -6,8 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { ArrowLeft, Clock, User, MapPin, Phone, MessageSquare, Trash2, Sparkles, Shirt, UtensilsCrossed, Package, FileText } from 'lucide-react';
+import { ArrowLeft, Clock, User, MapPin, Phone, MessageSquare, Trash2, Sparkles, Shirt, UtensilsCrossed, Package, FileText, Droplets } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { SERVICE_TYPE_META, ServiceType } from '@/types/subscription';
 
 interface ServiceRequest {
   id: string;
@@ -39,6 +40,15 @@ const serviceIcons: Record<string, typeof Trash2> = {
   laundry: Shirt,
   meal_prep: UtensilsCrossed,
   package_collection: Package,
+  osha_viombo: Droplets,
+};
+
+// Resolve canonical display name from service_type
+const getServiceDisplayName = (serviceType: string | null): string => {
+  if (serviceType && SERVICE_TYPE_META[serviceType as ServiceType]) {
+    return SERVICE_TYPE_META[serviceType as ServiceType].displayName;
+  }
+  return serviceType || 'Unknown service';
 };
 
 const statusColors: Record<string, string> = {
@@ -176,7 +186,7 @@ export default function AdminServiceRequests() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold capitalize">{req.service_type.replace(/_/g, ' ')}</span>
+                            <span className="font-semibold">{getServiceDisplayName(req.service_type)}</span>
                             <Badge className={statusColors[req.status] || 'bg-muted'} variant="secondary">
                               {req.status.replace(/_/g, ' ')}
                             </Badge>

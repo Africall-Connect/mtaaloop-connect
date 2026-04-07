@@ -70,6 +70,7 @@ export function ServiceRequestForm({ service, onSuccess }: ServiceRequestFormPro
         .insert({
           service_id: service.id,
           service_name: service.name,
+          service_type: service.service_type,
           customer_id: user.id,
           estate_id: currentApartment?.id !== 'general-location' ? currentApartment?.id : null,
           amount: isSubscriptionUsage ? 0 : service.base_price,
@@ -79,7 +80,7 @@ export function ServiceRequestForm({ service, onSuccess }: ServiceRequestFormPro
           customer_notes: notes,
           scheduled_for: scheduledFor || null,
           status: 'pending',
-        })
+        } as any)
         .select()
         .single();
 
