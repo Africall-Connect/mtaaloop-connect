@@ -91,29 +91,31 @@ export default function CSRServiceRequests() {
   }, []);
 
   const fetchAgents = useCallback(async () => {
+    // Prefer agent_profiles (populated at onboarding). Fall back to user_roles if empty.
+    const { data: profiles, error } = await (supabase
+      .from("agent_profiles") as any)
+      .select("user_id, full_name, email")
+      .eq("is_active", true)
+      .order("full_name");
+
+    if (!error && profiles && profiles.length > 0) {
+      setAgents(((profiles as any[]) || []).map((p: any) => ({
+        id: p.user_id,
+        label: p.full_name || p.email || p.user_id.slice(0, 8),
+      })));
+      return;
+    }
+
+    // Fallback: bare user_ids from user_roles
     const { data: roleData } = await supabase
       .from("user_roles")
       .select("user_id")
       .eq("role", "agent");
-
     if (!roleData || roleData.length === 0) {
       setAgents([]);
       return;
     }
-
-    const userIds = roleData.map(r => r.user_id);
-    try {
-      const { data: users } = await (supabase.rpc as any)("get_user_details_by_id", { user_ids: userIds });
-      if (users) {
-        setAgents(((users as any[]) || []).map((u: any) => ({
-          id: u.id,
-          label: u.raw_user_meta_data?.full_name || u.email || u.id.slice(0, 8),
-        })));
-      }
-    } catch {
-      // RPC may not be available — fall back to bare ids
-      setAgents(userIds.map(id => ({ id, label: id.slice(0, 8) })));
-    }
+    setAgents(roleData.map((r: any) => ({ id: r.user_id, label: r.user_id.slice(0, 8) })));
   }, []);
 
   useEffect(() => {

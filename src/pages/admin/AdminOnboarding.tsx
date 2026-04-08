@@ -267,6 +267,17 @@ export default function AdminOnboarding() {
       const { error: roleError } = await supabase.from('user_roles').insert({ user_id: userId, role: 'agent' });
       if (roleError) throw roleError;
 
+      // Create agent_profiles row so CSR can list them for assignment
+      const { error: profileError } = await (supabase.from('agent_profiles') as any).insert({
+        user_id: userId,
+        full_name: agentForm.fullName,
+        phone: agentForm.phone,
+        email: agentForm.email,
+        estate_id: agentForm.estateId || null,
+        is_active: true,
+      });
+      if (profileError) console.error('agent_profiles insert failed:', profileError);
+
       toast.success(`Agent "${agentForm.fullName}" onboarded successfully! They can login at /agent/dashboard`);
       setAgentForm({ fullName: '', email: '', phone: '', password: '', estateId: '' });
     } catch (error: any) {
