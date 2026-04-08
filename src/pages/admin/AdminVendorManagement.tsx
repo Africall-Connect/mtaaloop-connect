@@ -260,9 +260,9 @@ export default function AdminVendorManagement() {
       toast.success(`${editForm.business_name} updated successfully`);
       setEditVendor(null);
       fetchVendors();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating vendor:', error);
-      toast.error('Failed to update vendor');
+      toast.error('Failed to update vendor: ' + (error?.message || 'Unknown error'));
     } finally {
       setSaving(false);
     }

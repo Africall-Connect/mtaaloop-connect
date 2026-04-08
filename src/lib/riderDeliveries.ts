@@ -99,7 +99,7 @@ async function fetchNormalDeliveries(estateId: string | null): Promise<Available
           order_number,
           delivery_address,
           full_name,
-        customer:app_users (
+        customer:app_users!orders_customer_id_fkey (
           first_name,
           last_name,
           phone,
@@ -157,7 +157,7 @@ async function fetchPremiumDeliveries(estateId: string | null): Promise<Availabl
           id,
           delivery_address,
           full_name,
-          customer:app_users (
+          customer:app_users!premium_orders_customer_id_fkey (
             first_name,
             last_name,
             phone,
@@ -236,7 +236,7 @@ async function fetchActiveNormalDeliveries(riderProfileId: string): Promise<Acti
         full_name,
         payment_method,
         payment_status,
-        customer:app_users (
+        customer:app_users!orders_customer_id_fkey (
           first_name,
           last_name,
           phone,
@@ -288,7 +288,7 @@ async function fetchActivePremiumDeliveries(riderProfileId: string): Promise<Act
         customer_notes,
         created_at,
         full_name,
-        customer:app_users (
+        customer:app_users!premium_orders_customer_id_fkey (
           first_name,
           last_name,
           phone,
