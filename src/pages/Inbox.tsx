@@ -55,6 +55,20 @@ export default function Inbox() {
     });
   }, []);
 
+  // Auto-select chat from ?chat=<id> query param
+  useEffect(() => {
+    if (userChats.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const wantedChatId = params.get('chat');
+    if (wantedChatId) {
+      const match = userChats.find(c => c.chat_id === wantedChatId);
+      if (match && (!selectedChat || selectedChat.chat_id !== wantedChatId)) {
+        setSelectedChat(match);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userChats]);
+
   const userId = user?.id || 'anon';
   const currentUserName =
     (user?.user_metadata?.full_name as string) ||
