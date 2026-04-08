@@ -1,28 +1,35 @@
-import { Link } from "react-router-dom";
-import { ArrowLeft, Phone, Mail, MessageCircle, HelpCircle } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, Phone, Mail, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
+const SUPPORT_PHONE = "+254712345678";
+const SUPPORT_EMAIL = "support@mtaaloop.com";
+
 const Help = () => {
+  const navigate = useNavigate();
   const contactOptions = [
     {
       icon: Phone,
       title: "Call Us",
-      description: "+254 712 345 678",
+      description: SUPPORT_PHONE,
       action: "Call Now",
+      href: `tel:${SUPPORT_PHONE}`,
     },
     {
       icon: Mail,
       title: "Email Support",
-      description: "support@mtaalopp.com",
+      description: SUPPORT_EMAIL,
       action: "Send Email",
+      href: `mailto:${SUPPORT_EMAIL}?subject=MtaaLoop%20Support%20Request`,
     },
     {
       icon: MessageCircle,
       title: "Live Chat",
       description: "Chat with our team",
       action: "Start Chat",
+      onClick: () => navigate("/support-live-chat"),
     },
   ];
 
@@ -63,6 +70,16 @@ const Help = () => {
           <div className="grid md:grid-cols-3 gap-4">
             {contactOptions.map((option) => {
               const Icon = option.icon;
+              const btn = (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                  onClick={option.onClick}
+                >
+                  {option.action}
+                </Button>
+              );
               return (
                 <Card key={option.title} className="p-4 text-center">
                   <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -72,9 +89,11 @@ const Help = () => {
                   <p className="text-sm text-muted-foreground mb-3">
                     {option.description}
                   </p>
-                  <Button size="sm" variant="outline" className="w-full">
-                    {option.action}
-                  </Button>
+                  {option.href ? (
+                    <a href={option.href} className="block">{btn}</a>
+                  ) : (
+                    btn
+                  )}
                 </Card>
               );
             })}

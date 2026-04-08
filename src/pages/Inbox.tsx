@@ -357,15 +357,15 @@ export default function Inbox() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50 overflow-x-hidden">
+    <div className="h-screen flex flex-col bg-gray-50 dark:bg-slate-950 overflow-x-hidden">
       {/* Header */}
-      <div className="bg-white border-b px-3 sm:px-6 py-3 sm:py-4 flex items-center gap-2 sm:gap-4">
+      <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 px-3 sm:px-6 py-3 sm:py-4 flex items-center gap-2 sm:gap-4">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="shrink-0">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="min-w-0">
-          <h1 className="text-lg sm:text-2xl font-bold truncate">Inbox</h1>
-          <p className="text-xs sm:text-sm text-gray-500">{userChats.length} conversations</p>
+          <h1 className="text-lg sm:text-2xl font-bold truncate text-gray-900 dark:text-slate-100">Inbox</h1>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-slate-400">{userChats.length} conversations</p>
         </div>
       </div>
 
@@ -373,16 +373,16 @@ export default function Inbox() {
       <div className="flex-1 flex overflow-hidden">
         {/* Chat List - Left Panel (hidden on mobile when chat selected) */}
         <div className={cn(
-          "bg-white border-r overflow-y-auto",
+          "bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 overflow-y-auto",
           "w-full md:w-80",
           selectedChat && "hidden md:block"
         )}>
           {loading ? (
             <div className="flex items-center justify-center p-8">
-              <Loader2 className="animate-spin h-6 w-6" />
+              <Loader2 className="animate-spin h-6 w-6 text-gray-500 dark:text-slate-400" />
             </div>
           ) : userChats.length === 0 ? (
-            <div className="p-8 text-center text-gray-400">
+            <div className="p-8 text-center text-gray-400 dark:text-slate-500">
               No conversations yet
             </div>
           ) : (
@@ -392,16 +392,16 @@ export default function Inbox() {
                   key={chat.chat_id}
                   onClick={() => setSelectedChat(chat)}
                   className={cn(
-                    "p-3 sm:p-4 border-b cursor-pointer hover:bg-gray-50 transition",
-                    selectedChat?.chat_id === chat.chat_id && "bg-indigo-50 border-l-4 border-indigo-600"
+                    "p-3 sm:p-4 border-b border-gray-200 dark:border-slate-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/60 transition",
+                    selectedChat?.chat_id === chat.chat_id && "bg-indigo-50 dark:bg-indigo-950/40 border-l-4 border-l-indigo-600 dark:border-l-indigo-400"
                   )}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-semibold text-gray-900 text-sm sm:text-base truncate">
+                    <span className="font-semibold text-gray-900 dark:text-slate-100 text-sm sm:text-base truncate">
                       {getOtherPersonName(chat)}
                     </span>
                     <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-gray-400 dark:text-slate-500">
                         {new Date(chat.created_at).toLocaleDateString()}
                       </span>
                       {role === 'admin' && (
@@ -419,7 +419,7 @@ export default function Inbox() {
                       )}
                     </div>
                   </div>
-                  <div className="text-xs sm:text-sm text-gray-500 truncate">
+                  <div className="text-xs sm:text-sm text-gray-500 dark:text-slate-400 truncate">
                     {lastMessages.get(chat.chat_id) || '...'}
                   </div>
                 </div>
@@ -430,11 +430,11 @@ export default function Inbox() {
 
         {/* Messages - Right Panel (full width on mobile when chat selected) */}
         <div className={cn(
-          "flex-1 flex flex-col bg-gray-50",
+          "flex-1 flex flex-col bg-gray-50 dark:bg-slate-950",
           !selectedChat && "hidden md:flex"
         )}>
           {!selectedChat ? (
-            <div className="flex-1 flex items-center justify-center text-gray-400">
+            <div className="flex-1 flex items-center justify-center text-gray-400 dark:text-slate-500">
               <div className="text-center">
                 <Send className="h-16 w-16 mx-auto mb-4 opacity-20" />
                 <p className="text-lg">Select a conversation to start messaging</p>
@@ -443,7 +443,7 @@ export default function Inbox() {
           ) : (
             <>
               {/* Chat Header with back button on mobile */}
-              <div className="bg-white border-b px-3 sm:px-6 py-3 sm:py-4 flex items-center gap-3">
+              <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 px-3 sm:px-6 py-3 sm:py-4 flex items-center gap-3">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -453,10 +453,10 @@ export default function Inbox() {
                   <ChevronLeft className="h-5 w-5" />
                 </Button>
                 <div className="min-w-0">
-                  <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
+                  <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-slate-100 truncate">
                     {getOtherPersonName(selectedChat)}
                   </h2>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-slate-400">
                     {selectedChat.recipient_id ? 'Active' : 'Unassigned'}
                   </p>
                 </div>
@@ -465,7 +465,7 @@ export default function Inbox() {
               {/* Messages Area */}
               <div className="flex-1 overflow-y-auto p-6 space-y-4">
                 {messages.length === 0 ? (
-                  <div className="text-center text-gray-400 py-8">
+                  <div className="text-center text-gray-400 dark:text-slate-500 py-8">
                     No messages yet. Start the conversation!
                   </div>
                 ) : (
@@ -478,13 +478,13 @@ export default function Inbox() {
                         className={`max-w-md px-5 py-3 rounded-3xl shadow ${
                           msg.sender_id === userId
                             ? 'bg-indigo-600 text-white'
-                            : 'bg-white text-gray-900'
+                            : 'bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-200 dark:border-slate-700'
                         }`}
                       >
                         <p className="text-xs font-bold opacity-90">
                           {messageSenderNames.get(msg.sender_id) || 'Loading...'}
                         </p>
-                        <p className="text-sm mt-1">{msg.content}</p>
+                        <p className="text-sm mt-1 whitespace-pre-wrap break-words">{msg.content}</p>
                         <div className="text-xs opacity-70 mt-2">
                           {new Date(msg.created_at).toLocaleTimeString([], {
                             hour: '2-digit',
@@ -499,7 +499,7 @@ export default function Inbox() {
               </div>
 
               {/* Input Area */}
-              <div className="bg-white border-t p-4">
+              <div className="bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 p-4">
                 <div className="flex gap-3">
                   <Input
                     placeholder="Type a message..."
@@ -511,7 +511,7 @@ export default function Inbox() {
                         sendMessage();
                       }
                     }}
-                    className="flex-1"
+                    className="flex-1 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-gray-300 dark:border-slate-700"
                     disabled={sending}
                   />
                   <Button
