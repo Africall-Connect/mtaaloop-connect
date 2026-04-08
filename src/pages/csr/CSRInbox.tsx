@@ -114,6 +114,7 @@ export default function CSRInbox() {
     const { error } = await (supabase.from("private_chat_messages") as any).insert({
       chat_id: selectedChat.chat_id,
       sender_id: user.id,
+      sender_role: 'customer_rep',
       content: input.trim(),
     });
     if (error) {
@@ -212,6 +213,19 @@ export default function CSRInbox() {
                             : "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-bl-sm border border-slate-200 dark:border-slate-700"
                         )}
                       >
+                        {(msg as any).sender_role && (
+                          <div className={cn(
+                            "text-[9px] font-semibold uppercase mb-0.5 tracking-wide",
+                            isMe ? "text-emerald-100" : "text-slate-500 dark:text-slate-400"
+                          )}>
+                            {(msg as any).sender_role === 'customer_rep' ? 'Support'
+                              : (msg as any).sender_role === 'admin' ? 'Admin'
+                              : (msg as any).sender_role === 'vendor' ? 'Vendor'
+                              : (msg as any).sender_role === 'rider' ? 'Rider'
+                              : (msg as any).sender_role === 'agent' ? 'Agent'
+                              : 'Customer'}
+                          </div>
+                        )}
                         <div className="whitespace-pre-wrap">{msg.content}</div>
                         <div className={cn("text-[10px] mt-1", isMe ? "text-emerald-100" : "text-slate-400")}>
                           {new Date(msg.created_at).toLocaleTimeString()}

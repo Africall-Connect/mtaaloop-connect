@@ -59,6 +59,7 @@ export async function openModeratedChat(
     await (supabase.from("private_chat_messages") as any).insert({
       chat_id: chatId,
       sender_id: userId,
+      sender_role: role,
       content: `[Context] ${opts.contextLabel}`,
     });
   }

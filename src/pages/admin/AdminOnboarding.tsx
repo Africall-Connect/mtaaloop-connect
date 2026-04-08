@@ -44,6 +44,7 @@ const agentSchema = baseSchema.extend({
 });
 
 const csrSchema = baseSchema;
+const adminSchema = baseSchema;
 
 const riderSchema = baseSchema.extend({
   idNumber: z.string().trim().min(1, 'ID number is required'),
@@ -100,6 +101,11 @@ export default function AdminOnboarding() {
 
   // CSR form
   const [csrForm, setCsrForm] = useState({
+    fullName: '', email: '', phone: '', password: '',
+  });
+
+  // Admin form
+  const [adminForm, setAdminForm] = useState({
     fullName: '', email: '', phone: '', password: '',
   });
 
@@ -314,12 +320,36 @@ export default function AdminOnboarding() {
     }
   };
 
+  const handleAdminSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsed = parseZod(adminSchema, adminForm);
+    if (!parsed.success) return;
+    if (!window.confirm(`Create a new admin "${adminForm.fullName}" (${adminForm.email})? They will have full access to everything.`)) return;
+    setLoading(true);
+    try {
+      const newUser = await signUpAsAdmin(
+        adminForm.email,
+        adminForm.password,
+        { full_name: adminForm.fullName, phone: adminForm.phone }
+      );
+      const { error: roleError } = await supabase.from('user_roles').insert({ user_id: newUser.id, role: 'admin' });
+      if (roleError) throw roleError;
+      toast.success(`Admin "${adminForm.fullName}" created! They can log in at /admin/dashboard`);
+      setAdminForm({ fullName: '', email: '', phone: '', password: '' });
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create admin');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // --- Helper to update form and clear error ---
   const updateVendor = (field: string, value: string) => { clearFieldError(field); setVendorForm((p) => ({ ...p, [field]: value })); };
   const updateCustomer = (field: string, value: string) => { clearFieldError(field); setCustomerForm((p) => ({ ...p, [field]: value })); };
   const updateRider = (field: string, value: string) => { clearFieldError(field); setRiderForm((p) => ({ ...p, [field]: value })); };
   const updateAgent = (field: string, value: string) => { clearFieldError(field); setAgentForm((p) => ({ ...p, [field]: value })); };
   const updateCsr = (field: string, value: string) => { clearFieldError(field); setCsrForm((p) => ({ ...p, [field]: value })); };
+  const updateAdmin = (field: string, value: string) => { clearFieldError(field); setAdminForm((p) => ({ ...p, [field]: value })); };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
@@ -343,7 +373,7 @@ export default function AdminOnboarding() {
 
       <main className="container mx-auto px-4 py-8 max-w-2xl">
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setErrors({}); }}>
-          <TabsList className="grid w-full grid-cols-5 mb-6">
+          <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 mb-6">
             <TabsTrigger value="vendor" className="flex items-center gap-2">
               <Store className="h-4 w-4" /> Vendor
             </TabsTrigger>
@@ -358,6 +388,9 @@ export default function AdminOnboarding() {
             </TabsTrigger>
             <TabsTrigger value="csr" className="flex items-center gap-2">
               <Headphones className="h-4 w-4" /> CSR
+            </TabsTrigger>
+            <TabsTrigger value="admin" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" /> Admin
             </TabsTrigger>
           </TabsList>
 
@@ -732,6 +765,63 @@ export default function AdminOnboarding() {
 
                   <Button type="submit" disabled={loading} className="w-full">
                     {loading ? 'Creating CSR…' : 'Create CSR Account'}
+                  </Button>
+                </CardContent>
+              </form>
+            </Card>
+          </TabsContent>
+
+          {/* ===== ADMIN TAB ===== */}
+          <TabsContent value="admin">
+            <Card className="border-red-300 dark:border-red-900">
+              <CardHeader>
+                <CardTitle className="text-red-700 dark:text-red-300 flex items-center gap-2">
+                  <Shield className="h-5 w-5" /> New Admin
+                </CardTitle>
+                <CardDescription>
+                  ⚠️ Create another admin with full access to everything. Use this to
+                  hand off ownership or rotate admin accounts. You can log in as the new
+                  admin afterwards and remove the old one via <em>Users</em>.
+                </CardDescription>
+              </CardHeader>
+              <form onSubmit={handleAdminSubmit}>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Personal Information</h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="admin-fullName">Full Name</Label>
+                        <Input id="admin-fullName" value={adminForm.fullName} onChange={(e) => updateAdmin('fullName', e.target.value)} />
+                        <FieldError errors={errors} field="fullName" />
+                      </div>
+                      <div>
+                        <Label htmlFor="admin-phone">Phone Number</Label>
+                        <Input id="admin-phone" type="tel" placeholder="+254…" value={adminForm.phone} onChange={(e) => updateAdmin('phone', e.target.value)} />
+                        <FieldError errors={errors} field="phone" />
+                      </div>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="admin-email">Email</Label>
+                        <Input id="admin-email" type="email" value={adminForm.email} onChange={(e) => updateAdmin('email', e.target.value)} />
+                        <FieldError errors={errors} field="email" />
+                      </div>
+                      <div>
+                        <Label htmlFor="admin-password">Temporary Password</Label>
+                        <Input id="admin-password" type="password" value={adminForm.password} onChange={(e) => updateAdmin('password', e.target.value)} />
+                        <FieldError errors={errors} field="password" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 p-3 text-xs text-red-900 dark:text-red-200">
+                    <strong>Warning:</strong> Admins can create, edit, and delete any record in
+                    the system. Only give this role to people you fully trust. You'll be asked
+                    to confirm before the account is created.
+                  </div>
+
+                  <Button type="submit" disabled={loading} className="w-full bg-red-600 hover:bg-red-700 text-white">
+                    {loading ? 'Creating Admin…' : 'Create Admin Account'}
                   </Button>
                 </CardContent>
               </form>

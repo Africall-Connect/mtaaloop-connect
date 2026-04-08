@@ -195,8 +195,9 @@ export default function SupportLiveChat() {
       .insert({
         chat_id: chatId,
         sender_id: userId,
+        sender_role: role,
         content: text,
-      })
+      } as any)
       .select()
       .single();
 
