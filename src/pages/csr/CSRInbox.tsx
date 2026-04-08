@@ -165,8 +165,8 @@ export default function CSRInbox() {
                   c.is_closed && "opacity-60"
                 )}
               >
-                <div className="font-mono text-xs truncate">{c.initiator_id.slice(0, 12)}</div>
-                <div className="text-[11px] text-slate-500 mt-0.5">
+                <div className="font-mono text-xs truncate text-slate-900 dark:text-slate-100">{c.initiator_id.slice(0, 12)}</div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                   {new Date(c.created_at).toLocaleDateString()}
                   {c.is_closed && " · closed"}
                 </div>
@@ -186,8 +186,8 @@ export default function CSRInbox() {
           <>
             <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex items-center justify-between">
               <div className="min-w-0">
-                <div className="font-semibold text-sm font-mono truncate">{selectedChat.initiator_id.slice(0, 12)}</div>
-                <div className="text-xs text-slate-500">Started {new Date(selectedChat.created_at).toLocaleString()}</div>
+                <div className="font-semibold text-sm font-mono truncate text-slate-900 dark:text-slate-100">{selectedChat.initiator_id.slice(0, 12)}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">Started {new Date(selectedChat.created_at).toLocaleString()}</div>
               </div>
               <div className="flex gap-2">
                 {!selectedChat.is_closed && (
@@ -209,7 +209,7 @@ export default function CSRInbox() {
                           "max-w-[70%] rounded-2xl px-3 py-2 text-sm",
                           isMe
                             ? "bg-emerald-600 text-white rounded-br-sm"
-                            : "bg-white dark:bg-slate-800 rounded-bl-sm border border-slate-200 dark:border-slate-700"
+                            : "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-bl-sm border border-slate-200 dark:border-slate-700"
                         )}
                       >
                         <div className="whitespace-pre-wrap">{msg.content}</div>
