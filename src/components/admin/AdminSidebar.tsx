@@ -86,6 +86,8 @@ const NAV_GROUPS: NavGroup[] = [
       { to: "/admin/reviews", label: "Reviews", icon: Star },
       { to: "/admin/live-chat-assign", label: "Live Chat", icon: MessageSquare },
       { to: "/admin/inbox", label: "Inbox", icon: MessageSquare },
+      { to: "/csr/queue", label: "Support Queue", icon: MessageSquare },
+      { to: "/csr/inbox", label: "CSR Inbox", icon: MessageSquare },
     ],
   },
   {
