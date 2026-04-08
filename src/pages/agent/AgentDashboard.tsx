@@ -214,7 +214,7 @@ export default function AgentDashboard() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">
-              <span className="font-semibold capitalize">{req.service_type.replace(/_/g, ' ')}</span>
+              <span className="font-semibold capitalize">{(req.service_type || 'service').replace(/_/g, ' ')}</span>
               {req.urgency && (
                 <Badge className={urgencyColors[req.urgency] || 'bg-muted'} variant="secondary">
                   <Clock className="w-3 h-3 mr-1" />
@@ -226,7 +226,7 @@ export default function AgentDashboard() {
               <p className="text-sm text-muted-foreground mb-2">{req.description}</p>
             )}
             <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mb-3">
-              <span className="flex items-center gap-1"><User className="w-3 h-3" /> Customer: {req.user_id.slice(0, 8)}…</span>
+              <span className="flex items-center gap-1"><User className="w-3 h-3" /> Customer: {req.user_id ? `${req.user_id.slice(0, 8)}…` : 'Unknown'}</span>
               {req.errand_type && <span>Type: {req.errand_type.replace(/_/g, ' ')}</span>}
               {req.location_scope && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {req.location_scope.replace(/_/g, ' ')}</span>}
               {req.contact_number && (
@@ -398,11 +398,11 @@ export default function AgentDashboard() {
               <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
                 <div>
                   <p className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Service</p>
-                  <p className="text-sm sm:text-lg truncate text-gray-900 dark:text-gray-100 capitalize">{currentTask.service_type.replace(/_/g, ' ')}</p>
+                  <p className="text-sm sm:text-lg truncate text-gray-900 dark:text-gray-100 capitalize">{(currentTask.service_type || 'service').replace(/_/g, ' ')}</p>
                 </div>
                 <div>
                   <p className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Customer</p>
-                  <p className="text-sm sm:text-lg truncate text-gray-900 dark:text-gray-100">{currentTask.user_id.slice(0, 8)}…</p>
+                  <p className="text-sm sm:text-lg truncate text-gray-900 dark:text-gray-100">{currentTask.user_id ? `${currentTask.user_id.slice(0, 8)}…` : 'Unknown'}</p>
                 </div>
                 <div>
                   <p className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Location</p>
@@ -566,7 +566,7 @@ export default function AgentDashboard() {
                   {customers.map(([id, info]) => (
                     <div key={id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="min-w-0">
-                        <p className="font-medium truncate">{id.slice(0, 8)}…</p>
+                        <p className="font-medium truncate">{id ? `${id.slice(0, 8)}…` : 'Unknown'}</p>
                         <p className="text-xs text-muted-foreground">{info.count} task{info.count > 1 ? 's' : ''} · last {new Date(info.last).toLocaleDateString()}</p>
                       </div>
                       <div className="flex gap-2">
