@@ -24,6 +24,10 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import {
   Briefcase,
@@ -49,6 +53,10 @@ import {
   UtensilsCrossed,
   Trash2,
   User,
+  Search,
+  Headphones,
+  Calendar,
+  Info,
 } from 'lucide-react';
 
 interface ServiceRequest {
@@ -98,6 +106,10 @@ export default function AgentDashboard() {
     return false;
   });
   const [notesMap, setNotesMap] = useState<Record<string, string>>({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'assigned' | 'in_progress' | 'completed'>('all');
+  const [selectedTask, setSelectedTask] = useState<ServiceRequest | null>(null);
+  const [customerInfo, setCustomerInfo] = useState<Record<string, { name: string; email?: string; phone?: string }>>({});
 
   // Theme state with green dark mode (mirrors rider)
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -177,14 +189,73 @@ export default function AgentDashboard() {
 
   const messageCustomer = async (customerId: string) => {
     try {
+      if (!user) { toast.error('Not signed in'); return; }
+      if (!customerId) { toast.error('Customer not found'); return; }
       const { findOrCreateChatWithCustomer } = await import('@/lib/csrChat');
-      if (!user) return;
       const chatId = await findOrCreateChatWithCustomer(user.id, customerId, 'agent');
+      toast.success('Opening chat with customer…');
       navigate(`/inbox?chat=${chatId}`);
     } catch (e: any) {
-      toast.error('Failed: ' + (e?.message || 'Unknown'));
+      toast.error('Failed to message customer: ' + (e?.message || 'Unknown'));
     }
   };
+
+  const messageCsr = async () => {
+    try {
+      if (!user) { toast.error('Not signed in'); return; }
+      // Find or create an agent → CSR chat
+      const { data: existing } = await (supabase.from('private_chats') as any)
+        .select('chat_id')
+        .eq('initiator_id', user.id)
+        .eq('initiator_role', 'agent')
+        .eq('recipient_role', 'customer_rep')
+        .eq('is_closed', false)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      let chatId: string;
+      if (existing && existing.length > 0) {
+        chatId = (existing[0] as any).chat_id;
+      } else {
+        const { data: created, error } = await (supabase.from('private_chats') as any)
+          .insert({
+            initiator_id: user.id,
+            initiator_role: 'agent',
+            recipient_id: null,
+            recipient_role: 'customer_rep',
+            is_closed: false,
+          })
+          .select('chat_id')
+          .single();
+        if (error) throw error;
+        chatId = (created as any).chat_id;
+      }
+      toast.success('Opening chat with support…');
+      navigate(`/inbox?chat=${chatId}`);
+    } catch (e: any) {
+      toast.error('Failed to message support: ' + (e?.message || 'Unknown'));
+    }
+  };
+
+  // Fetch customer info (name/phone/email) once tasks load
+  useEffect(() => {
+    const missing = requests
+      .map(r => r.user_id)
+      .filter((id): id is string => !!id && !customerInfo[id]);
+    if (missing.length === 0) return;
+    const unique = Array.from(new Set(missing));
+    (async () => {
+      const { data } = await (supabase
+        .from('customer_profiles') as any)
+        .select('user_id, full_name, phone')
+        .in('user_id', unique);
+      const next: typeof customerInfo = {};
+      ((data as any[]) || []).forEach(c => {
+        next[c.user_id] = { name: c.full_name || 'Customer', phone: c.phone || undefined };
+      });
+      setCustomerInfo(prev => ({ ...prev, ...next }));
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requests]);
 
   const handleOnlineToggle = (checked: boolean) => {
     setOnline(checked);
@@ -217,8 +288,9 @@ export default function AgentDashboard() {
 
   const renderTaskCard = (req: ServiceRequest) => {
     const ServiceIcon = serviceIcons[req.service_type] || FileText;
+    const customer = req.user_id ? customerInfo[req.user_id] : undefined;
     return (
-      <Card key={req.id} className="p-4">
+      <Card key={req.id} className="p-4 hover:shadow-md transition-shadow">
         <div className="flex items-start gap-3">
           <div className="p-2 rounded-lg bg-primary/10 shrink-0">
             <ServiceIcon className="w-5 h-5 text-primary" />
@@ -232,20 +304,23 @@ export default function AgentDashboard() {
                   {req.urgency?.replace(/_/g, ' ')}
                 </Badge>
               )}
+              <Badge variant="outline" className="text-[10px]">{req.status.replace(/_/g, ' ')}</Badge>
             </div>
             {req.description && (
-              <p className="text-sm text-muted-foreground mb-2">{req.description}</p>
+              <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{req.description}</p>
             )}
             <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mb-3">
-              <span className="flex items-center gap-1"><User className="w-3 h-3" /> Customer: {req.user_id ? `${req.user_id.slice(0, 8)}…` : 'Unknown'}</span>
+              <span className="flex items-center gap-1">
+                <User className="w-3 h-3" /> {customer?.name || (req.user_id ? `${req.user_id.slice(0, 8)}…` : 'Unknown')}
+              </span>
               {req.errand_type && <span>Type: {req.errand_type.replace(/_/g, ' ')}</span>}
               {req.location_scope && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {req.location_scope.replace(/_/g, ' ')}</span>}
-              {req.contact_number && (
-                <a href={`tel:${req.contact_number}`} className="flex items-center gap-1 text-primary hover:underline">
-                  <Phone className="w-3 h-3" /> {req.contact_number}
+              {(req.contact_number || customer?.phone) && (
+                <a href={`tel:${req.contact_number || customer?.phone}`} className="flex items-center gap-1 text-primary hover:underline">
+                  <Phone className="w-3 h-3" /> {req.contact_number || customer?.phone}
                 </a>
               )}
-              <span>{new Date(req.created_at).toLocaleString()}</span>
+              <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {new Date(req.created_at).toLocaleString()}</span>
             </div>
             {req.status !== 'completed' && (
               <div className="mb-3">
@@ -261,33 +336,51 @@ export default function AgentDashboard() {
             {req.status === 'completed' && req.agent_notes && (
               <p className="text-xs bg-muted p-2 rounded mb-2">📝 {req.agent_notes}</p>
             )}
-            {req.status !== 'completed' && req.status !== 'cancelled' && (
-              <div className="flex gap-2 flex-wrap">
-                {req.status === 'assigned' && (
-                  <Button size="sm" onClick={() => updateStatus(req.id, 'in_progress')} className="gap-1">
-                    <Play className="w-3 h-3" /> Start Task
-                  </Button>
-                )}
-                {req.status === 'in_progress' && (
-                  <Button size="sm" onClick={() => updateStatus(req.id, 'completed')} className="gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Mark Complete
-                  </Button>
-                )}
+            <div className="flex gap-2 flex-wrap">
+              {req.status === 'assigned' && (
+                <Button size="sm" onClick={() => updateStatus(req.id, 'in_progress')} className="gap-1">
+                  <Play className="w-3 h-3" /> Start Task
+                </Button>
+              )}
+              {req.status === 'in_progress' && (
+                <Button size="sm" onClick={() => updateStatus(req.id, 'completed')} className="gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Mark Complete
+                </Button>
+              )}
+              {req.status !== 'cancelled' && req.user_id && (
                 <Button size="sm" variant="outline" className="gap-1" onClick={() => messageCustomer(req.user_id)}>
                   <MessageSquare className="w-3 h-3" /> Message Customer
                 </Button>
-              </div>
-            )}
-            {req.status === 'completed' && (
-              <Badge variant="secondary">
-                <CheckCircle2 className="w-3 h-3 mr-1" /> Completed
-              </Badge>
-            )}
+              )}
+              {req.status !== 'cancelled' && (
+                <Button size="sm" variant="outline" className="gap-1" onClick={messageCsr}>
+                  <Headphones className="w-3 h-3" /> Message Support
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" className="gap-1" onClick={() => setSelectedTask(req)}>
+                <Info className="w-3 h-3" /> Details
+              </Button>
+            </div>
           </div>
         </div>
       </Card>
     );
   };
+
+  // Filter active tasks by search + status
+  const filteredActive = activeRequests.filter(r => {
+    if (statusFilter !== 'all' && r.status !== statusFilter) return false;
+    if (!searchTerm) return true;
+    const q = searchTerm.toLowerCase();
+    const c = r.user_id ? customerInfo[r.user_id] : undefined;
+    return (
+      (r.service_type || '').toLowerCase().includes(q) ||
+      (r.description || '').toLowerCase().includes(q) ||
+      (r.errand_type || '').toLowerCase().includes(q) ||
+      (r.contact_number || '').toLowerCase().includes(q) ||
+      (c?.name || '').toLowerCase().includes(q)
+    );
+  });
 
   // Customers (unique users this agent has served) — for the Customers tab
   const customers = Array.from(
@@ -354,6 +447,15 @@ export default function AgentDashboard() {
                 title="Inbox"
               >
                 <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600 dark:text-gray-300" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 sm:h-10 sm:w-10 hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={messageCsr}
+                title="Message Support (CSR)"
+              >
+                <Headphones className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600 dark:text-gray-300" />
               </Button>
               <Button
                 variant="ghost"
@@ -553,14 +655,39 @@ export default function AgentDashboard() {
         {/* ACTIVE TASKS TAB */}
         {activeTab === 'active-tasks' && (
           <div className="space-y-4">
+            {/* Search + filter bar */}
+            <Card className="p-3">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by customer, service type, phone…"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
+                  <SelectTrigger className="sm:w-48"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All statuses</SelectItem>
+                    <SelectItem value="assigned">Assigned</SelectItem>
+                    <SelectItem value="in_progress">In progress</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </Card>
+
             {loading ? (
               <div className="flex justify-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
               </div>
-            ) : activeRequests.length === 0 ? (
-              <Card className="p-8 text-center text-muted-foreground">No active tasks. Check back soon!</Card>
+            ) : filteredActive.length === 0 ? (
+              <Card className="p-8 text-center text-muted-foreground">
+                {activeRequests.length === 0 ? 'No active tasks. Check back soon!' : 'No tasks match your filters.'}
+              </Card>
             ) : (
-              activeRequests.map(renderTaskCard)
+              filteredActive.map(renderTaskCard)
             )}
           </div>
         )}
@@ -690,6 +817,108 @@ export default function AgentDashboard() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Task detail drawer */}
+        <Sheet open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
+          <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+            {selectedTask && (() => {
+              const ServiceIcon = serviceIcons[selectedTask.service_type] || FileText;
+              const c = selectedTask.user_id ? customerInfo[selectedTask.user_id] : undefined;
+              return (
+                <>
+                  <SheetHeader>
+                    <SheetTitle className="flex items-center gap-2">
+                      <ServiceIcon className="w-5 h-5 text-primary" />
+                      <span className="capitalize">{(selectedTask.service_type || 'service').replace(/_/g, ' ')}</span>
+                    </SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-4 space-y-4">
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline">{selectedTask.status.replace(/_/g, ' ')}</Badge>
+                      {selectedTask.urgency && <Badge className={urgencyColors[selectedTask.urgency]}>{selectedTask.urgency.replace(/_/g, ' ')}</Badge>}
+                    </div>
+
+                    {selectedTask.description && (
+                      <div>
+                        <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Description</h4>
+                        <p className="text-sm">{selectedTask.description}</p>
+                      </div>
+                    )}
+
+                    <Separator />
+
+                    <div>
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">Customer</h4>
+                      <div className="space-y-1 text-sm">
+                        <p className="flex items-center gap-2"><User className="w-3 h-3" /> {c?.name || 'Unknown'}</p>
+                        {(selectedTask.contact_number || c?.phone) && (
+                          <a className="flex items-center gap-2 text-primary" href={`tel:${selectedTask.contact_number || c?.phone}`}>
+                            <Phone className="w-3 h-3" /> {selectedTask.contact_number || c?.phone}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Type</h4>
+                        <p>{selectedTask.errand_type?.replace(/_/g, ' ') || '—'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Location</h4>
+                        <p>{selectedTask.location_scope?.replace(/_/g, ' ') || '—'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Channel</h4>
+                        <p>{selectedTask.channel_preference || '—'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Created</h4>
+                        <p>{new Date(selectedTask.created_at).toLocaleString()}</p>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Notes</h4>
+                      <Textarea
+                        className="text-xs min-h-[80px]"
+                        value={notesMap[selectedTask.id] ?? selectedTask.agent_notes ?? ''}
+                        onChange={(e) => setNotesMap(prev => ({ ...prev, [selectedTask.id]: e.target.value }))}
+                        onBlur={() => saveNotes(selectedTask.id)}
+                        placeholder="Add private notes about this task…"
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {selectedTask.status === 'assigned' && (
+                        <Button size="sm" onClick={() => { updateStatus(selectedTask.id, 'in_progress'); setSelectedTask(null); }}>
+                          <Play className="w-3 h-3 mr-1" /> Start Task
+                        </Button>
+                      )}
+                      {selectedTask.status === 'in_progress' && (
+                        <Button size="sm" onClick={() => { updateStatus(selectedTask.id, 'completed'); setSelectedTask(null); }}>
+                          <CheckCircle2 className="w-3 h-3 mr-1" /> Mark Complete
+                        </Button>
+                      )}
+                      {selectedTask.user_id && (
+                        <Button size="sm" variant="outline" onClick={() => messageCustomer(selectedTask.user_id)}>
+                          <MessageSquare className="w-3 h-3 mr-1" /> Message Customer
+                        </Button>
+                      )}
+                      <Button size="sm" variant="outline" onClick={messageCsr}>
+                        <Headphones className="w-3 h-3 mr-1" /> Message Support
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+          </SheetContent>
+        </Sheet>
       </main>
     </div>
   );
