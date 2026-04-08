@@ -13,9 +13,19 @@ interface Message {
   id: string;
   chat_id: string;
   sender_id: string;
+  sender_role?: string | null;
   content: string;
   created_at: string;
 }
+
+const ROLE_BADGE: Record<string, { label: string; cls: string }> = {
+  customer:     { label: 'Customer', cls: 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200' },
+  vendor:       { label: 'Vendor',   cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200' },
+  rider:        { label: 'Rider',    cls: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200' },
+  agent:        { label: 'Agent',    cls: 'bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-200' },
+  customer_rep: { label: 'Support',  cls: 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200' },
+  admin:        { label: 'Admin',    cls: 'bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-slate-100' },
+};
 
 interface PrivateChat {
   chat_id: string;
@@ -294,8 +304,9 @@ export default function Inbox() {
       .insert({
         chat_id: selectedChat.chat_id,
         sender_id: userId,
+        sender_role: role,
         content: text,
-      });
+      } as any);
 
     if (error) {
       toast.error('Failed to send message');
@@ -491,9 +502,16 @@ export default function Inbox() {
                             : 'bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-200 dark:border-slate-700'
                         }`}
                       >
-                        <p className="text-xs font-bold opacity-90">
-                          {messageSenderNames.get(msg.sender_id) || 'Loading...'}
-                        </p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-xs font-bold opacity-90">
+                            {messageSenderNames.get(msg.sender_id) || 'Loading...'}
+                          </p>
+                          {msg.sender_role && ROLE_BADGE[msg.sender_role] && (
+                            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${ROLE_BADGE[msg.sender_role].cls}`}>
+                              {ROLE_BADGE[msg.sender_role].label}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-sm mt-1 whitespace-pre-wrap break-words">{msg.content}</p>
                         <div className="text-xs opacity-70 mt-2">
                           {new Date(msg.created_at).toLocaleTimeString([], {

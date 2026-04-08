@@ -685,35 +685,12 @@ export default function AdvancedOrdersManagement() {
                             try {
                               const { data: { user } } = await supabase.auth.getUser();
                               if (!user) { toast.error('Not signed in'); return; }
-                              // Vendors message customers via CSR (moderated). Open or create
-                              // a vendor → CSR queue chat, with the order context.
-                              const { data: existing } = await (supabase.from('private_chats') as any)
-                                .select('chat_id')
-                                .eq('initiator_id', user.id)
-                                .eq('initiator_role', 'vendor')
-                                .eq('recipient_role', 'customer_rep')
-                                .eq('is_closed', false)
-                                .order('created_at', { ascending: false })
-                                .limit(1);
-                              let chatId: string;
-                              if (existing && existing.length > 0) {
-                                chatId = (existing[0] as any).chat_id;
-                              } else {
-                                const { data: created, error } = await (supabase.from('private_chats') as any)
-                                  .insert({
-                                    initiator_id: user.id,
-                                    initiator_role: 'vendor',
-                                    recipient_id: null,
-                                    recipient_role: 'customer_rep',
-                                    is_closed: false,
-                                  })
-                                  .select('chat_id')
-                                  .single();
-                                if (error) throw error;
-                                chatId = (created as any).chat_id;
-                              }
-                              toast.info('Your message will be reviewed by support before reaching the customer.');
-                              navigate(`/inbox?chat=${chatId}&context=order:${order.id}`);
+                              const { openModeratedChat } = await import('@/lib/moderatedChat');
+                              const chatId = await openModeratedChat(user.id, 'vendor', {
+                                contextLabel: `Re: order ${order.order_number || order.id.slice(0, 8)}`,
+                              });
+                              toast.info('Your message will reach the customer via support.');
+                              navigate(`/inbox?chat=${chatId}`);
                             } catch (e: any) {
                               toast.error('Failed: ' + (e?.message || 'Unknown'));
                             }

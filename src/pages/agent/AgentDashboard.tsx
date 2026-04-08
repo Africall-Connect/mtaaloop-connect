@@ -187,48 +187,27 @@ export default function AgentDashboard() {
     else toast.success('Notes saved');
   };
 
+  // Both "Message Customer" and "Message Support" route through CSR now.
+  // CSR relays between agent and customer, so communication stays moderated.
   const messageCustomer = async (customerId: string) => {
     try {
       if (!user) { toast.error('Not signed in'); return; }
-      if (!customerId) { toast.error('Customer not found'); return; }
-      const { findOrCreateChatWithCustomer } = await import('@/lib/csrChat');
-      const chatId = await findOrCreateChatWithCustomer(user.id, customerId, 'agent');
-      toast.success('Opening chat with customer…');
+      const { openModeratedChat } = await import('@/lib/moderatedChat');
+      const task = requests.find(r => r.user_id === customerId);
+      const label = task ? `Re: ${task.service_type} task for customer ${customerId.slice(0, 8)}` : undefined;
+      const chatId = await openModeratedChat(user.id, 'agent', { contextLabel: label });
+      toast.info('Your message will reach the customer via support.');
       navigate(`/inbox?chat=${chatId}`);
     } catch (e: any) {
-      toast.error('Failed to message customer: ' + (e?.message || 'Unknown'));
+      toast.error('Failed: ' + (e?.message || 'Unknown'));
     }
   };
 
   const messageCsr = async () => {
     try {
       if (!user) { toast.error('Not signed in'); return; }
-      // Find or create an agent → CSR chat
-      const { data: existing } = await (supabase.from('private_chats') as any)
-        .select('chat_id')
-        .eq('initiator_id', user.id)
-        .eq('initiator_role', 'agent')
-        .eq('recipient_role', 'customer_rep')
-        .eq('is_closed', false)
-        .order('created_at', { ascending: false })
-        .limit(1);
-      let chatId: string;
-      if (existing && existing.length > 0) {
-        chatId = (existing[0] as any).chat_id;
-      } else {
-        const { data: created, error } = await (supabase.from('private_chats') as any)
-          .insert({
-            initiator_id: user.id,
-            initiator_role: 'agent',
-            recipient_id: null,
-            recipient_role: 'customer_rep',
-            is_closed: false,
-          })
-          .select('chat_id')
-          .single();
-        if (error) throw error;
-        chatId = (created as any).chat_id;
-      }
+      const { openModeratedChat } = await import('@/lib/moderatedChat');
+      const chatId = await openModeratedChat(user.id, 'agent');
       toast.success('Opening chat with support…');
       navigate(`/inbox?chat=${chatId}`);
     } catch (e: any) {
@@ -349,7 +328,7 @@ export default function AgentDashboard() {
               )}
               {req.status !== 'cancelled' && req.user_id && (
                 <Button size="sm" variant="outline" className="gap-1" onClick={() => messageCustomer(req.user_id)}>
-                  <MessageSquare className="w-3 h-3" /> Message Customer
+                  <MessageSquare className="w-3 h-3" /> Message Customer (via Support)
                 </Button>
               )}
               {req.status !== 'cancelled' && (
@@ -906,7 +885,7 @@ export default function AgentDashboard() {
                       )}
                       {selectedTask.user_id && (
                         <Button size="sm" variant="outline" onClick={() => messageCustomer(selectedTask.user_id)}>
-                          <MessageSquare className="w-3 h-3 mr-1" /> Message Customer
+                          <MessageSquare className="w-3 h-3 mr-1" /> Message Customer (via Support)
                         </Button>
                       )}
                       <Button size="sm" variant="outline" onClick={messageCsr}>

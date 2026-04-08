@@ -1449,47 +1449,18 @@ const OrderTracking = () => {
               <div className="flex gap-3 justify-center flex-wrap">
                 <Button variant="outline" size="sm" onClick={async () => {
                   try {
-                    if (!orderData?.vendor_id) { toast.error('Vendor not found'); return; }
-                    // Look up the vendor's user_id from vendor_profiles
-                    const { data: vp } = await (supabase.from('vendor_profiles') as any)
-                      .select('user_id')
-                      .eq('id', orderData.vendor_id)
-                      .maybeSingle();
-                    const vendorUserId = (vp as any)?.user_id;
-                    if (!vendorUserId) { toast.error('This vendor cannot be messaged yet'); return; }
                     const { data: { user } } = await supabase.auth.getUser();
                     if (!user) { toast.error('Sign in first'); return; }
-                    // Find or create a customer→vendor chat
-                    const { data: existing } = await (supabase.from('private_chats') as any)
-                      .select('chat_id')
-                      .eq('initiator_id', user.id)
-                      .eq('recipient_id', vendorUserId)
-                      .eq('is_closed', false)
-                      .order('created_at', { ascending: false })
-                      .limit(1);
-                    let chatId: string;
-                    if (existing && existing.length > 0) {
-                      chatId = (existing[0] as any).chat_id;
-                    } else {
-                      const { data: created, error } = await (supabase.from('private_chats') as any)
-                        .insert({
-                          initiator_id: user.id,
-                          initiator_role: 'customer',
-                          recipient_id: vendorUserId,
-                          recipient_role: 'vendor',
-                          is_closed: false,
-                        })
-                        .select('chat_id')
-                        .single();
-                      if (error) throw error;
-                      chatId = (created as any).chat_id;
-                    }
+                    const { openModeratedChat } = await import('@/lib/moderatedChat');
+                    const label = `Re: order ${orderData?.id?.slice(0, 8) || ''} (${orderData?.vendor_name || 'vendor'})`;
+                    const chatId = await openModeratedChat(user.id, 'customer', { contextLabel: label });
+                    toast.info('Support will relay your message to the vendor.');
                     navigate(`/inbox?chat=${chatId}`);
                   } catch (e: any) {
                     toast.error('Failed: ' + (e?.message || 'Unknown'));
                   }
                 }}>
-                  Message Vendor
+                  Message Vendor (via Support)
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => navigate("/support-live-chat")}>
                   Chat with Support

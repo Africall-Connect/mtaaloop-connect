@@ -335,20 +335,20 @@ export default function RiderActiveOrders({ riderId }: RiderActiveOrdersProps) {
 
                     <Button size="sm" variant="outline" className="gap-1" onClick={async () => {
                       try {
-                        const { findOrCreateChatWithCustomer } = await import('@/lib/csrChat');
+                        const { openModeratedChat } = await import('@/lib/moderatedChat');
                         const { data: { user } } = await supabase.auth.getUser();
-                        if (!user || !order.customer_id) {
-                          toast.error('Cannot start chat');
-                          return;
-                        }
-                        const chatId = await findOrCreateChatWithCustomer(user.id, order.customer_id, 'rider');
+                        if (!user) { toast.error('Not signed in'); return; }
+                        const chatId = await openModeratedChat(user.id, 'rider', {
+                          contextLabel: `Re: delivery for order ${order.order_number || order.id.slice(0, 8)}`,
+                        });
+                        toast.info('Your message will reach the customer via support.');
                         window.location.href = `/inbox?chat=${chatId}`;
                       } catch (e: any) {
                         toast.error('Failed: ' + (e?.message || 'Unknown'));
                       }
                     }}>
                       <MessageSquare className="h-4 w-4" />
-                      Message Customer
+                      Message Customer (via Support)
                     </Button>
 
                     <Button size="sm" variant="outline" className="gap-1" onClick={() => toast.info(`Order #${order.order_number}: ${order.order_items.map(i => `${i.product_name} x${i.quantity}`).join(', ')} - Total: KES ${Number(order.total_amount).toLocaleString()}`)}>
