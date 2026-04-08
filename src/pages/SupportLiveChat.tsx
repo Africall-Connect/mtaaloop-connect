@@ -94,15 +94,18 @@ export default function SupportLiveChat() {
   useEffect(() => {
     async function setupPrivateChat() {
       if (!user || role === 'admin') return;
-      // Check for existing open chat for this user (initiator)
+      // Check for existing open SUPPORT chat for this user
+      // (recipient_role='customer_rep' marks it as a CSR queue chat, distinct
+      // from vendor/rider chats the same customer might have open).
       const { data: chat } = await supabase
         .from('private_chats')
         .select('*')
         .eq('initiator_id', userId)
+        .eq('recipient_role', 'customer_rep')
         .eq('is_closed', false)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       let chat_id = chat?.chat_id;
       // If no chat, create one with recipient_id null (unassigned)
@@ -113,7 +116,7 @@ export default function SupportLiveChat() {
             initiator_id: userId,
             initiator_role: role,
             recipient_id: null,
-            recipient_role: null,
+            recipient_role: 'customer_rep', // flag as a support-queue chat so it's routed to CSR
           })
           .select()
           .single();

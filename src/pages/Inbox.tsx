@@ -132,7 +132,16 @@ export default function Inbox() {
       query = query.or(`initiator_id.eq.${userId},recipient_id.eq.${userId}`);
     }
 
-    const { data: chats, error: chatsError } = await query;
+    const { data: chatsRaw, error: chatsError } = await query;
+
+    // Customers see support chats in /support-live-chat, not here.
+    // Staff inbox should also hide support-queue rows until they're claimed
+    // by THIS user; unclaimed support chats belong in CSR chat queue.
+    const chats = (chatsRaw || []).filter((c: any) => {
+      if (c.recipient_role !== 'customer_rep') return true;
+      // It's a support chat. Only show it to the claimed CSR.
+      return c.recipient_id === userId;
+    });
 
     if (chatsError) {
       toast.error('Error fetching chats');

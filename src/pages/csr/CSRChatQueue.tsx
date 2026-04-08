@@ -32,6 +32,7 @@ export default function CSRChatQueue() {
     const { data, error } = await (supabase.from("private_chats") as any)
       .select("*")
       .is("recipient_id", null)
+      .eq("recipient_role", "customer_rep")
       .eq("is_closed", false)
       .order("created_at", { ascending: false });
     if (error) {
