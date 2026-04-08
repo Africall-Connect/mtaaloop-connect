@@ -122,14 +122,25 @@ export default function AgentDashboard() {
   const fetchMyRequests = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const { data, error } = await (supabase
-      .from('service_requests')
-      .select('*') as any)
-      .eq('assigned_to', user.id)
-      .order('created_at', { ascending: false });
-
-    if (!error) setRequests((data as ServiceRequest[]) || []);
-    setLoading(false);
+    try {
+      const { data, error } = await (supabase
+        .from('service_requests')
+        .select('*') as any)
+        .eq('assigned_to', user.id)
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.error('fetchMyRequests error:', error);
+        toast.error('Failed to load tasks: ' + (error.message || 'Unknown'));
+        setRequests([]);
+      } else {
+        setRequests((data as ServiceRequest[]) || []);
+      }
+    } catch (e: any) {
+      console.error('fetchMyRequests exception:', e);
+      setRequests([]);
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
 
   useEffect(() => {
@@ -218,7 +229,7 @@ export default function AgentDashboard() {
               {req.urgency && (
                 <Badge className={urgencyColors[req.urgency] || 'bg-muted'} variant="secondary">
                   <Clock className="w-3 h-3 mr-1" />
-                  {req.urgency.replace(/_/g, ' ')}
+                  {req.urgency?.replace(/_/g, ' ')}
                 </Badge>
               )}
             </div>
