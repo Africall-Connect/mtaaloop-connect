@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          estate_id: string | null
+          full_name: string
+          id: string
+          is_active: boolean
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          estate_id?: string | null
+          full_name: string
+          id?: string
+          is_active?: boolean
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          estate_id?: string | null
+          full_name?: string
+          id?: string
+          is_active?: boolean
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_profiles_estate_id_fkey"
+            columns: ["estate_id"]
+            isOneToOne: false
+            referencedRelation: "estates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       badges: {
         Row: {
           created_at: string | null
@@ -620,6 +671,128 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      csr_campaign_sends: {
+        Row: {
+          campaign_id: string
+          customer_id: string
+          id: string
+          notification_id: string | null
+          sent_at: string | null
+        }
+        Insert: {
+          campaign_id: string
+          customer_id: string
+          id?: string
+          notification_id?: string | null
+          sent_at?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          customer_id?: string
+          id?: string
+          notification_id?: string | null
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "csr_campaign_sends_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "csr_outbound_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "csr_campaign_sends_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      csr_canned_responses: {
+        Row: {
+          body: string
+          category: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          shortcut: string | null
+          title: string
+          use_count: number | null
+        }
+        Insert: {
+          body: string
+          category: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          shortcut?: string | null
+          title: string
+          use_count?: number | null
+        }
+        Update: {
+          body?: string
+          category?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          shortcut?: string | null
+          title?: string
+          use_count?: number | null
+        }
+        Relationships: []
+      }
+      csr_outbound_campaigns: {
+        Row: {
+          audience_filter: Json | null
+          campaign_type: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          last_sent_at: string | null
+          message: string
+          name: string
+          title: string
+          total_sent: number | null
+        }
+        Insert: {
+          audience_filter?: Json | null
+          campaign_type: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_sent_at?: string | null
+          message: string
+          name: string
+          title: string
+          total_sent?: number | null
+        }
+        Update: {
+          audience_filter?: Json | null
+          campaign_type?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_sent_at?: string | null
+          message?: string
+          name?: string
+          title?: string
+          total_sent?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "csr_outbound_campaigns_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
             referencedColumns: ["id"]
           },
         ]
@@ -1489,6 +1662,7 @@ export type Database = {
           is_muted: boolean | null
           is_video_off: boolean | null
           joined_at: string | null
+          last_seen_at: string | null
           participant_status: string | null
           room_id: string | null
           user_id: string | null
@@ -1499,6 +1673,7 @@ export type Database = {
           is_muted?: boolean | null
           is_video_off?: boolean | null
           joined_at?: string | null
+          last_seen_at?: string | null
           participant_status?: string | null
           room_id?: string | null
           user_id?: string | null
@@ -1509,6 +1684,7 @@ export type Database = {
           is_muted?: boolean | null
           is_video_off?: boolean | null
           joined_at?: string | null
+          last_seen_at?: string | null
           participant_status?: string | null
           room_id?: string | null
           user_id?: string | null
@@ -1620,6 +1796,7 @@ export type Database = {
         Row: {
           click_rate: number
           created_at: string
+          created_by_csr: string | null
           id: string
           message: string
           name: string
@@ -1635,6 +1812,7 @@ export type Database = {
         Insert: {
           click_rate?: number
           created_at?: string
+          created_by_csr?: string | null
           id?: string
           message: string
           name: string
@@ -1650,6 +1828,7 @@ export type Database = {
         Update: {
           click_rate?: number
           created_at?: string
+          created_by_csr?: string | null
           id?: string
           message?: string
           name?: string
@@ -1663,6 +1842,13 @@ export type Database = {
           vendor_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "marketing_campaigns_created_by_csr_fkey"
+            columns: ["created_by_csr"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "marketing_campaigns_vendor_fkey"
             columns: ["vendor_id"]
@@ -2149,15 +2335,20 @@ export type Database = {
           cancelled_at: string | null
           category: string | null
           created_at: string | null
+          csr_notes: string | null
           customer_id: string | null
           customer_notes: string | null
           customer_signature: string | null
           delivered_at: string | null
           delivery_address: string
           estate_id: string | null
+          flagged_at: string | null
+          flagged_by: string | null
+          flagged_reason: string | null
           full_name: string | null
           house: string | null
           id: string
+          is_flagged: boolean | null
           is_mtaaloop_managed: boolean | null
           mtaaloop_delivery_type: string | null
           order_number: string | null
@@ -2182,15 +2373,20 @@ export type Database = {
           cancelled_at?: string | null
           category?: string | null
           created_at?: string | null
+          csr_notes?: string | null
           customer_id?: string | null
           customer_notes?: string | null
           customer_signature?: string | null
           delivered_at?: string | null
           delivery_address: string
           estate_id?: string | null
+          flagged_at?: string | null
+          flagged_by?: string | null
+          flagged_reason?: string | null
           full_name?: string | null
           house?: string | null
           id?: string
+          is_flagged?: boolean | null
           is_mtaaloop_managed?: boolean | null
           mtaaloop_delivery_type?: string | null
           order_number?: string | null
@@ -2215,15 +2411,20 @@ export type Database = {
           cancelled_at?: string | null
           category?: string | null
           created_at?: string | null
+          csr_notes?: string | null
           customer_id?: string | null
           customer_notes?: string | null
           customer_signature?: string | null
           delivered_at?: string | null
           delivery_address?: string
           estate_id?: string | null
+          flagged_at?: string | null
+          flagged_by?: string | null
+          flagged_reason?: string | null
           full_name?: string | null
           house?: string | null
           id?: string
+          is_flagged?: boolean | null
           is_mtaaloop_managed?: boolean | null
           mtaaloop_delivery_type?: string | null
           order_number?: string | null
@@ -2255,6 +2456,13 @@ export type Database = {
             columns: ["estate_id"]
             isOneToOne: false
             referencedRelation: "estates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_flagged_by_fkey"
+            columns: ["flagged_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
             referencedColumns: ["id"]
           },
           {
@@ -2713,6 +2921,7 @@ export type Database = {
           created_at: string
           id: string
           sender_id: string
+          sender_role: string | null
         }
         Insert: {
           chat_id: string
@@ -2720,6 +2929,7 @@ export type Database = {
           created_at?: string
           id?: string
           sender_id: string
+          sender_role?: string | null
         }
         Update: {
           chat_id?: string
@@ -2727,6 +2937,7 @@ export type Database = {
           created_at?: string
           id?: string
           sender_id?: string
+          sender_role?: string | null
         }
         Relationships: [
           {
@@ -3106,6 +3317,58 @@ export type Database = {
           window_start?: string
         }
         Relationships: []
+      }
+      review_prompts: {
+        Row: {
+          customer_id: string
+          id: string
+          order_id: string
+          prompt_type: string | null
+          responded_at: string | null
+          sent_at: string | null
+          sent_by: string | null
+        }
+        Insert: {
+          customer_id: string
+          id?: string
+          order_id: string
+          prompt_type?: string | null
+          responded_at?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+        }
+        Update: {
+          customer_id?: string
+          id?: string
+          order_id?: string
+          prompt_type?: string | null
+          responded_at?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_prompts_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_prompts_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_prompts_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rider_profiles: {
         Row: {
@@ -3569,6 +3832,121 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_ticket_notes: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string | null
+          id: string
+          ticket_id: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string | null
+          id?: string
+          ticket_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string | null
+          id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_ticket_notes_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          assigned_at: string | null
+          assigned_to: string | null
+          category: string
+          created_at: string | null
+          customer_id: string
+          description: string
+          escalated_to_admin: boolean | null
+          escalation_reason: string | null
+          id: string
+          order_id: string | null
+          resolved_at: string | null
+          severity: string
+          status: string
+          subject: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_to?: string | null
+          category: string
+          created_at?: string | null
+          customer_id: string
+          description: string
+          escalated_to_admin?: boolean | null
+          escalation_reason?: string | null
+          id?: string
+          order_id?: string | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+          subject: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_to?: string | null
+          category?: string
+          created_at?: string | null
+          customer_id?: string
+          description?: string
+          escalated_to_admin?: boolean | null
+          escalation_reason?: string | null
+          id?: string
+          order_id?: string | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+          subject?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_tickets_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_tickets_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
@@ -4305,7 +4683,7 @@ export type Database = {
           tagline: string | null
           total_orders: number | null
           updated_at: string
-          user_id: string
+          user_id: string | null
           vendor_signature: string | null
           website: string | null
           whatsapp_business: string | null
@@ -4367,7 +4745,7 @@ export type Database = {
           tagline?: string | null
           total_orders?: number | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
           vendor_signature?: string | null
           website?: string | null
           whatsapp_business?: string | null
@@ -4429,7 +4807,7 @@ export type Database = {
           tagline?: string | null
           total_orders?: number | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
           vendor_signature?: string | null
           website?: string | null
           whatsapp_business?: string | null
@@ -4853,6 +5231,7 @@ export type Database = {
       cleanup_empty_rooms: { Args: never; Returns: undefined }
       cleanup_rate_limits: { Args: never; Returns: undefined }
       cleanup_security_logs: { Args: never; Returns: undefined }
+      cleanup_stale_participants: { Args: never; Returns: undefined }
       credit_customer_wallet: {
         Args: {
           p_amount: number
@@ -4976,10 +5355,13 @@ export type Database = {
             Returns: boolean
           }
         | { Args: { r: string; uid: string }; Returns: boolean }
+      heartbeat_room: { Args: { p_room_id: string }; Returns: undefined }
       is_consultation_vendor: {
         Args: { _user_id: string; _vendor_id: string }
         Returns: boolean
       }
+      is_csr: { Args: { uid: string }; Returns: boolean }
+      is_room_member: { Args: { p_room_id: string }; Returns: boolean }
       is_user_blocked: {
         Args: { check_by_user_id: string; check_user_id: string }
         Returns: boolean
@@ -5091,7 +5473,7 @@ export type Database = {
           tagline: string | null
           total_orders: number | null
           updated_at: string
-          user_id: string
+          user_id: string | null
           vendor_signature: string | null
           website: string | null
           whatsapp_business: string | null
@@ -5115,6 +5497,7 @@ export type Database = {
         | "compliance"
         | "customer_care"
         | "agent"
+        | "customer_rep"
       estate_registration_status: "pending" | "approved" | "rejected"
       estate_type:
         | "apartment_complex"
@@ -5260,6 +5643,7 @@ export const Constants = {
         "compliance",
         "customer_care",
         "agent",
+        "customer_rep",
       ],
       estate_registration_status: ["pending", "approved", "rejected"],
       estate_type: [
