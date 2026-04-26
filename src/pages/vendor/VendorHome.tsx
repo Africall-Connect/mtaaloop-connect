@@ -281,27 +281,29 @@ export default function VendorHome() {
           onSearchChange={setSearchQuery}
         />
 
-        {/* Hero Banner */}
-        <div className="relative h-40 md:h-56 overflow-hidden">
-          <img
-            src={getHeroImageUrl()}
-            alt={vendor.business_name}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8">
-            <div className="max-w-7xl mx-auto">
-              <h2 className="text-2xl md:text-4xl font-bold text-foreground drop-shadow-sm">
-                Welcome to {vendor.business_name}
-              </h2>
-              {vendor.tagline && (
-                <p className="text-sm md:text-lg text-muted-foreground mt-1 max-w-2xl">
-                  {vendor.tagline}
-                </p>
-              )}
+        {/* Hero Banner — suppressed for pharmacy archetype (PharmacyView renders its own clinical hero) */}
+        {vendor.operational_category !== 'pharmacy' && (
+          <div className="relative h-40 md:h-56 overflow-hidden">
+            <img
+              src={getHeroImageUrl()}
+              alt={vendor.business_name}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8">
+              <div className="max-w-7xl mx-auto">
+                <h2 className="text-2xl md:text-4xl font-bold text-foreground drop-shadow-sm">
+                  Welcome to {vendor.business_name}
+                </h2>
+                {vendor.tagline && (
+                  <p className="text-sm md:text-lg text-muted-foreground mt-1 max-w-2xl">
+                    {vendor.tagline}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Filters Bar */}
         <div className="sticky top-[140px] md:top-[180px] z-30 bg-background/95 backdrop-blur-sm border-b px-4 md:px-6 py-3">

@@ -22,6 +22,8 @@ export interface Product {
   image_storage_path?: string | null;
   // Pharmacy-specific fields
   requires_prescription?: boolean;
+  symptom_category?: string | null;
+  dosage_form?: string | null;
   // Booking-specific fields
   duration?: number;
 }
@@ -59,6 +61,7 @@ export interface VendorProfile {
   brand_surface?: string | null;
   font_display?: string | null;
   hero_style?: string | null;
+  story?: string | null;
   created_at: string;
   updated_at: string;
 }

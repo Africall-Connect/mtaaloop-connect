@@ -3122,6 +3122,7 @@ export type Database = {
           created_at: string | null
           customizations: Json | null
           description: string | null
+          dosage_form: string | null
           fulfillment_mode: string | null
           id: string
           image_storage_path: string | null
@@ -3135,9 +3136,11 @@ export type Database = {
           orders_this_week: number | null
           price: number
           requires_address: boolean | null
+          requires_prescription: boolean
           requires_schedule: boolean | null
           stock_quantity: number | null
           subcategory: string | null
+          symptom_category: string | null
           unit_type: string | null
           updated_at: string | null
           vendor_id: string
@@ -3147,6 +3150,7 @@ export type Database = {
           created_at?: string | null
           customizations?: Json | null
           description?: string | null
+          dosage_form?: string | null
           fulfillment_mode?: string | null
           id?: string
           image_storage_path?: string | null
@@ -3160,9 +3164,11 @@ export type Database = {
           orders_this_week?: number | null
           price: number
           requires_address?: boolean | null
+          requires_prescription?: boolean
           requires_schedule?: boolean | null
           stock_quantity?: number | null
           subcategory?: string | null
+          symptom_category?: string | null
           unit_type?: string | null
           updated_at?: string | null
           vendor_id: string
@@ -3172,6 +3178,7 @@ export type Database = {
           created_at?: string | null
           customizations?: Json | null
           description?: string | null
+          dosage_form?: string | null
           fulfillment_mode?: string | null
           id?: string
           image_storage_path?: string | null
@@ -3185,9 +3192,11 @@ export type Database = {
           orders_this_week?: number | null
           price?: number
           requires_address?: boolean | null
+          requires_prescription?: boolean
           requires_schedule?: boolean | null
           stock_quantity?: number | null
           subcategory?: string | null
+          symptom_category?: string | null
           unit_type?: string | null
           updated_at?: string | null
           vendor_id?: string
@@ -4685,6 +4694,7 @@ export type Database = {
           rejection_reason: string | null
           review_count: number | null
           slug: string
+          story: string | null
           tagline: string | null
           total_orders: number | null
           updated_at: string
@@ -4752,6 +4762,7 @@ export type Database = {
           rejection_reason?: string | null
           review_count?: number | null
           slug: string
+          story?: string | null
           tagline?: string | null
           total_orders?: number | null
           updated_at?: string
@@ -4819,6 +4830,7 @@ export type Database = {
           rejection_reason?: string | null
           review_count?: number | null
           slug?: string
+          story?: string | null
           tagline?: string | null
           total_orders?: number | null
           updated_at?: string
@@ -5490,6 +5502,7 @@ export type Database = {
           rejection_reason: string | null
           review_count: number | null
           slug: string
+          story: string | null
           tagline: string | null
           total_orders: number | null
           updated_at: string

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Product, VendorWithProducts } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,12 +9,28 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ConsultationBookingFlow } from "@/components/pharmacy/ConsultationBookingFlow";
 import { ConsultationType } from "@/types/consultation";
-import { Plus, Pill, CalendarClock, ShoppingBasket, Stethoscope, Clock, ArrowRight } from "lucide-react";
+import { Pill, CalendarClock, Stethoscope, Clock, ArrowRight } from "lucide-react";
+import { PharmacyHero } from "@/components/vendor/pharmacy/PharmacyHero";
+import { PharmacyStory } from "@/components/vendor/pharmacy/PharmacyStory";
+import { PharmacyProductCard } from "@/components/vendor/pharmacy/PharmacyProductCard";
+import { PharmacyStickyUploadBar } from "@/components/vendor/pharmacy/PharmacyStickyUploadBar";
 
 interface PharmacyViewProps {
   vendor: VendorWithProducts;
   products: Product[];
 }
+
+// Render order for symptom sections
+const SYMPTOM_ORDER: Array<{ key: string; label: string }> = [
+  { key: "cold-flu", label: "Cold & Flu" },
+  { key: "pain-relief", label: "Pain Relief" },
+  { key: "baby-care", label: "Baby Care" },
+  { key: "first-aid", label: "First Aid" },
+  { key: "chronic-care", label: "Chronic Care" },
+  { key: "vitamins", label: "Vitamins" },
+  { key: "personal-care", label: "Personal Care" },
+  { key: "other", label: "Other" },
+];
 
 export function PharmacyView({ vendor, products }: PharmacyViewProps) {
   const [activeTab, setActiveTab] = useState<string>("products");
@@ -23,33 +39,35 @@ export function PharmacyView({ vendor, products }: PharmacyViewProps) {
   const { addItem } = useCart();
   const { toast } = useToast();
 
-  // Only show inventory products (not bookings - those are handled by consultation system)
-  const inventoryProducts = products.filter(p => p.item_type !== 'booking');
+  // Only show inventory products (not bookings)
+  const inventoryProducts = useMemo(
+    () => products.filter((p) => p.item_type !== "booking"),
+    [products]
+  );
 
-  // Group inventory products by subcategory
-  const groupedProducts = inventoryProducts.reduce((acc, product) => {
-    const category = product.subcategory || product.category || 'General';
-    if (!acc[category]) {
-      acc[category] = [];
+  // Group inventory products by symptom_category
+  const groupedBySymptom = useMemo(() => {
+    const groups: Record<string, Product[]> = {};
+    for (const p of inventoryProducts) {
+      const key = (p.symptom_category as string) || "other";
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(p);
     }
-    acc[category].push(product);
-    return acc;
-  }, {} as Record<string, Product[]>);
+    return groups;
+  }, [inventoryProducts]);
 
-  // Fetch consultation types to check if vendor offers consultations
   useEffect(() => {
     const fetchConsultationTypes = async () => {
       const { data, error } = await supabase
-        .from('consultation_types')
-        .select('*')
-        .eq('vendor_id', vendor.id)
-        .eq('is_active', true);
+        .from("consultation_types")
+        .select("*")
+        .eq("vendor_id", vendor.id)
+        .eq("is_active", true);
 
       if (!error && data) {
         setConsultationTypes(data as unknown as ConsultationType[]);
       }
     };
-
     fetchConsultationTypes();
   }, [vendor.id]);
 
@@ -70,9 +88,16 @@ export function PharmacyView({ vendor, products }: PharmacyViewProps) {
   };
 
   const hasConsultations = consultationTypes.length > 0;
+  const hasAnyProducts = inventoryProducts.length > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24">
+      {/* Pharmacy hero — replaces the generic banner */}
+      <PharmacyHero vendor={vendor} />
+
+      {/* Vendor story strip */}
+      <PharmacyStory vendor={vendor} />
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-8">
           <TabsTrigger value="products" className="gap-2">
@@ -87,81 +112,55 @@ export function PharmacyView({ vendor, products }: PharmacyViewProps) {
 
         {/* Products Tab */}
         <TabsContent value="products" className="mt-0">
-          {inventoryProducts.length > 0 ? (
-            Object.entries(groupedProducts).map(([category, productsInCategory]) => (
-              <section key={category} className="mb-12">
-                <h3 className="text-2xl font-bold mb-6 capitalize flex items-center gap-2">
-                  <Pill className="h-5 w-5 text-primary" />
-                  {category}
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {productsInCategory.map((product: Product) => (
-                    <div 
-                      key={product.id} 
-                      className="bg-card border rounded-xl overflow-hidden group transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+          {hasAnyProducts ? (
+            SYMPTOM_ORDER.map(({ key, label }) => {
+              const items = groupedBySymptom[key];
+              if (!items || items.length === 0) return null;
+              return (
+                <section key={key} className="mb-12">
+                  <header className="mb-5">
+                    <h3
+                      className="text-xl md:text-2xl font-medium tracking-tight"
+                      style={{
+                        fontFamily: "var(--vendor-font-display)",
+                        color: "var(--vendor-primary)",
+                      }}
                     >
-                      <div className="relative">
-                        <div className="aspect-square bg-muted overflow-hidden">
-                          {product.image_url ? (
-                            <img
-                              src={product.image_url}
-                              alt={product.name}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-primary/10 flex items-center justify-center">
-                              <Pill className="h-16 w-16 text-muted-foreground" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="absolute top-2 right-2 flex flex-col gap-2">
-                          {product.is_popular && (
-                            <Badge className="shadow-md">
-                              Popular
-                            </Badge>
-                          )}
-                          {product.is_new && (
-                            <Badge variant="secondary" className="shadow-md">
-                              New
-                            </Badge>
-                          )}
-                          {product.requires_prescription && (
-                            <Badge variant="destructive" className="shadow-md">
-                              Rx Required
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      <div className="p-4 flex flex-col">
-                        <h4 className="font-semibold text-lg mb-1 line-clamp-1">{product.name}</h4>
-                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2 flex-grow">
-                          {product.description}
-                        </p>
-                        <div className="flex items-center justify-between mt-auto">
-                          <span className="text-xl font-bold text-primary">
-                            KSh {product.price.toLocaleString()}
-                          </span>
-                          <Button
-                            size="icon"
-                            className="rounded-full"
-                            onClick={() => handleAddProduct(product)}
-                            disabled={product.requires_prescription}
-                          >
-                            <Plus className="h-5 w-5" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            ))
+                      {label}
+                    </h3>
+                    <div
+                      className="mt-2 h-px w-full"
+                      style={{
+                        background:
+                          "color-mix(in srgb, var(--vendor-primary) 10%, transparent)",
+                      }}
+                    />
+                  </header>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                    {items.map((product) => (
+                      <PharmacyProductCard
+                        key={product.id}
+                        product={product}
+                        onAdd={handleAddProduct}
+                      />
+                    ))}
+                  </div>
+                </section>
+              );
+            })
           ) : (
-            <div className="text-center py-20 bg-muted/50 rounded-xl">
-              <ShoppingBasket className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-              <h3 className="text-2xl font-bold mb-2">No Products Available</h3>
-              <p className="text-muted-foreground max-w-md mx-auto">
-                This pharmacy hasn't added any products yet. Check back later!
+            <div
+              className="text-center py-20 rounded-xl border"
+              style={{
+                background: "var(--vendor-surface)",
+                borderColor:
+                  "color-mix(in srgb, var(--vendor-primary) 15%, transparent)",
+                color: "var(--vendor-primary)",
+              }}
+            >
+              <p className="max-w-md mx-auto">
+                No medicines in your cart yet. A pharmacist is on duty if you
+                need advice.
               </p>
             </div>
           )}
@@ -172,22 +171,43 @@ export function PharmacyView({ vendor, products }: PharmacyViewProps) {
           {hasConsultations ? (
             <section className="space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-bold flex items-center gap-2">
-                  <Stethoscope className="h-5 w-5 text-primary" />
+                <h3
+                  className="text-2xl font-medium flex items-center gap-2"
+                  style={{
+                    fontFamily: "var(--vendor-font-display)",
+                    color: "var(--vendor-primary)",
+                  }}
+                >
+                  <Stethoscope
+                    className="h-5 w-5"
+                    style={{ color: "var(--vendor-primary)" }}
+                  />
                   Available Consultations
                 </h3>
               </div>
-              
-              {/* Consultation Types Grid */}
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {consultationTypes.map((consultation) => (
-                  <div 
+                  <div
                     key={consultation.id}
-                    className="bg-card border rounded-xl p-6 hover:shadow-lg hover:border-primary/50 transition-all"
+                    className="bg-card border rounded-xl p-6 transition-colors"
+                    style={{
+                      borderColor:
+                        "color-mix(in srgb, var(--vendor-primary) 10%, transparent)",
+                    }}
                   >
                     <div className="flex items-start gap-4">
-                      <div className="p-3 bg-primary/10 rounded-full shrink-0">
-                        <Stethoscope className="h-6 w-6 text-primary" />
+                      <div
+                        className="p-3 rounded-full shrink-0"
+                        style={{
+                          background:
+                            "color-mix(in srgb, var(--vendor-primary) 10%, transparent)",
+                        }}
+                      >
+                        <Stethoscope
+                          className="h-6 w-6"
+                          style={{ color: "var(--vendor-primary)" }}
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
@@ -209,7 +229,10 @@ export function PharmacyView({ vendor, products }: PharmacyViewProps) {
                             <Clock className="h-4 w-4" />
                             {consultation.duration_minutes} min
                           </div>
-                          <div className="text-lg font-bold text-primary">
+                          <div
+                            className="text-lg font-bold"
+                            style={{ color: "var(--vendor-primary)" }}
+                          >
                             KSh {consultation.price.toLocaleString()}
                           </div>
                         </div>
@@ -219,15 +242,32 @@ export function PharmacyView({ vendor, products }: PharmacyViewProps) {
                 ))}
               </div>
 
-              {/* Book Now CTA */}
-              <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div
+                className="rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border"
+                style={{
+                  background:
+                    "color-mix(in srgb, var(--vendor-primary) 6%, transparent)",
+                  borderColor:
+                    "color-mix(in srgb, var(--vendor-primary) 15%, transparent)",
+                }}
+              >
                 <div>
-                  <h4 className="font-semibold text-lg">Ready to book?</h4>
+                  <h4
+                    className="font-semibold text-lg"
+                    style={{ color: "var(--vendor-primary)" }}
+                  >
+                    Ready to book?
+                  </h4>
                   <p className="text-muted-foreground">
                     Choose a consultation type, select your preferred time, and provide health details.
                   </p>
                 </div>
-                <Button size="lg" onClick={() => setShowBookingFlow(true)} className="gap-2 shrink-0">
+                <Button
+                  size="lg"
+                  onClick={() => setShowBookingFlow(true)}
+                  className="gap-2 shrink-0 text-white"
+                  style={{ background: "var(--vendor-primary)" }}
+                >
                   Book Consultation
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -238,12 +278,15 @@ export function PharmacyView({ vendor, products }: PharmacyViewProps) {
               <Stethoscope className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
               <h3 className="text-2xl font-bold mb-2">No Consultations Available</h3>
               <p className="text-muted-foreground max-w-md mx-auto">
-                This pharmacy doesn't offer consultation services yet. Check back later!
+                This pharmacy doesn't offer consultation services yet. Check back later.
               </p>
             </div>
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Sticky upload bar */}
+      <PharmacyStickyUploadBar vendorId={vendor.id} />
 
       {/* Consultation Booking Flow Dialog */}
       <Dialog open={showBookingFlow} onOpenChange={setShowBookingFlow}>
