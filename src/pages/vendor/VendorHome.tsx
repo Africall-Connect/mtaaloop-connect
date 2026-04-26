@@ -284,8 +284,11 @@ export default function VendorHome() {
           onSearchChange={setSearchQuery}
         />
 
-        {/* Hero Banner — suppressed for pharmacy & liquor archetypes (they render their own hero) */}
-        {vendor.operational_category !== 'pharmacy' && vendor.business_type !== 'liquor-store' && (
+        {/* Hero Banner — suppressed for archetypes that render their own hero */}
+        {vendor.operational_category !== 'pharmacy' &&
+         vendor.business_type !== 'liquor-store' &&
+         vendor.business_type !== 'groceries-essentials' &&
+         vendor.business_type !== 'living-essentials' && (
           <div className="relative h-40 md:h-56 overflow-hidden">
             <img
               src={getHeroImageUrl()}
