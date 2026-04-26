@@ -22,6 +22,8 @@ export interface Product {
   image_storage_path?: string | null;
   // Pharmacy-specific fields
   requires_prescription?: boolean;
+  symptom_category?: 'cold-flu' | 'pain-relief' | 'baby-care' | 'first-aid' | 'chronic-care' | 'vitamins' | 'personal-care' | 'other' | null;
+  dosage_form?: 'pill' | 'syrup' | 'cream' | 'drops' | 'inhaler' | 'sachet' | 'other' | null;
   // Booking-specific fields
   duration?: number;
 }
