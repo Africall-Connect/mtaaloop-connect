@@ -94,7 +94,7 @@ export function VendorNavbar({
               onClick={() => navigate('/account')}
               className="p-2 hover:bg-muted rounded-lg transition-colors"
             >
-              <User className="h-5 w-5 text-foreground" />
+              <User className="h-5 w-5 text-foreground" style={isLiquor ? { color: '#F5E6D3' } : undefined} />
             </button>
             <NotificationBell vendorId={vendor.id} />
           </div>
@@ -111,11 +111,16 @@ export function VendorNavbar({
                 <img
                   src={imageUrl}
                   alt={vendor.business_name}
-                  className="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover border-2 border-primary"
+                  className="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover border-2"
+                  style={
+                    isLiquor
+                      ? { borderColor: 'var(--vendor-accent)', filter: 'sepia(0.3) saturate(1.2)' }
+                      : { borderColor: 'hsl(var(--primary))' }
+                  }
                 />
               )}
               <div>
-                <h1 className="text-lg md:text-2xl font-bold">{vendor.business_name}</h1>
+                <h1 className="text-lg md:text-2xl font-bold" style={isLiquor ? { color: '#F5E6D3', fontFamily: 'var(--vendor-font-display)' } : undefined}>{vendor.business_name}</h1>
                 <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm text-muted-foreground flex-wrap">
                   <div className="flex items-center gap-1">
                     <Star className="h-3 w-3 md:h-4 md:w-4 fill-yellow-400 text-yellow-400" />
