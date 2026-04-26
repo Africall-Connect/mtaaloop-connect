@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { TermsAgreementCheckbox } from "@/components/TermsAgreementCheckbox";
 import { Card } from "@/components/ui/card";
 import { Eye, EyeOff, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -229,21 +229,17 @@ const Signup = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="terms"
-              checked={formData.agreeToTerms}
-              onCheckedChange={(checked) => 
-                setFormData({ ...formData, agreeToTerms: checked as boolean })
-              }
-            />
-            <Label htmlFor="terms" className="text-sm cursor-pointer">
-              I agree to the{" "}
-              <Link to="/terms" className="text-primary hover:underline">
-                Terms & Conditions
-              </Link>
-            </Label>
-          </div>
+          <TermsAgreementCheckbox
+            checked={formData.agreeToTerms}
+            onCheckedChange={(checked) =>
+              setFormData({ ...formData, agreeToTerms: checked })
+            }
+          >
+            I agree to the{" "}
+            <Link to="/terms" className="text-primary hover:underline">
+              Terms & Conditions
+            </Link>
+          </TermsAgreementCheckbox>
 
           <Button type="submit" className="w-full" size="lg" disabled={submitting}>
             {submitting ? "Creating Account..." : "Create Account"}

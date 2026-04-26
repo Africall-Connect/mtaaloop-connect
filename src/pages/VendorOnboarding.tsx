@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+import { TermsAgreementCheckbox } from "@/components/TermsAgreementCheckbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -972,11 +972,13 @@ const VendorOnboarding = () => {
               </div>
 
               {/* Terms */}
-              <div className="flex items-start space-x-2 pt-2">
-                <Checkbox id="terms" checked={agreedToTerms} onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)} className="mt-0.5" />
-                <Label htmlFor="terms" className="text-sm cursor-pointer leading-snug">
+              <div className="pt-2">
+                <TermsAgreementCheckbox
+                  checked={agreedToTerms}
+                  onCheckedChange={setAgreedToTerms}
+                >
                   I agree to MtaaLoop's terms and conditions and understand my application will be reviewed before activation.
-                </Label>
+                </TermsAgreementCheckbox>
               </div>
             </CardContent>
 

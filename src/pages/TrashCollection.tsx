@@ -7,9 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { TermsAgreementCheckbox } from "@/components/TermsAgreementCheckbox";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  initiateMpesaPayment,
+  pollMpesaTransaction,
+  formatPhoneNumber,
+} from "@/lib/megapay";
 
 const TrashCollection = () => {
   const navigate = useNavigate();
@@ -22,8 +28,13 @@ const TrashCollection = () => {
   const [estateName, setEstateName] = useState<string>("");
   const [estateId, setEstateId] = useState<string | null>(null);
   const [houseNumber, setHouseNumber] = useState<string>("");
+  const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [customerNotes, setCustomerNotes] = useState<string>("");
   const [includeTrashBag, setIncludeTrashBag] = useState(false);
+  const [mpesaWaiting, setMpesaWaiting] = useState(false);
+  // Subscription mode: 'one_time' | 'weekly' | 'biweekly' | 'monthly'
+  const [planMode, setPlanMode] = useState<'one_time' | 'weekly' | 'biweekly' | 'monthly'>('one_time');
+  const [dayOfWeek, setDayOfWeek] = useState<number>(1); // 0=Sun … 6=Sat, default Mon
   
   const trashCollectionFee = 30; // 30 shillings
   const trashBagFee = 5; // 5 shillings
@@ -80,6 +91,10 @@ const TrashCollection = () => {
           if (address) {
             setHouseNumber(address.unit_number || "");
           }
+
+          // Prefill phone from user metadata if available
+          const metaPhone = (metadata?.phone as string | undefined) || (user.phone as string | undefined);
+          if (metaPhone) setPhoneNumber(metaPhone);
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -111,15 +126,94 @@ const TrashCollection = () => {
       return;
     }
 
+    const formattedPhone = formatPhoneNumber(phoneNumber);
+    if (!/^254\d{9}$/.test(formattedPhone)) {
+      toast.error("Enter a valid Kenyan phone number (e.g. 0712345678)");
+      return;
+    }
+
+    // ── Subscription branch: create the subscription row, first pickup auto-fires on next sweep ──
+    if (planMode !== 'one_time') {
+      setIsProcessing(true);
+      try {
+        const { error: subError } = await supabase
+          .from('trash_subscriptions' as never)
+          .insert([
+            {
+              customer_id: user.id,
+              estate_id: estateId,
+              house: houseNumber,
+              full_name: fullName,
+              phone: formattedPhone,
+              amount: totalAmount,
+              frequency: planMode,
+              day_of_week: dayOfWeek,
+              status: 'active',
+            },
+          ] as never);
+        if (subError) throw subError;
+        toast.success(
+          `${planMode === 'weekly' ? 'Weekly' : planMode === 'biweekly' ? 'Bi-weekly' : 'Monthly'} trash subscription activated! First pickup will be scheduled automatically.`
+        );
+        navigate('/home');
+      } catch (err) {
+        toast.error(`Failed to create subscription: ${(err as Error).message}`);
+      } finally {
+        setIsProcessing(false);
+      }
+      return;
+    }
+
     setIsProcessing(true);
 
+    // ══════════════════════════════════════════════════════════════
+    // Step 1 — Fire M-Pesa STK push BEFORE creating the order row.
+    //          Only create the order after payment confirms.
+    // ══════════════════════════════════════════════════════════════
+    setMpesaWaiting(true);
+    let mpesaReceipt: string | null = null;
     try {
-      // Prepare customer notes with trash bag info
-      const notesWithBagInfo = includeTrashBag 
-        ? (customerNotes ? `${customerNotes}\n\n[TRASH BAG INCLUDED - KSh ${trashBagFee}]` : `[TRASH BAG INCLUDED - KSh ${trashBagFee}]`)
-        : customerNotes || null;
+      const reference = `TRASH-${Date.now()}`;
+      const stk = await initiateMpesaPayment(formattedPhone, totalAmount, reference);
+      if (!stk.success || !stk.transaction_request_id) {
+        toast.error(stk.error || "Failed to initiate M-Pesa payment");
+        setIsProcessing(false);
+        setMpesaWaiting(false);
+        return;
+      }
+      toast.success("Check your phone and enter M-Pesa PIN…");
+      const result = await pollMpesaTransaction(stk.transaction_request_id);
+      if (result.status !== "paid") {
+        toast.error(
+          result.status === "timeout"
+            ? "Payment timed out. Please try again."
+            : "Payment was not completed."
+        );
+        setIsProcessing(false);
+        setMpesaWaiting(false);
+        return;
+      }
+      mpesaReceipt = result.receipt || null;
+    } catch (mpesaErr: unknown) {
+      toast.error(
+        `M-Pesa error: ${mpesaErr instanceof Error ? mpesaErr.message : "Unknown error"}`
+      );
+      setIsProcessing(false);
+      setMpesaWaiting(false);
+      return;
+    }
+    setMpesaWaiting(false);
 
-      // Create trash collection order
+    try {
+      // Prepare customer notes with trash bag info + M-Pesa receipt for traceability
+      const baseNotes = includeTrashBag
+        ? (customerNotes ? `${customerNotes}\n\n[TRASH BAG INCLUDED - KSh ${trashBagFee}]` : `[TRASH BAG INCLUDED - KSh ${trashBagFee}]`)
+        : (customerNotes || "");
+      const notesWithBagInfo = mpesaReceipt
+        ? `${baseNotes}${baseNotes ? "\n\n" : ""}[M-PESA RECEIPT: ${mpesaReceipt}]`.trim()
+        : (baseNotes || null);
+
+      // Create trash collection order (payment already confirmed above)
       const { data: newOrder, error: orderError } = await supabase
         .from('trash_collection')
         .insert([
@@ -131,7 +225,7 @@ const TrashCollection = () => {
             full_name: fullName,
             customer_notes: notesWithBagInfo,
             status: 'pending',
-            payment_status: 'pending',
+            payment_status: 'paid',
           },
         ])
         .select('*')
@@ -249,6 +343,24 @@ const TrashCollection = () => {
               />
             </div>
 
+            {/* Phone Number (for M-Pesa STK) */}
+            <div className="space-y-3 mb-4">
+              <Label htmlFor="phone_number" className="flex items-center gap-2">
+                📱 M-Pesa Phone Number
+              </Label>
+              <Input
+                id="phone_number"
+                type="tel"
+                inputMode="tel"
+                placeholder="e.g. 0712345678"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                You'll receive an STK push to pay KSh {totalAmount} before the agent is dispatched.
+              </p>
+            </div>
+
             {/* Customer Notes */}
             <div className="space-y-3">
               <Label htmlFor="notes">📝 Special Instructions (Optional)</Label>
@@ -282,6 +394,63 @@ const TrashCollection = () => {
             </div>
           </div>
 
+          {/* Plan picker — one-time vs recurring subscription */}
+          <div className="border-t pt-4">
+            <Label className="block mb-2 font-semibold">Choose your plan</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                { key: 'one_time', label: 'One-time', hint: 'Single pickup' },
+                { key: 'weekly', label: 'Weekly', hint: 'Every 7 days' },
+                { key: 'biweekly', label: 'Bi-weekly', hint: 'Every 14 days' },
+                { key: 'monthly', label: 'Monthly', hint: 'Every 28 days' },
+              ] as const).map((p) => {
+                const isActive = planMode === p.key;
+                return (
+                  <button
+                    key={p.key}
+                    type="button"
+                    onClick={() => setPlanMode(p.key)}
+                    className={`rounded-lg border p-3 text-left transition-colors ${
+                      isActive
+                        ? 'border-primary bg-primary/5'
+                        : 'border-input hover:bg-muted/40'
+                    }`}
+                  >
+                    <div className="font-semibold text-sm">{p.label}</div>
+                    <div className="text-xs text-muted-foreground">{p.hint}</div>
+                  </button>
+                );
+              })}
+            </div>
+            {planMode !== 'one_time' && (
+              <div className="mt-3">
+                <Label className="block mb-2 text-sm">Preferred pickup day</Label>
+                <div className="flex gap-1.5 flex-wrap">
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => {
+                    const active = dayOfWeek === i;
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setDayOfWeek(i)}
+                        className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
+                          active
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-input hover:bg-muted/40'
+                        }`}
+                      >
+                        {d}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  You'll be charged KSh {totalAmount} automatically each pickup. Cancel anytime from your account.
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* Pricing */}
           <div className="border-t pt-4">
             <div className="flex justify-between items-center mb-2">
@@ -304,41 +473,48 @@ const TrashCollection = () => {
           </div>
 
           {/* Terms & Conditions */}
-          <div className="flex items-start space-x-2">
-            <Checkbox
-              id="terms"
-              checked={agreedToTerms}
-              onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-            />
-            <Label htmlFor="terms" className="text-sm cursor-pointer leading-relaxed">
-              I agree to Terms & Conditions. I understand that the agent will pick up trash from my doorstep/gate.
-            </Label>
-          </div>
+          <TermsAgreementCheckbox
+            checked={agreedToTerms}
+            onCheckedChange={setAgreedToTerms}
+          >
+            I agree to Terms & Conditions. I understand that the agent will pick up trash from my doorstep/gate.
+          </TermsAgreementCheckbox>
 
           {/* Submit Button */}
           <Button
             onClick={handlePlaceOrder}
             className="w-full"
             size="lg"
-            disabled={isProcessing || !agreedToTerms || !estateId}
+            disabled={isProcessing || mpesaWaiting || !agreedToTerms || !estateId}
           >
-            {isProcessing ? (
+            {mpesaWaiting ? (
+              <span className="flex items-center gap-2">
+                <span className="animate-spin">⏳</span>
+                Waiting for M-Pesa PIN...
+              </span>
+            ) : isProcessing ? (
               <span className="flex items-center gap-2">
                 <span className="animate-spin">⏳</span>
                 Processing Request...
               </span>
+            ) : planMode !== 'one_time' ? (
+              `Activate ${planMode === 'weekly' ? 'Weekly' : planMode === 'biweekly' ? 'Bi-weekly' : 'Monthly'} Subscription`
             ) : (
-              `Request Trash Collection - KSh ${totalAmount}`
+              `Pay KSh ${totalAmount} & Request Pickup`
             )}
           </Button>
 
-          {isProcessing && (
+          {(isProcessing || mpesaWaiting) && (
             <Card className="p-6 bg-emerald-50 border-emerald-200">
               <div className="text-center space-y-3">
-                <div className="text-4xl animate-bounce">🚛</div>
-                <h3 className="font-bold text-lg">Finding Nearest Agent</h3>
+                <div className="text-4xl animate-bounce">{mpesaWaiting ? "📱" : "🚛"}</div>
+                <h3 className="font-bold text-lg">
+                  {mpesaWaiting ? "Confirm on Your Phone" : "Finding Nearest Agent"}
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  We're notifying available agents in your area...
+                  {mpesaWaiting
+                    ? "Enter your M-Pesa PIN on the STK prompt to confirm payment..."
+                    : "We're notifying available agents in your area..."}
                 </p>
                 <div className="flex items-center justify-center gap-2 text-sm text-emerald-600">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
-import { Checkbox } from '@/components/ui/checkbox';
+import { TermsAgreementCheckbox } from '@/components/TermsAgreementCheckbox';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
@@ -356,17 +356,13 @@ export function ConsultationBookingFlow({ vendor, onClose }: ConsultationBooking
             </div>
           </div>
 
-          <Label className="flex items-start gap-3 p-4 border rounded-lg cursor-pointer hover:bg-accent">
-            <Checkbox
-              checked={agreedToTerms}
-              onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
-              className="mt-0.5"
-            />
-            <span className="text-sm">
-              I confirm that the information provided is accurate and I agree to the 
-              consultation terms and conditions.
-            </span>
-          </Label>
+          <TermsAgreementCheckbox
+            checked={agreedToTerms}
+            onCheckedChange={setAgreedToTerms}
+          >
+            I confirm that the information provided is accurate and I agree to the
+            consultation terms and conditions.
+          </TermsAgreementCheckbox>
 
           <Button
             className="w-full"

@@ -225,6 +225,7 @@ const MyConsultations = lazy(() => import("./pages/MyConsultations"));
 const MyBookings = lazy(() => import("./pages/MyBookings"));
 const ImageGeneratorPage = lazy(() => import("./pages/ImageGenerator"));
 const LaunchKit = lazy(() => import("./pages/LaunchKit"));
+const Terms = lazy(() => import("./pages/Terms"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -263,6 +264,7 @@ const App = () => (
             <Route path="/" element={<LandingPage />} />
             <Route path="/marketplace" element={<Index />} />
             <Route path="/launch-kit" element={<LaunchKit />} />
+            <Route path="/terms" element={<Terms />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/auth/signup" element={<Signup />} />
               <Route path="/auth/login" element={<Login />} />
