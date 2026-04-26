@@ -61,6 +61,7 @@ export interface VendorProfile {
   brand_surface?: string | null;
   font_display?: string | null;
   hero_style?: string | null;
+  story?: string | null;
   created_at: string;
   updated_at: string;
 }
