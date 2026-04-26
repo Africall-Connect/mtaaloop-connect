@@ -100,7 +100,16 @@ export function VendorNavbar({
             >
               <ShoppingCart className="h-5 w-5 text-foreground" style={cartIconStyle} />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                <span
+                  className="absolute -top-1 -right-1 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center"
+                  style={
+                    isMiniMart
+                      ? { background: 'var(--vendor-primary)', color: BLACK }
+                      : isToiletries
+                      ? { background: 'var(--vendor-primary)', color: PLUM }
+                      : { background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }
+                  }
+                >
                   {cartCount}
                 </span>
               )}
@@ -109,7 +118,18 @@ export function VendorNavbar({
               onClick={() => navigate('/account')}
               className="p-2 hover:bg-muted rounded-lg transition-colors"
             >
-              <User className="h-5 w-5 text-foreground" style={isLiquor ? { color: '#F5E6D3' } : undefined} />
+              <User
+                className="h-5 w-5 text-foreground"
+                style={
+                  isLiquor
+                    ? { color: CREAM }
+                    : isToiletries
+                    ? { color: PLUM }
+                    : isMiniMart
+                    ? { color: BLACK }
+                    : undefined
+                }
+              />
             </button>
             <NotificationBell vendorId={vendor.id} />
           </div>
