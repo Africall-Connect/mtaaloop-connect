@@ -1,96 +1,108 @@
-## Phase 1.1 — Per-Vendor Theming Foundation
+## Phase 1.3 — Lika Store Liquor Archetype
 
-Goal: ship the theming **plumbing** so every vendor storefront can later render with its own brand. Customer-visible UI must look pixel-identical after this phase.
+Goal: Transform Lika Store into a moody, brass-on-oxblood, occasion-driven liquor experience. Tsavo, Lisa Two, and LISA SERVICES remain pixel-identical.
 
-### Confirmed current state
-- `vendor_profiles` already has `tagline` (text, nullable) and `delivery_time` (text, nullable) — those columns will **not** be re-added; only seed values get written.
-- 5 new columns are needed: `brand_primary`, `brand_accent`, `brand_surface`, `font_display`, `hero_style`.
-- All 4 live vendors exist with exact name matches:
-  - Tsavo Pharmacy (`pharmacy`)
-  - Lika Store (`liquor-store`)
-  - Lisa Two Toiletries (`groceries-essentials`) — note trailing space in DB, will match with `TRIM(business_name) ILIKE`
-  - LISA SERVICES (`living-essentials`)
-- Generated Supabase types live in `src/integrations/supabase/types.ts` and regenerate automatically after migration — no manual edit. The hand-rolled `VendorProfile` interface in `src/types/database.ts` will get the 5 optional fields added.
+### Confirmed pre-state
+- Lika: `business_type='liquor-store'`, `operational_category='inventory'`, 127 products, brand tokens already seeded (#7B1E22 / #B08D57 / #1A0F0F, fraunces, hero 'moody'), `story` is NULL, `open_hours` is NULL.
+- `vendor_profiles.story` column exists (added in Phase 1.2). No need to re-add.
+- `products` has `symptom_category`, `requires_prescription`, `dosage_form`. No `occasion_tag` and no `abv` columns yet.
+- Currently Lika routes through `InventoryView` because `operational_category='inventory'`.
 
 ---
 
-### Step 1 — Migration (schema only)
+### STEP 1 — Database migration
 
-Add 5 nullable text columns to `public.vendor_profiles`:
-```
-brand_primary  text
-brand_accent   text
-brand_surface  text
-font_display   text
-hero_style     text
-```
+Add nullable columns to `products`:
+- `occasion_tag text` with CHECK constraint: `'friday-crew' | 'solo-wind-down' | 'last-minute-gift' | 'celebration' | 'cocktail-night' | 'beer-run' | 'other'`
+- `abv numeric(4,1)` (nullable, e.g. 5.0, 12.5, 40.0, 43.0)
 
-Then a single `UPDATE` to backfill defaults from `business_type` for **all rows** (so future vendors inherit too) using a `CASE` mapping:
+### STEP 2 — Backfill Lika data (insert/update)
 
-| business_type | primary | accent | surface | font | hero |
-|---|---|---|---|---|---|
-| pharmacy | #0F766E | #10B981 | #FFFFFF | inter-tight | clinical |
-| liquor-store | #7B1E22 | #B08D57 | #1A0F0F | fraunces | moody |
-| groceries-essentials | #F4C2C2 | #E8A4A4 | #FFF8F5 | default | soft |
-| living-essentials | #F5A524 | #000000 | #FFFEF5 | archivo | bold |
-| restaurant | #C65D3A | #F5A524 | #FFF8F0 | default | warm |
-| (else) | #1E2A78 | #F5A524 | #F7F3EC | default | default |
+- `vendor_profiles.story` for Lika → "Run by James from inside Tsavo — the bar that knows your usual, even on a Tuesday."
+- `products.occasion_tag` for all 127 Lika products via SQL `CASE` on subcategory + name keywords:
+  - Local Beer / Imported Beer / Stout / Cider → `beer-run`
+  - Whiskey & Bourbon premium (price > 3000 or single malt / Macallan / McVoy / McLaren) → `solo-wind-down`
+  - Whiskey & Bourbon mid → `friday-crew`
+  - Vodka / Gin / Tequila / Rum / Liqueur → `friday-crew`
+  - Champagne / Sparkling / Prosecco / gift packs → `celebration`
+  - Sparkling Wine → `celebration`; other Wine / Red Wine / White Wine → `solo-wind-down`
+  - Mixers / Syrups / Bitters / Cocktail kits → `cocktail-night`
+  - Miniatures → `last-minute-gift`
+  - Tobacco / Lighters / accessories → `other`
+  - Default → `friday-crew`
+- `products.abv` backfill: beer ~5.0, stout ~5.5, cider ~4.5, wine ~12.0, sparkling ~11.5, spirits ~40.0, premium spirits ~43.0, liqueur ~17.0, miniatures match parent category. Tobacco/accessories left null.
 
-No CHECK constraints — values are advisory. No RLS changes (existing policies cover all columns).
+### STEP 3 — Routing in `VendorHome.tsx`
 
-### Step 2 — Seed the 4 live vendors (data, via insert/update tool)
+In the "Render the correct view" block (around line 340):
+- Add: `business_type === 'liquor-store'` → render `<LiquorView />`.
+- Suppress generic hero banner for liquor archetype too (alongside pharmacy).
+- Suppress the sticky filter bar count for liquor (LiquorView uses occasion sections, not a flat product count). The Sort dropdown stays — restyled by VendorThemeProvider variables.
+- Lisa Two and LISA SERVICES (`living-essentials` / `groceries-essentials` / others) keep falling through to `InventoryView` exactly as today — pixel-identical.
 
-Run 4 targeted `UPDATE` statements (matched by `TRIM(LOWER(business_name))`) to write intentional values **including** `tagline` and `delivery_time`:
+### STEP 4 — New components in `src/components/vendor/liquor/`
 
-- **Tsavo Pharmacy** → primary `#0F766E`, accent `#10B981`, surface `#FFFFFF`, font `inter-tight`, hero `clinical`, tagline "Your trusted neighbourhood pharmacy", delivery_time "Within the hour"
-- **Lika Store** → primary `#7B1E22`, accent `#B08D57`, surface `#1A0F0F`, font `fraunces`, hero `moody`, tagline "For the Friday crew and the solo wind-down", delivery_time "Within the hour"
-- **Lisa Two Toiletries** → primary `#F4C2C2`, accent `#E8A4A4`, surface `#FFF8F5`, font `default`, hero `soft`, tagline "Skin, hair, home — the soft essentials", delivery_time "Today by 6pm"
-- **LISA SERVICES** → primary `#F5A524`, accent `#000000`, surface `#FFFEF5`, font `archivo`, hero `bold`, tagline "The mtaa mini-mart, restocked daily", delivery_time "45 min"
+**`LiquorAgeGate.tsx`** — Modal blocking storefront on first mount per vendor session. Uses `sessionStorage` key `liquor_age_verified_${vendorId}`. Not dismissible by Esc, outside click, or URL param. "Yes, I'm 18+" sets the flag; "No, take me back" navigates to `/home`. Background uses `--vendor-surface`, headline in Fraunces 500, primary button filled `--vendor-primary`, secondary outline `--vendor-accent`. Footer: "We do not sell to minors. ID may be required on delivery." at 60% opacity.
 
-Each `UPDATE` returns the affected row count; after running, a verification `SELECT` confirms all 4 are non-null on every theming column. (All 4 are confirmed present in DB right now — no skip/warn expected.)
+**`LiquorHero.tsx`** — Dark hero with radial gradient from `--vendor-primary` 25% top-left fading to transparent. Vendor logo (brass tint), name in Fraunces 500 cream-white (#F5E6D3), tagline in italic brass-80%. Three trust pills with brass-50% borders: "ID checked on delivery", delivery_time, "{neighbours_served} on the block trust us" (uses same 90-day distinct customer count as PharmacyStory; hides if <10). Primary CTA "Browse the bar" smooth-scrolls to `#occasions`. Secondary "Build a custom order" → WhatsApp deep link with prefilled message. No product photography.
 
-### Step 3 — `VendorThemeProvider` component
+**`LiquorStory.tsx`** — Story strip styled for dark theme. Background = `--vendor-surface` lifted 4% via `color-mix`. Top + bottom hairlines in brass 20%. Avatar + cream-white-90% story text. Right-aligned stat "Serving {n} neighbours" hidden if <10. Reads from `vendor.story`.
 
-New file: `src/components/vendor/VendorThemeProvider.tsx`
+**`LiquorProductCard.tsx`** — Card bg = `--vendor-surface` lifted 6%. Border 1px `--vendor-accent` 15% → 50% on hover, 300ms transition, no lift/scale/bounce. Full-bleed image with bottom dark vignette. Top-right: "18+" pill (primary bg, brass border, cream text). Bottom-left: occasion tag pill (brass 25% tint, brass text). Product name in Fraunces 500 cream-white. Price in tabular brass. ABV line beneath name at 60% opacity if present. "Reserve" button outline brass → fills brass on hover. `onAdd` calls `addItem` from CartContext (same shape as Pharmacy/Inventory).
 
-- Props: `{ vendor: { brand_primary?: string|null; brand_accent?: string|null; brand_surface?: string|null; font_display?: string|null; ... }, children: ReactNode }`
-- Renders a single `<div data-vendor-theme>` wrapper with inline `style` setting:
-  - `--vendor-primary` (fallback `#1E2A78`)
-  - `--vendor-accent` (fallback `#F5A524`)
-  - `--vendor-surface` (fallback `#F7F3EC`)
-  - `--vendor-font-display` mapped from `font_display`:
-    - `inter-tight` → `'Inter Tight', system-ui, sans-serif`
-    - `fraunces` → `'Fraunces', Georgia, serif`
-    - `archivo` → `'Archivo', system-ui, sans-serif`
-    - `default` / null → `inherit`
-- **Scoped, not global** — variables live on the wrapper div, never `document.documentElement`, so vendor portal / customer app are unaffected.
-- Inside a `useEffect`, lazy-injects a `<link rel="stylesheet">` to Google Fonts **only for the font this vendor needs** (skips if `default`). Uses a module-level `Set` to guard against duplicate injection across re-renders / vendor switches. Includes `display=swap` in the URL.
-- No visual styling applied to children — purely sets variables.
+**`LiquorView.tsx`** — Mirrors PharmacyView structure. Renders `LiquorAgeGate` first, `LiquorHero`, `LiquorStory`, then occasion sections in this fixed order, skipping empty:
+- Friday Crew → Solo Wind-Down → Cocktail Night → Celebration → Beer Run → Last-Minute Gift → Other
 
-### Step 4 — Wire into VendorHome
+Each section header in Fraunces 500 italic cream-white with brass-30% hairline. Anchor `id="occasions"` before first section so hero CTA can scroll to it. Footer disclaimer at bottom (50% opacity): "Drink responsibly. Do not drink and drive. Sale of alcohol prohibited to persons under 18." Empty section copy: "Nothing here right now — check back Friday." Wrapper has dark background = `--vendor-surface` and forces text inheritance to cream-white locally (only inside LiquorView, not leaking).
 
-In `src/pages/vendor/VendorHome.tsx`, wrap **only** the three existing return blocks (loading skeleton, "vendor not found", and the main render) in `<VendorThemeProvider vendor={vendor ?? null}>…</VendorThemeProvider>`. No other edits to the file. Nothing reads the variables yet — that's expected and intentional.
+### STEP 5 — VendorNavbar restyle for liquor
 
-### Step 5 — Types
+In `src/components/vendor/VendorNavbar.tsx`, extend the existing `isPharmacy` branch to also detect `isLiquor = vendor.business_type === 'liquor-store'`. When liquor:
+- nav background = `--vendor-surface`
+- text + icons = cream-white (#F5E6D3), brass on hover
+- cart icon and logo border = `--vendor-accent` (brass)
+Pharmacy styling unchanged. All other vendors render exactly as today.
 
-Add 5 optional fields to the hand-rolled `VendorProfile` interface in `src/types/database.ts`:
-```ts
-brand_primary?: string | null;
-brand_accent?: string | null;
-brand_surface?: string | null;
-font_display?: string | null;
-hero_style?: string | null;
-```
-The auto-generated `src/integrations/supabase/types.ts` refreshes itself after the migration — not edited manually.
+### STEP 6 — Voice pass (liquor-only, scoped to LiquorView)
 
-### Acceptance verification (post-implementation)
-1. `SELECT brand_primary, brand_accent, brand_surface, font_display, hero_style, tagline, delivery_time FROM vendor_profiles WHERE id IN (4 ids)` → all non-null.
-2. Visit `/vendor/tsavo-pharmacy` (and the other 3) → DOM inspector shows `<div data-vendor-theme style="--vendor-primary:#0F766E; …">`.
-3. Page renders pixel-identical to current state (no consumers of the variables yet).
-4. No TS errors, no console errors, no font flash on `/`, `/home`, `/checkout`, `/admin/*`, `/vendor-portal/*`.
+Inside LiquorView and LiquorProductCard only:
+- "Add to cart" → "Reserve"
+- Toast on add → `"Reserved"` / `"1x ${name} added to your reservation"`
+- Empty section → "Nothing here right now — check back Friday."
+- Empty cart message: not in scope here (FloatingCartButton lives outside), but the in-card button text is fully replaced.
+- No emoji anywhere in LiquorView components.
 
-### Out of scope (deferred to later phases)
-- Reading the CSS variables anywhere (hero, cards, buttons).
-- Category-archetype storefronts (clinical pharmacy, moody liquor, etc.).
-- Founder story block, hero redesign, archetype `*View` refactors.
-- Routing changes, vendor portal UI for editing brand fields.
+> Note: cart drawer/checkout copy ("Your reservation") would require touching cart components which the prompt forbids modifying outside this scope. The card-level "Reserve" CTA satisfies the storefront acceptance — system-wide cart copy stays cart-default. Will document this scope decision in the completion note.
+
+### STEP 7 — Type updates
+
+In `src/types/database.ts`, extend the `Product` interface with optional `occasion_tag?: string | null` and `abv?: number | null`. The generated `src/integrations/supabase/types.ts` is auto-managed by Supabase — leave untouched.
+
+---
+
+### Files created
+- `supabase/migrations/<ts>_liquor_archetype.sql` (schema only — adds `occasion_tag`, `abv`)
+- Data backfill via the insert tool (separate UPDATE statements for `vendor_profiles.story`, `products.occasion_tag`, `products.abv`)
+- `src/components/vendor/liquor/LiquorAgeGate.tsx`
+- `src/components/vendor/liquor/LiquorHero.tsx`
+- `src/components/vendor/liquor/LiquorStory.tsx`
+- `src/components/vendor/liquor/LiquorProductCard.tsx`
+- `src/pages/vendor/views/LiquorView.tsx`
+
+### Files edited
+- `src/pages/vendor/VendorHome.tsx` — add liquor routing branch + suppress hero banner for liquor
+- `src/components/vendor/VendorNavbar.tsx` — add liquor-archetype styling branch
+- `src/types/database.ts` — extend Product with `occasion_tag`, `abv`
+
+### Files NOT touched (proof of containment)
+- `src/pages/vendor/views/InventoryView.tsx`
+- `src/pages/vendor/views/PharmacyView.tsx`
+- `src/pages/vendor/views/ServiceView.tsx`, `BookingView.tsx`
+- All cart, checkout, tracking, vendor portal, admin, customer Home files
+
+### Acceptance verification plan
+- Lika storefront: age gate → moody hero → story → 6 occasion sections → disclaimer footer.
+- Tsavo storefront: still PharmacyView, identical to Phase 1.2.
+- Lisa Two & LISA SERVICES: still InventoryView, no visual change.
+- Customer home grid `/home`: VendorThemeProvider stays scoped to `VendorHome` only — no leak.
+- Reporting after run: counts per `occasion_tag`, count with `abv` set, products that fell into 'other'.
