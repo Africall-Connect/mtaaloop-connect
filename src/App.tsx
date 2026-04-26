@@ -13,7 +13,7 @@ import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
-import { CustomCursor } from "./components/CustomCursor";
+
 
 // Eagerly loaded (critical path)
 import LandingPage from "./pages/LandingPage";
@@ -253,7 +253,7 @@ const App = () => (
               <SubscriptionProvider>
                 <NotificationProvider>
                 <TooltipProvider>
-                <CustomCursor />
+                
                 <Toaster />
                 <Sonner />
                 <BrowserRouter>
