@@ -37,10 +37,17 @@ export function VendorNavbar({
   const cartCount = getItemCount();
 
   const isPharmacy = vendor.business_type === 'pharmacy';
+  const isLiquor = vendor.business_type === 'liquor-store';
   const navStyle = isPharmacy
     ? { background: 'var(--vendor-surface)', color: 'var(--vendor-primary)' }
+    : isLiquor
+    ? { background: 'var(--vendor-surface)', color: '#F5E6D3' }
     : undefined;
-  const cartIconStyle = isPharmacy ? { color: 'var(--vendor-primary)' } : undefined;
+  const cartIconStyle = isPharmacy
+    ? { color: 'var(--vendor-primary)' }
+    : isLiquor
+    ? { color: 'var(--vendor-accent)' }
+    : undefined;
 
   const getFallbackImageUrl = () => {
     switch (vendor.business_type) {
