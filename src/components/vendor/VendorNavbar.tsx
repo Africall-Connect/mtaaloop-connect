@@ -150,12 +150,29 @@ export function VendorNavbar({
                   style={
                     isLiquor
                       ? { borderColor: 'var(--vendor-accent)', filter: 'sepia(0.3) saturate(1.2)' }
+                      : isToiletries
+                      ? { borderColor: 'var(--vendor-primary)' }
+                      : isMiniMart
+                      ? { borderColor: BLACK, borderRadius: 0 }
                       : { borderColor: 'hsl(var(--primary))' }
                   }
                 />
               )}
               <div>
-                <h1 className="text-lg md:text-2xl font-bold" style={isLiquor ? { color: '#F5E6D3', fontFamily: 'var(--vendor-font-display)' } : undefined}>{vendor.business_name}</h1>
+                <h1
+                  className="text-lg md:text-2xl font-bold"
+                  style={
+                    isLiquor
+                      ? { color: CREAM, fontFamily: 'var(--vendor-font-display)' }
+                      : isToiletries
+                      ? { color: PLUM, fontFamily: 'var(--vendor-font-display)', fontWeight: 400 }
+                      : isMiniMart
+                      ? { color: BLACK, fontFamily: 'var(--vendor-font-display)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '-0.01em' }
+                      : undefined
+                  }
+                >
+                  {vendor.business_name}
+                </h1>
                 <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm text-muted-foreground flex-wrap">
                   <div className="flex items-center gap-1">
                     <Star className="h-3 w-3 md:h-4 md:w-4 fill-yellow-400 text-yellow-400" />
