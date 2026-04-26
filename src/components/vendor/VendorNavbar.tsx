@@ -38,15 +38,30 @@ export function VendorNavbar({
 
   const isPharmacy = vendor.business_type === 'pharmacy';
   const isLiquor = vendor.business_type === 'liquor-store';
+  const isToiletries = vendor.business_type === 'groceries-essentials';
+  const isMiniMart = vendor.business_type === 'living-essentials';
+
+  const PLUM = '#3D2B2B';
+  const BLACK = '#000000';
+  const CREAM = '#F5E6D3';
+
   const navStyle = isPharmacy
     ? { background: 'var(--vendor-surface)', color: 'var(--vendor-primary)' }
     : isLiquor
-    ? { background: 'var(--vendor-surface)', color: '#F5E6D3' }
+    ? { background: 'var(--vendor-surface)', color: CREAM }
+    : isToiletries
+    ? { background: 'var(--vendor-surface)', color: PLUM }
+    : isMiniMart
+    ? { background: 'var(--vendor-surface)', color: BLACK, borderTop: '4px solid #000' }
     : undefined;
   const cartIconStyle = isPharmacy
     ? { color: 'var(--vendor-primary)' }
     : isLiquor
     ? { color: 'var(--vendor-accent)' }
+    : isToiletries
+    ? { color: 'var(--vendor-primary)' }
+    : isMiniMart
+    ? { color: BLACK }
     : undefined;
 
   const getFallbackImageUrl = () => {
