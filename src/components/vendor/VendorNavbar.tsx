@@ -36,6 +36,12 @@ export function VendorNavbar({
   const { getItemCount } = useCart();
   const cartCount = getItemCount();
 
+  const isPharmacy = vendor.business_type === 'pharmacy';
+  const navStyle = isPharmacy
+    ? { background: 'var(--vendor-surface)', color: 'var(--vendor-primary)' }
+    : undefined;
+  const cartIconStyle = isPharmacy ? { color: 'var(--vendor-primary)' } : undefined;
+
   const getFallbackImageUrl = () => {
     switch (vendor.business_type) {
       case 'food-drinks':
@@ -54,7 +60,7 @@ export function VendorNavbar({
   const imageUrl = vendor.logo_url || vendor.cover_image_url || getFallbackImageUrl();
   
   return (
-    <nav className="bg-background/95 backdrop-blur-sm border-b sticky top-0 z-40">
+    <nav className="bg-background/95 backdrop-blur-sm border-b sticky top-0 z-40" style={navStyle}>
       {/* Mtaalopp Top Bar */}
       <div className="bg-muted/50 border-b px-4 md:px-6 py-2">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
