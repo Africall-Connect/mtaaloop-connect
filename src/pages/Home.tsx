@@ -402,12 +402,20 @@ const Home = () => {
             transition={{ duration: 0.5 }}
           >
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-              Welcome to Mtaaloop
+              Your mtaa, on tap
             </h1>
             <p className="text-muted-foreground text-sm md:text-base mt-1">
-              Everything you need, delivered to your doorstep
+              {(() => {
+                const openCount = vendors.filter(v => isVendorCurrentlyOpen(v.open_hours, v.is_open)).length;
+                const estateName = currentApartment?.name;
+                if (!estateName || estateName === "General Location" || estateName === "Select Location") {
+                  return "Stores near you, ready to deliver";
+                }
+                return `${openCount} store${openCount === 1 ? "" : "s"} in ${estateName} ready to deliver`;
+              })()}
             </p>
           </motion.div>
+
 
           <motion.form
             onSubmit={handleSearch}

@@ -4689,6 +4689,7 @@ export type Database = {
           paybill_number: string | null
           payout_method: string | null
           paystack_recipient_code: string | null
+          product_count: number
           products_and_services: string | null
           rating: number | null
           rejection_reason: string | null
@@ -4757,6 +4758,7 @@ export type Database = {
           paybill_number?: string | null
           payout_method?: string | null
           paystack_recipient_code?: string | null
+          product_count?: number
           products_and_services?: string | null
           rating?: number | null
           rejection_reason?: string | null
@@ -4825,6 +4827,7 @@ export type Database = {
           paybill_number?: string | null
           payout_method?: string | null
           paystack_recipient_code?: string | null
+          product_count?: number
           products_and_services?: string | null
           rating?: number | null
           rejection_reason?: string | null
@@ -5497,6 +5500,7 @@ export type Database = {
           paybill_number: string | null
           payout_method: string | null
           paystack_recipient_code: string | null
+          product_count: number
           products_and_services: string | null
           rating: number | null
           rejection_reason: string | null
