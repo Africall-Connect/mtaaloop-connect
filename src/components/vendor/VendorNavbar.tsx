@@ -76,7 +76,7 @@ export function VendorNavbar({
               onClick={() => navigate('/cart')}
               className="relative p-2 hover:bg-muted rounded-lg transition-colors"
             >
-              <ShoppingCart className="h-5 w-5 text-foreground" />
+              <ShoppingCart className="h-5 w-5 text-foreground" style={cartIconStyle} />
               {cartCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                   {cartCount}
