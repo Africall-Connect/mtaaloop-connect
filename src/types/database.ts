@@ -62,6 +62,8 @@ export interface VendorProfile {
   font_display?: string | null;
   hero_style?: string | null;
   story?: string | null;
+  // Denormalised product count (kept in sync via DB trigger)
+  product_count?: number | null;
   created_at: string;
   updated_at: string;
 }
