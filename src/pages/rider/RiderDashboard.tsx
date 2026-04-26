@@ -512,7 +512,7 @@ export default function RiderDashboard() {
                     </Button>
                     <Button
                       variant="outline"
-                      onClick={() => { const addr = delivery?.orders?.vendor_address || delivery?.orders?.delivery_address; if (addr) window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`, '_blank'); }}
+                      onClick={() => { const d = delivery as any; const addr = d?.orders?.vendor_address || d?.orders?.delivery_address; if (addr) window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`, '_blank'); }}
                       className="text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2 h-auto whitespace-nowrap"
                       size="sm"
                     >
@@ -552,7 +552,7 @@ export default function RiderDashboard() {
                     </Button>
                     <Button
                       variant="outline"
-                      onClick={() => { const addr = delivery?.orders?.delivery_address; if (addr) window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`, '_blank'); }}
+                      onClick={() => { const addr = (delivery as any)?.orders?.delivery_address; if (addr) window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`, '_blank'); }}
                       className="text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2 h-auto whitespace-nowrap"
                       size="sm"
                     >

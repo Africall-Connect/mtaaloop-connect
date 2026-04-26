@@ -26,7 +26,7 @@ export default function AdminReviews() {
 
   const fetchReviews = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await (supabase.from("reviews") as any)
+    const { data, error } = await ((supabase as any).from("reviews"))
       .select("*")
       .order("created_at", { ascending: false })
       .limit(500);
@@ -52,7 +52,7 @@ export default function AdminReviews() {
   });
 
   const toggleVisibility = async (r: Review) => {
-    const { error } = await (supabase.from("reviews") as any)
+    const { error } = await ((supabase as any).from("reviews"))
       .update({ is_visible: !(r.is_visible !== false) })
       .eq("id", r.id);
     if (error) toast.error("Update failed: " + error.message);
@@ -64,7 +64,7 @@ export default function AdminReviews() {
 
   const deleteReview = async (id: string) => {
     if (!confirm("Delete this review permanently?")) return;
-    const { error } = await (supabase.from("reviews") as any).delete().eq("id", id);
+    const { error } = await ((supabase as any).from("reviews")).delete().eq("id", id);
     if (error) toast.error("Delete failed: " + error.message);
     else {
       toast.success("Review deleted");

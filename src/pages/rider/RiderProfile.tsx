@@ -53,7 +53,7 @@ export default function RiderProfile() {
     const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
     if (uploadError) { toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" }); return; }
     const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
-    await supabase.from('rider_profiles').update({ avatar_url: urlData.publicUrl }).eq('id', user.id);
+    await supabase.from('rider_profiles').update({ avatar_url: urlData.publicUrl } as any).eq('id', user.id);
     setProfile(prev => prev ? { ...prev, avatar_url: urlData.publicUrl } : prev);
     toast({ title: "Avatar updated" });
   };

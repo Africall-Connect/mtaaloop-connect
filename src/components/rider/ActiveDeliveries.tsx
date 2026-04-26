@@ -312,7 +312,7 @@ export function ActiveDeliveries({ riderId }: ActiveDeliveriesProps) {
                       Navigate
                     </Button>
 
-                    <Button size="sm" variant="outline" className="gap-1" onClick={() => { const phone = delivery.order?.customer_phone; if (phone) window.location.href = `sms:${phone}`; }}>
+                    <Button size="sm" variant="outline" className="gap-1" onClick={() => { const phone = (delivery.order as any)?.customer_phone; if (phone) window.location.href = `sms:${phone}`; }}>
                       <MessageSquare className="h-4 w-4" />
                       Message Customer
                     </Button>

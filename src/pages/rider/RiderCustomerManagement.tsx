@@ -257,7 +257,7 @@ export default function RiderCustomerManagement() {
                           <MessageSquare className="h-4 w-4 mr-1" />
                           Message
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => toast.info(`${customer.name} has ${customer.total_orders} orders totalling KES ${customer.total_spent.toLocaleString()}`)}>
+                        <Button size="sm" variant="outline" onClick={() => toast.info(`${[customer.first_name, customer.last_name].filter(Boolean).join(' ') || customer.email} has ${customer.order_count} orders totalling KES ${customer.total_spent.toLocaleString()}`)}>
                           Order History
                         </Button>
                       </div>
