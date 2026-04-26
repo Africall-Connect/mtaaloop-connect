@@ -250,21 +250,23 @@ export default function VendorHome() {
 
   if (!vendor) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background flex items-center justify-center">
-        <div className="text-center px-4">
-          <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-            <ShoppingBag className="w-10 h-10 text-muted-foreground" />
+      <VendorThemeProvider vendor={null}>
+        <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background flex items-center justify-center">
+          <div className="text-center px-4">
+            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+              <ShoppingBag className="w-10 h-10 text-muted-foreground" />
+            </div>
+            <h1 className="text-2xl font-bold mb-2">Vendor not found</h1>
+            <p className="text-muted-foreground mb-4">The vendor you're looking for doesn't exist or is no longer available.</p>
+            <Button 
+              onClick={() => navigate('/home')}
+              className="gap-2"
+            >
+              Back to Home
+            </Button>
           </div>
-          <h1 className="text-2xl font-bold mb-2">Vendor not found</h1>
-          <p className="text-muted-foreground mb-4">The vendor you're looking for doesn't exist or is no longer available.</p>
-          <Button 
-            onClick={() => navigate('/home')}
-            className="gap-2"
-          >
-            Back to Home
-          </Button>
         </div>
-      </div>
+      </VendorThemeProvider>
     );
   }
 
