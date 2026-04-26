@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+import { TermsAgreementCheckbox } from "@/components/TermsAgreementCheckbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -459,12 +459,12 @@ const VendorSignup = () => {
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox id="terms" checked={agreedToTerms} onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)} />
-              <Label htmlFor="terms" className="text-sm cursor-pointer">
-                I agree to the terms and conditions
-              </Label>
-            </div>
+            <TermsAgreementCheckbox
+              checked={agreedToTerms}
+              onCheckedChange={setAgreedToTerms}
+            >
+              I agree to the terms and conditions
+            </TermsAgreementCheckbox>
           </CardContent>
           <CardFooter className="flex-col gap-4">
             <Button type="submit" className="w-full" disabled={loading}>

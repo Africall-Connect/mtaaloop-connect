@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
-import { Checkbox } from '@/components/ui/checkbox';
+import { TermsAgreementCheckbox } from '@/components/TermsAgreementCheckbox';
 import { BookingServiceCard } from './BookingServiceCard';
 import { BookingTimeSlotGrid } from './BookingTimeSlotGrid';
 import { BookingServiceType, BookingTimeSlot } from '@/types/booking';
@@ -379,18 +379,13 @@ export function BookingFlow({ vendor, initialService, onClose, onSuccess }: Book
               )}
             </div>
 
-            <div className="flex items-start space-x-2 pt-4">
-              <Checkbox
-                id="terms"
+            <div className="pt-4">
+              <TermsAgreementCheckbox
                 checked={agreedToTerms}
-                onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-              />
-              <label
-                htmlFor="terms"
-                className="text-sm text-muted-foreground leading-tight cursor-pointer"
+                onCheckedChange={setAgreedToTerms}
               >
                 I confirm this booking and agree to the vendor's terms and cancellation policy.
-              </label>
+              </TermsAgreementCheckbox>
             </div>
           </div>
         )}

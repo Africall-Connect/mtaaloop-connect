@@ -11,7 +11,7 @@ import { Card } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+import { TermsAgreementCheckbox } from "@/components/TermsAgreementCheckbox";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -655,16 +655,14 @@ const Checkout = () => {
             </Card>
 
             {/* Terms */}
-            <div className="flex items-start gap-2 px-3 py-3 border border-primary/30 bg-white/90 rounded-lg shadow-sm md:px-4 md:py-4">
-              <Checkbox
-                id="terms"
-                checked={agreedToTerms}
-                onCheckedChange={c => setAgreedToTerms(c as boolean)}
-              />
-              <Label htmlFor="terms" className="text-base font-medium text-foreground leading-tight cursor-pointer">
-                I agree to the <span className="text-[#2563EB] font-semibold underline">Terms & Conditions</span>
-              </Label>
-            </div>
+            <TermsAgreementCheckbox
+              variant="card"
+              checked={agreedToTerms}
+              onCheckedChange={setAgreedToTerms}
+            >
+              I agree to the <span className="text-[#2563EB] font-semibold underline">Terms & Conditions</span>
+            </TermsAgreementCheckbox>
+
           </div>
         )}
 
