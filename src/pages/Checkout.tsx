@@ -660,7 +660,6 @@ const Checkout = () => {
                 id="terms"
                 checked={agreedToTerms}
                 onCheckedChange={c => setAgreedToTerms(c as boolean)}
-                className="h-5 w-5 border-2 border-primary text-white bg-white focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-300"
               />
               <Label htmlFor="terms" className="text-base font-medium text-foreground leading-tight cursor-pointer">
                 I agree to the <span className="text-[#2563EB] font-semibold underline">Terms & Conditions</span>
