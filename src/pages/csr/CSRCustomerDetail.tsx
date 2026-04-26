@@ -34,7 +34,7 @@ export default function CSRCustomerDetail() {
       (supabase.from("customer_wallet_tx") as any).select("*").eq("user_id", customerId).order("created_at", { ascending: false }).limit(50),
       (supabase.from("support_tickets") as any).select("*").eq("customer_id", customerId).order("created_at", { ascending: false }).limit(50),
       (supabase.from("private_chats") as any).select("*").eq("initiator_id", customerId).order("created_at", { ascending: false }).limit(50),
-      (supabase.from("customer_addresses") as any).select("*").eq("user_id", customerId).limit(20),
+      ((supabase as any).from("customer_addresses")).select("*").eq("user_id", customerId).limit(20),
     ]);
     setOrders((o.data as any[]) || []);
     setWalletTx((wtx.data as any[]) || []);

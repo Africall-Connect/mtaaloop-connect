@@ -33,6 +33,7 @@ interface Conversation {
   customer_id: string;
   customer_name: string;
   customer_email: string;
+  customer_phone?: string;
   last_message: string;
   last_message_time: string;
   unread_count: number;
@@ -329,7 +330,7 @@ export default function CommunicationsHub() {
                         <Mail className="h-4 w-4 mr-1" />
                         Email
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => { setConversations(prev => prev.filter(c => c.customer_id !== selectedConv.customer_id)); setSelectedConv(null); toast.success("Conversation archived"); }}>
+                      <Button size="sm" variant="outline" onClick={() => { setConversations(prev => prev.filter(c => c.customer_id !== selectedConv.customer_id)); setSelectedConversation(null); toast.success("Conversation archived"); }}>
                         <Archive className="h-4 w-4" />
                       </Button>
                     </div>
