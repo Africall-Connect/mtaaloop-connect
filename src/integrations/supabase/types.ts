@@ -3133,16 +3133,21 @@ export type Database = {
           is_popular: boolean | null
           item_type: string | null
           low_stock_threshold: number | null
+          mart_aisle: string | null
           name: string
           occasion_tag: string | null
           orders_this_week: number | null
+          pack_size: string | null
           price: number
+          refill_cadence_days: number | null
           requires_address: boolean | null
           requires_prescription: boolean
           requires_schedule: boolean | null
+          skin_type: string | null
           stock_quantity: number | null
           subcategory: string | null
           symptom_category: string | null
+          toiletries_category: string | null
           unit_type: string | null
           updated_at: string | null
           vendor_id: string
@@ -3163,16 +3168,21 @@ export type Database = {
           is_popular?: boolean | null
           item_type?: string | null
           low_stock_threshold?: number | null
+          mart_aisle?: string | null
           name: string
           occasion_tag?: string | null
           orders_this_week?: number | null
+          pack_size?: string | null
           price: number
+          refill_cadence_days?: number | null
           requires_address?: boolean | null
           requires_prescription?: boolean
           requires_schedule?: boolean | null
+          skin_type?: string | null
           stock_quantity?: number | null
           subcategory?: string | null
           symptom_category?: string | null
+          toiletries_category?: string | null
           unit_type?: string | null
           updated_at?: string | null
           vendor_id: string
@@ -3193,16 +3203,21 @@ export type Database = {
           is_popular?: boolean | null
           item_type?: string | null
           low_stock_threshold?: number | null
+          mart_aisle?: string | null
           name?: string
           occasion_tag?: string | null
           orders_this_week?: number | null
+          pack_size?: string | null
           price?: number
+          refill_cadence_days?: number | null
           requires_address?: boolean | null
           requires_prescription?: boolean
           requires_schedule?: boolean | null
+          skin_type?: string | null
           stock_quantity?: number | null
           subcategory?: string | null
           symptom_category?: string | null
+          toiletries_category?: string | null
           unit_type?: string | null
           updated_at?: string | null
           vendor_id?: string

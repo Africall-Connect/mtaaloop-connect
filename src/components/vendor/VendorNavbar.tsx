@@ -38,15 +38,30 @@ export function VendorNavbar({
 
   const isPharmacy = vendor.business_type === 'pharmacy';
   const isLiquor = vendor.business_type === 'liquor-store';
+  const isToiletries = vendor.business_type === 'groceries-essentials';
+  const isMiniMart = vendor.business_type === 'living-essentials';
+
+  const PLUM = '#3D2B2B';
+  const BLACK = '#000000';
+  const CREAM = '#F5E6D3';
+
   const navStyle = isPharmacy
     ? { background: 'var(--vendor-surface)', color: 'var(--vendor-primary)' }
     : isLiquor
-    ? { background: 'var(--vendor-surface)', color: '#F5E6D3' }
+    ? { background: 'var(--vendor-surface)', color: CREAM }
+    : isToiletries
+    ? { background: 'var(--vendor-surface)', color: PLUM }
+    : isMiniMart
+    ? { background: 'var(--vendor-surface)', color: BLACK, borderTop: '4px solid #000' }
     : undefined;
   const cartIconStyle = isPharmacy
     ? { color: 'var(--vendor-primary)' }
     : isLiquor
     ? { color: 'var(--vendor-accent)' }
+    : isToiletries
+    ? { color: 'var(--vendor-primary)' }
+    : isMiniMart
+    ? { color: BLACK }
     : undefined;
 
   const getFallbackImageUrl = () => {
@@ -85,7 +100,16 @@ export function VendorNavbar({
             >
               <ShoppingCart className="h-5 w-5 text-foreground" style={cartIconStyle} />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                <span
+                  className="absolute -top-1 -right-1 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center"
+                  style={
+                    isMiniMart
+                      ? { background: 'var(--vendor-primary)', color: BLACK }
+                      : isToiletries
+                      ? { background: 'var(--vendor-primary)', color: PLUM }
+                      : { background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }
+                  }
+                >
                   {cartCount}
                 </span>
               )}
@@ -94,7 +118,18 @@ export function VendorNavbar({
               onClick={() => navigate('/account')}
               className="p-2 hover:bg-muted rounded-lg transition-colors"
             >
-              <User className="h-5 w-5 text-foreground" style={isLiquor ? { color: '#F5E6D3' } : undefined} />
+              <User
+                className="h-5 w-5 text-foreground"
+                style={
+                  isLiquor
+                    ? { color: CREAM }
+                    : isToiletries
+                    ? { color: PLUM }
+                    : isMiniMart
+                    ? { color: BLACK }
+                    : undefined
+                }
+              />
             </button>
             <NotificationBell vendorId={vendor.id} />
           </div>
@@ -115,12 +150,29 @@ export function VendorNavbar({
                   style={
                     isLiquor
                       ? { borderColor: 'var(--vendor-accent)', filter: 'sepia(0.3) saturate(1.2)' }
+                      : isToiletries
+                      ? { borderColor: 'var(--vendor-primary)' }
+                      : isMiniMart
+                      ? { borderColor: BLACK, borderRadius: 0 }
                       : { borderColor: 'hsl(var(--primary))' }
                   }
                 />
               )}
               <div>
-                <h1 className="text-lg md:text-2xl font-bold" style={isLiquor ? { color: '#F5E6D3', fontFamily: 'var(--vendor-font-display)' } : undefined}>{vendor.business_name}</h1>
+                <h1
+                  className="text-lg md:text-2xl font-bold"
+                  style={
+                    isLiquor
+                      ? { color: CREAM, fontFamily: 'var(--vendor-font-display)' }
+                      : isToiletries
+                      ? { color: PLUM, fontFamily: 'var(--vendor-font-display)', fontWeight: 400 }
+                      : isMiniMart
+                      ? { color: BLACK, fontFamily: 'var(--vendor-font-display)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '-0.01em' }
+                      : undefined
+                  }
+                >
+                  {vendor.business_name}
+                </h1>
                 <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm text-muted-foreground flex-wrap">
                   <div className="flex items-center gap-1">
                     <Star className="h-3 w-3 md:h-4 md:w-4 fill-yellow-400 text-yellow-400" />

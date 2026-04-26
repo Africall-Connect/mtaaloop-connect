@@ -27,6 +27,13 @@ export interface Product {
   // Liquor-specific fields (Phase 1.3)
   occasion_tag?: string | null;
   abv?: number | null;
+  // Toiletries-specific fields (Phase 1.4)
+  skin_type?: string | null;
+  toiletries_category?: string | null;
+  pack_size?: string | null;
+  refill_cadence_days?: number | null;
+  // MiniMart-specific fields (Phase 1.4)
+  mart_aisle?: string | null;
   // Booking-specific fields
   duration?: number;
 }

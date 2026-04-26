@@ -7,6 +7,8 @@ import { ServiceView } from "./views/ServiceView";
 import { BookingView } from "./views/BookingView";
 import { PharmacyView } from "./views/PharmacyView";
 import { LiquorView } from "./views/LiquorView";
+import { ToiletriesView } from "./views/ToiletriesView";
+import { MiniMartView } from "./views/MiniMartView";
 import { ShoppingBag, Package, ArrowUpDown, SlidersHorizontal } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -282,8 +284,11 @@ export default function VendorHome() {
           onSearchChange={setSearchQuery}
         />
 
-        {/* Hero Banner — suppressed for pharmacy & liquor archetypes (they render their own hero) */}
-        {vendor.operational_category !== 'pharmacy' && vendor.business_type !== 'liquor-store' && (
+        {/* Hero Banner — suppressed for archetypes that render their own hero */}
+        {vendor.operational_category !== 'pharmacy' &&
+         vendor.business_type !== 'liquor-store' &&
+         vendor.business_type !== 'groceries-essentials' &&
+         vendor.business_type !== 'living-essentials' && (
           <div className="relative h-40 md:h-56 overflow-hidden">
             <img
               src={getHeroImageUrl()}
@@ -306,40 +311,47 @@ export default function VendorHome() {
           </div>
         )}
 
-        {/* Filters Bar */}
-        <div className="sticky top-[140px] md:top-[180px] z-30 bg-background/95 backdrop-blur-sm border-b px-4 md:px-6 py-3">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between gap-4">
-              <p className="text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">{filteredProducts.length}</span> product{filteredProducts.length !== 1 ? 's' : ''} 
-                {activeSubcategoryName && (
-                  <span className="hidden sm:inline"> in <span className="text-primary font-medium">{activeSubcategoryName}</span></span>
-                )}
-              </p>
-              <div className="flex items-center gap-2">
-                <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
-                  <SelectTrigger className="w-[140px] md:w-[180px] h-9 text-xs md:text-sm">
-                    <ArrowUpDown className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="popular">Most Popular</SelectItem>
-                    <SelectItem value="newest">Newest First</SelectItem>
-                    <SelectItem value="price-low">Price: Low to High</SelectItem>
-                    <SelectItem value="price-high">Price: High to Low</SelectItem>
-                    <SelectItem value="name">Name A-Z</SelectItem>
-                  </SelectContent>
-                </Select>
+        {/* Filters Bar — hidden for archetypes with their own filtering UI */}
+        {vendor.business_type !== 'liquor-store' &&
+         vendor.business_type !== 'groceries-essentials' &&
+         vendor.business_type !== 'living-essentials' && (
+          <div className="sticky top-[140px] md:top-[180px] z-30 bg-background/95 backdrop-blur-sm border-b px-4 md:px-6 py-3">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">{filteredProducts.length}</span> product{filteredProducts.length !== 1 ? 's' : ''} 
+                  {activeSubcategoryName && (
+                    <span className="hidden sm:inline"> in <span className="text-primary font-medium">{activeSubcategoryName}</span></span>
+                  )}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+                    <SelectTrigger className="w-[140px] md:w-[180px] h-9 text-xs md:text-sm">
+                      <ArrowUpDown className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="popular">Most Popular</SelectItem>
+                      <SelectItem value="newest">Newest First</SelectItem>
+                      <SelectItem value="price-low">Price: Low to High</SelectItem>
+                      <SelectItem value="price-high">Price: High to Low</SelectItem>
+                      <SelectItem value="name">Name A-Z</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
-          {/* Liquor archetype takes precedence over operational_category for liquor-store vendors */}
           {vendor.business_type === 'liquor-store' ? (
             <LiquorView vendor={vendor} products={filteredProducts} />
+          ) : vendor.business_type === 'groceries-essentials' ? (
+            <ToiletriesView vendor={vendor} products={filteredProducts} />
+          ) : vendor.business_type === 'living-essentials' ? (
+            <MiniMartView vendor={vendor} products={filteredProducts} />
           ) : (
             <>
               {vendor.operational_category === 'inventory' && <InventoryView vendor={vendor} products={filteredProducts} />}
