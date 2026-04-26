@@ -130,6 +130,7 @@ export default function AdvancedOrdersManagement() {
       setOrders(
         (data || []).map((order: Record<string, unknown>): Order => ({
           id: order.id as string,
+          customer_id: order.customer_id as string,
           order_number: order.order_number as string | null,
           status: order.status as string,
           total_amount: order.total_amount as number,
