@@ -1,1 +1,2 @@
 Is push being fetched in Bolt.
+Auto-sync verified — Claude Code ↔ GitHub ↔ Lovable bridge active (2026-04-26).
