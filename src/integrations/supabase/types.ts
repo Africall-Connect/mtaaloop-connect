@@ -4640,6 +4640,9 @@ export type Database = {
           bank_code: string | null
           bank_name: string | null
           banner_url: string | null
+          brand_accent: string | null
+          brand_primary: string | null
+          brand_surface: string | null
           business_address: string
           business_description: string | null
           business_email: string | null
@@ -4657,8 +4660,10 @@ export type Database = {
           estate_id: string | null
           estate_or_building_name: string | null
           facebook_page: string | null
+          font_display: string | null
           has_fixed_menu: boolean | null
           has_packaging: boolean | null
+          hero_style: string | null
           id: string
           instagram_handle: string | null
           is_active: boolean | null
@@ -4702,6 +4707,9 @@ export type Database = {
           bank_code?: string | null
           bank_name?: string | null
           banner_url?: string | null
+          brand_accent?: string | null
+          brand_primary?: string | null
+          brand_surface?: string | null
           business_address: string
           business_description?: string | null
           business_email?: string | null
@@ -4719,8 +4727,10 @@ export type Database = {
           estate_id?: string | null
           estate_or_building_name?: string | null
           facebook_page?: string | null
+          font_display?: string | null
           has_fixed_menu?: boolean | null
           has_packaging?: boolean | null
+          hero_style?: string | null
           id?: string
           instagram_handle?: string | null
           is_active?: boolean | null
@@ -4764,6 +4774,9 @@ export type Database = {
           bank_code?: string | null
           bank_name?: string | null
           banner_url?: string | null
+          brand_accent?: string | null
+          brand_primary?: string | null
+          brand_surface?: string | null
           business_address?: string
           business_description?: string | null
           business_email?: string | null
@@ -4781,8 +4794,10 @@ export type Database = {
           estate_id?: string | null
           estate_or_building_name?: string | null
           facebook_page?: string | null
+          font_display?: string | null
           has_fixed_menu?: boolean | null
           has_packaging?: boolean | null
+          hero_style?: string | null
           id?: string
           instagram_handle?: string | null
           is_active?: boolean | null
@@ -5430,6 +5445,9 @@ export type Database = {
           bank_code: string | null
           bank_name: string | null
           banner_url: string | null
+          brand_accent: string | null
+          brand_primary: string | null
+          brand_surface: string | null
           business_address: string
           business_description: string | null
           business_email: string | null
@@ -5447,8 +5465,10 @@ export type Database = {
           estate_id: string | null
           estate_or_building_name: string | null
           facebook_page: string | null
+          font_display: string | null
           has_fixed_menu: boolean | null
           has_packaging: boolean | null
+          hero_style: string | null
           id: string
           instagram_handle: string | null
           is_active: boolean | null
