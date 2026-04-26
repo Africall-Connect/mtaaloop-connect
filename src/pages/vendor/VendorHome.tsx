@@ -7,6 +7,8 @@ import { ServiceView } from "./views/ServiceView";
 import { BookingView } from "./views/BookingView";
 import { PharmacyView } from "./views/PharmacyView";
 import { LiquorView } from "./views/LiquorView";
+import { ToiletriesView } from "./views/ToiletriesView";
+import { MiniMartView } from "./views/MiniMartView";
 import { ShoppingBag, Package, ArrowUpDown, SlidersHorizontal } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
