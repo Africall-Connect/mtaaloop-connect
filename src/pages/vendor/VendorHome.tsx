@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { FloatingCartButton } from "@/components/FloatingCartButton";
 import { VendorWithProducts, Product } from "@/types/database";
+import { VendorThemeProvider } from "@/components/vendor/VendorThemeProvider";
 import {
   Select,
   SelectContent,
@@ -227,21 +228,23 @@ export default function VendorHome() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-          <Skeleton className="h-48 w-full rounded-2xl mb-8" />
-          <Skeleton className="h-8 w-48 mb-6" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {[1, 2, 3, 4].map(i => (
-              <Skeleton key={i} className="h-64 w-full rounded-xl" />
-            ))}
+      <VendorThemeProvider vendor={vendor}>
+        <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+            <Skeleton className="h-48 w-full rounded-2xl mb-8" />
+            <Skeleton className="h-8 w-48 mb-6" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+              {[1, 2, 3, 4].map(i => (
+                <Skeleton key={i} className="h-64 w-full rounded-xl" />
+              ))}
+            </div>
           </div>
-        </div>
 
-        {getItemCount() > 0 && (
-          <FloatingCartButton />
-        )}
-      </div>
+          {getItemCount() > 0 && (
+            <FloatingCartButton />
+          )}
+        </div>
+      </VendorThemeProvider>
     );
   }
 
