@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { FloatingCartButton } from "@/components/FloatingCartButton";
 import { VendorWithProducts, Product } from "@/types/database";
+import { VendorThemeProvider } from "@/components/vendor/VendorThemeProvider";
 import {
   Select,
   SelectContent,
@@ -227,119 +228,125 @@ export default function VendorHome() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-          <Skeleton className="h-48 w-full rounded-2xl mb-8" />
-          <Skeleton className="h-8 w-48 mb-6" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {[1, 2, 3, 4].map(i => (
-              <Skeleton key={i} className="h-64 w-full rounded-xl" />
-            ))}
+      <VendorThemeProvider vendor={vendor}>
+        <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+            <Skeleton className="h-48 w-full rounded-2xl mb-8" />
+            <Skeleton className="h-8 w-48 mb-6" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+              {[1, 2, 3, 4].map(i => (
+                <Skeleton key={i} className="h-64 w-full rounded-xl" />
+              ))}
+            </div>
           </div>
-        </div>
 
-        {getItemCount() > 0 && (
-          <FloatingCartButton />
-        )}
-      </div>
+          {getItemCount() > 0 && (
+            <FloatingCartButton />
+          )}
+        </div>
+      </VendorThemeProvider>
     );
   }
 
   if (!vendor) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background flex items-center justify-center">
-        <div className="text-center px-4">
-          <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-            <ShoppingBag className="w-10 h-10 text-muted-foreground" />
+      <VendorThemeProvider vendor={null}>
+        <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background flex items-center justify-center">
+          <div className="text-center px-4">
+            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+              <ShoppingBag className="w-10 h-10 text-muted-foreground" />
+            </div>
+            <h1 className="text-2xl font-bold mb-2">Vendor not found</h1>
+            <p className="text-muted-foreground mb-4">The vendor you're looking for doesn't exist or is no longer available.</p>
+            <Button 
+              onClick={() => navigate('/home')}
+              className="gap-2"
+            >
+              Back to Home
+            </Button>
           </div>
-          <h1 className="text-2xl font-bold mb-2">Vendor not found</h1>
-          <p className="text-muted-foreground mb-4">The vendor you're looking for doesn't exist or is no longer available.</p>
-          <Button 
-            onClick={() => navigate('/home')}
-            className="gap-2"
-          >
-            Back to Home
-          </Button>
         </div>
-      </div>
+      </VendorThemeProvider>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background">
-      <VendorNavbar 
-        vendor={{ ...vendor, slug: vendorSlug, vendor_categories: dbCategories }} 
-        selectedSubcategory={selectedSubcategory}
-        onSubcategoryChange={setSelectedSubcategory}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-      />
-
-      {/* Hero Banner */}
-      <div className="relative h-40 md:h-56 overflow-hidden">
-        <img
-          src={getHeroImageUrl()}
-          alt={vendor.business_name}
-          className="w-full h-full object-cover"
+    <VendorThemeProvider vendor={vendor}>
+      <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background">
+        <VendorNavbar 
+          vendor={{ ...vendor, slug: vendorSlug, vendor_categories: dbCategories }} 
+          selectedSubcategory={selectedSubcategory}
+          onSubcategoryChange={setSelectedSubcategory}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8">
-          <div className="max-w-7xl mx-auto">
-            <h2 className="text-2xl md:text-4xl font-bold text-foreground drop-shadow-sm">
-              Welcome to {vendor.business_name}
-            </h2>
-            {vendor.tagline && (
-              <p className="text-sm md:text-lg text-muted-foreground mt-1 max-w-2xl">
-                {vendor.tagline}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
 
-      {/* Filters Bar */}
-      <div className="sticky top-[140px] md:top-[180px] z-30 bg-background/95 backdrop-blur-sm border-b px-4 md:px-6 py-3">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{filteredProducts.length}</span> product{filteredProducts.length !== 1 ? 's' : ''} 
-              {activeSubcategoryName && (
-                <span className="hidden sm:inline"> in <span className="text-primary font-medium">{activeSubcategoryName}</span></span>
+        {/* Hero Banner */}
+        <div className="relative h-40 md:h-56 overflow-hidden">
+          <img
+            src={getHeroImageUrl()}
+            alt={vendor.business_name}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8">
+            <div className="max-w-7xl mx-auto">
+              <h2 className="text-2xl md:text-4xl font-bold text-foreground drop-shadow-sm">
+                Welcome to {vendor.business_name}
+              </h2>
+              {vendor.tagline && (
+                <p className="text-sm md:text-lg text-muted-foreground mt-1 max-w-2xl">
+                  {vendor.tagline}
+                </p>
               )}
-            </p>
-            <div className="flex items-center gap-2">
-              <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
-                <SelectTrigger className="w-[140px] md:w-[180px] h-9 text-xs md:text-sm">
-                  <ArrowUpDown className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="popular">Most Popular</SelectItem>
-                  <SelectItem value="newest">Newest First</SelectItem>
-                  <SelectItem value="price-low">Price: Low to High</SelectItem>
-                  <SelectItem value="price-high">Price: High to Low</SelectItem>
-                  <SelectItem value="name">Name A-Z</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
-        {/* Render the correct view based on operational_category */}
-        {vendor.operational_category === 'inventory' && <InventoryView vendor={vendor} products={filteredProducts} />}
-        {vendor.operational_category === 'service' && <ServiceView vendor={vendor} products={filteredProducts} />}
-        {vendor.operational_category === 'booking' && <BookingView vendor={vendor} products={filteredProducts} />}
-        {vendor.operational_category === 'pharmacy' && <PharmacyView vendor={vendor} products={filteredProducts} />}
-        {!vendor.operational_category && <InventoryView vendor={vendor} products={filteredProducts} />}
-      </div>
+        {/* Filters Bar */}
+        <div className="sticky top-[140px] md:top-[180px] z-30 bg-background/95 backdrop-blur-sm border-b px-4 md:px-6 py-3">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">{filteredProducts.length}</span> product{filteredProducts.length !== 1 ? 's' : ''} 
+                {activeSubcategoryName && (
+                  <span className="hidden sm:inline"> in <span className="text-primary font-medium">{activeSubcategoryName}</span></span>
+                )}
+              </p>
+              <div className="flex items-center gap-2">
+                <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+                  <SelectTrigger className="w-[140px] md:w-[180px] h-9 text-xs md:text-sm">
+                    <ArrowUpDown className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="popular">Most Popular</SelectItem>
+                    <SelectItem value="newest">Newest First</SelectItem>
+                    <SelectItem value="price-low">Price: Low to High</SelectItem>
+                    <SelectItem value="price-high">Price: High to Low</SelectItem>
+                    <SelectItem value="name">Name A-Z</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {/* Floating Cart Button */}
-      {getItemCount() > 0 && (
-        <FloatingCartButton />
-      )}
-    </div>
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
+          {/* Render the correct view based on operational_category */}
+          {vendor.operational_category === 'inventory' && <InventoryView vendor={vendor} products={filteredProducts} />}
+          {vendor.operational_category === 'service' && <ServiceView vendor={vendor} products={filteredProducts} />}
+          {vendor.operational_category === 'booking' && <BookingView vendor={vendor} products={filteredProducts} />}
+          {vendor.operational_category === 'pharmacy' && <PharmacyView vendor={vendor} products={filteredProducts} />}
+          {!vendor.operational_category && <InventoryView vendor={vendor} products={filteredProducts} />}
+        </div>
+
+        {/* Floating Cart Button */}
+        {getItemCount() > 0 && (
+          <FloatingCartButton />
+        )}
+      </div>
+    </VendorThemeProvider>
   );
 }

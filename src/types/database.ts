@@ -53,6 +53,12 @@ export interface VendorProfile {
   years_in_business: number | null;
   certifications: any;
   operational_category: string | null;
+  // Per-vendor theming (Phase 1.1)
+  brand_primary?: string | null;
+  brand_accent?: string | null;
+  brand_surface?: string | null;
+  font_display?: string | null;
+  hero_style?: string | null;
   created_at: string;
   updated_at: string;
 }
