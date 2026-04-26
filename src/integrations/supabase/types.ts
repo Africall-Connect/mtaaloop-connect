@@ -3118,6 +3118,7 @@ export type Database = {
       }
       products: {
         Row: {
+          abv: number | null
           category: string
           created_at: string | null
           customizations: Json | null
@@ -3133,6 +3134,7 @@ export type Database = {
           item_type: string | null
           low_stock_threshold: number | null
           name: string
+          occasion_tag: string | null
           orders_this_week: number | null
           price: number
           requires_address: boolean | null
@@ -3146,6 +3148,7 @@ export type Database = {
           vendor_id: string
         }
         Insert: {
+          abv?: number | null
           category: string
           created_at?: string | null
           customizations?: Json | null
@@ -3161,6 +3164,7 @@ export type Database = {
           item_type?: string | null
           low_stock_threshold?: number | null
           name: string
+          occasion_tag?: string | null
           orders_this_week?: number | null
           price: number
           requires_address?: boolean | null
@@ -3174,6 +3178,7 @@ export type Database = {
           vendor_id: string
         }
         Update: {
+          abv?: number | null
           category?: string
           created_at?: string | null
           customizations?: Json | null
@@ -3189,6 +3194,7 @@ export type Database = {
           item_type?: string | null
           low_stock_threshold?: number | null
           name?: string
+          occasion_tag?: string | null
           orders_this_week?: number | null
           price?: number
           requires_address?: boolean | null

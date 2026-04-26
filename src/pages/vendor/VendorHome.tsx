@@ -6,6 +6,7 @@ import { InventoryView } from "./views/InventoryView";
 import { ServiceView } from "./views/ServiceView";
 import { BookingView } from "./views/BookingView";
 import { PharmacyView } from "./views/PharmacyView";
+import { LiquorView } from "./views/LiquorView";
 import { ShoppingBag, Package, ArrowUpDown, SlidersHorizontal } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -281,8 +282,8 @@ export default function VendorHome() {
           onSearchChange={setSearchQuery}
         />
 
-        {/* Hero Banner — suppressed for pharmacy archetype (PharmacyView renders its own clinical hero) */}
-        {vendor.operational_category !== 'pharmacy' && (
+        {/* Hero Banner — suppressed for pharmacy & liquor archetypes (they render their own hero) */}
+        {vendor.operational_category !== 'pharmacy' && vendor.business_type !== 'liquor-store' && (
           <div className="relative h-40 md:h-56 overflow-hidden">
             <img
               src={getHeroImageUrl()}
@@ -336,12 +337,18 @@ export default function VendorHome() {
 
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
-          {/* Render the correct view based on operational_category */}
-          {vendor.operational_category === 'inventory' && <InventoryView vendor={vendor} products={filteredProducts} />}
-          {vendor.operational_category === 'service' && <ServiceView vendor={vendor} products={filteredProducts} />}
-          {vendor.operational_category === 'booking' && <BookingView vendor={vendor} products={filteredProducts} />}
-          {vendor.operational_category === 'pharmacy' && <PharmacyView vendor={vendor} products={filteredProducts} />}
-          {!vendor.operational_category && <InventoryView vendor={vendor} products={filteredProducts} />}
+          {/* Liquor archetype takes precedence over operational_category for liquor-store vendors */}
+          {vendor.business_type === 'liquor-store' ? (
+            <LiquorView vendor={vendor} products={filteredProducts} />
+          ) : (
+            <>
+              {vendor.operational_category === 'inventory' && <InventoryView vendor={vendor} products={filteredProducts} />}
+              {vendor.operational_category === 'service' && <ServiceView vendor={vendor} products={filteredProducts} />}
+              {vendor.operational_category === 'booking' && <BookingView vendor={vendor} products={filteredProducts} />}
+              {vendor.operational_category === 'pharmacy' && <PharmacyView vendor={vendor} products={filteredProducts} />}
+              {!vendor.operational_category && <InventoryView vendor={vendor} products={filteredProducts} />}
+            </>
+          )}
         </div>
 
         {/* Floating Cart Button */}
