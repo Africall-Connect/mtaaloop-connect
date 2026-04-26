@@ -24,6 +24,9 @@ export interface Product {
   requires_prescription?: boolean;
   symptom_category?: string | null;
   dosage_form?: string | null;
+  // Liquor-specific fields (Phase 1.3)
+  occasion_tag?: string | null;
+  abv?: number | null;
   // Booking-specific fields
   duration?: number;
 }
