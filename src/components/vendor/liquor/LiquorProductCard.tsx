@@ -1,5 +1,6 @@
 import { Product } from "@/types/database";
 import { Package } from "lucide-react";
+import { handleProductImageError } from "@/lib/placeholderImages";
 
 interface LiquorProductCardProps {
   product: Product & { occasion_tag?: string | null; abv?: number | null };
@@ -46,6 +47,8 @@ export function LiquorProductCard({ product, onAdd }: LiquorProductCardProps) {
             src={product.image_url}
             alt={product.name}
             className="w-full h-full object-cover"
+            loading="lazy"
+            onError={handleProductImageError(product.category || 'liquor')}
           />
         ) : (
           <div
