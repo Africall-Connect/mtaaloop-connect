@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { LogIn, ChevronDown, Sparkles, Video } from "lucide-react";
+import { LogIn, ChevronDown, Sparkles, Video, Menu } from "lucide-react";
 import { MtaaLoopOrbit } from "@/components/MtaaLoopLogo";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -58,37 +58,17 @@ export const HeroSection = () => {
       <CartoonIllustrations />
       <FloatingIcons />
 
-      {/* Announcement - waves in from right */}
-      <motion.div
-        {...waveFromRight(0.1)}
-        className="absolute top-16 left-0 right-0 z-30 mx-6"
-      >
-        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 text-white py-3 px-6 rounded-2xl shadow-2xl border border-white/10 backdrop-blur-sm">
-          <div className="container mx-auto flex items-center justify-between max-w-6xl">
-            <div className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center animate-pulse">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <span className="font-bold tracking-wide">MtaaLoop Connect — Live Now</span>
-              <span className="hidden sm:inline text-white/80 text-sm">Random video chats with your actual neighbors</span>
-            </div>
-            <Button size="sm" onClick={handleTryConnect}
-              className="bg-white/20 text-white hover:bg-white/30 font-semibold border border-white/20 backdrop-blur-sm rounded-xl">
-              Try It
-            </Button>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Nav - waves in from left */}
+      {/* Nav - waves in from left (always on top) */}
       <motion.nav {...waveFromLeft(0)}
-        className="absolute top-0 w-full py-4 px-6 flex justify-between items-center z-20"
+        className="absolute top-0 w-full py-3 sm:py-4 px-3 sm:px-6 flex justify-between items-center gap-2 z-30"
       >
-        <div className="flex items-center gap-1">
-          <MtaaLoopOrbit size={48} />
-          <span className="text-2xl font-black text-foreground tracking-tight">Mtaaloop</span>
+        <div className="flex items-center gap-1 min-w-0">
+          <MtaaLoopOrbit size={40} />
+          <span className="text-xl sm:text-2xl font-black text-foreground tracking-tight truncate">Mtaaloop</span>
         </div>
-        <div className="flex gap-2">
+
+        {/* Desktop nav */}
+        <div className="hidden md:flex gap-2">
           <Button variant="ghost" onClick={handleTryConnect} className="gap-1 rounded-xl">
             <Video className="h-4 w-4" /> Connect
           </Button>
@@ -108,7 +88,67 @@ export const HeroSection = () => {
           <Button variant="ghost" onClick={() => navigate('/auth/login')} className="rounded-xl">Log In</Button>
           <Button className="bg-primary hover:bg-primary/90 text-white rounded-xl" onClick={() => navigate('/auth/signup')}>Get Started</Button>
         </div>
+
+        {/* Mobile nav: Log In always visible + hamburger */}
+        <div className="flex md:hidden items-center gap-1.5 shrink-0">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/auth/login')}
+            className="rounded-xl h-11 px-3 text-sm font-semibold"
+          >
+            Log In
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="Open menu"
+                className="rounded-xl h-11 w-11 bg-white/70 backdrop-blur-sm border-white/60"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-60 bg-background border shadow-lg z-50">
+              <DropdownMenuItem
+                onClick={() => navigate('/auth/signup')}
+                className="font-semibold text-primary"
+              >
+                ✨ Get Started — Free
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleTryConnect}>
+                <Video className="h-4 w-4 mr-2" /> Connect (Live Video)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/auth/vendor-signup')}>Join as Vendor</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/auth/estate-signup')}>Register Estate</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/auth/rider-signup')}>Become a Rider</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/launch-kit')}>Launch Kit 🚀</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </motion.nav>
+
+      {/* Announcement - sits below the nav on mobile, original spot on desktop */}
+      <motion.div
+        {...waveFromRight(0.1)}
+        className="absolute top-[68px] sm:top-20 left-0 right-0 z-20 mx-3 sm:mx-6"
+      >
+        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 text-white py-2 sm:py-3 px-3 sm:px-6 rounded-2xl shadow-2xl border border-white/10 backdrop-blur-sm">
+          <div className="container mx-auto flex items-center justify-between gap-2 max-w-6xl">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="hidden sm:flex w-7 h-7 rounded-full bg-white/20 items-center justify-center animate-pulse shrink-0">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <span className="font-bold tracking-wide text-sm sm:text-base truncate">MtaaLoop Connect — Live</span>
+              <span className="hidden sm:inline text-white/80 text-sm">Random video chats with your actual neighbors</span>
+            </div>
+            <Button size="sm" onClick={handleTryConnect}
+              className="bg-white/20 text-white hover:bg-white/30 font-semibold border border-white/20 backdrop-blur-sm rounded-xl shrink-0">
+              Try It
+            </Button>
+          </div>
+        </div>
+      </motion.div>
 
       <div className="container px-4 relative z-10">
         <div className="max-w-5xl mx-auto text-center space-y-6">
