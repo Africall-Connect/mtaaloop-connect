@@ -60,7 +60,7 @@ export function LiquorHero({ vendor }: LiquorHeroProps) {
       className="relative overflow-hidden rounded-2xl mb-8"
       style={{
         background: "var(--vendor-surface)",
-        minHeight: "320px",
+        minHeight: "240px",
       }}
     >
       {/* Radial gradient mood overlay */}
