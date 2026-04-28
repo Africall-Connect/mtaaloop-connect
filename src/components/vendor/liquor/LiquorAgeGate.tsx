@@ -116,6 +116,7 @@ export function LiquorAgeGate({ vendorId }: LiquorAgeGateProps) {
 
         <div className="flex flex-col gap-3">
           <button
+            ref={acceptBtnRef}
             onClick={accept}
             className="w-full rounded-lg py-3 px-6 text-base font-medium transition-colors duration-300"
             style={{
@@ -126,6 +127,7 @@ export function LiquorAgeGate({ vendorId }: LiquorAgeGateProps) {
             Yes, I'm 18+
           </button>
           <button
+            ref={declineBtnRef}
             onClick={decline}
             className="w-full rounded-lg py-3 px-6 text-base font-medium border transition-colors duration-300"
             style={{
