@@ -29,7 +29,4 @@ export default defineConfig(({ mode }) => ({
       nextTick: (fn: () => void) => setTimeout(fn, 0),
     },
   },
-  optimizeDeps: {
-    include: ["simple-peer"],
-  },
 }));
