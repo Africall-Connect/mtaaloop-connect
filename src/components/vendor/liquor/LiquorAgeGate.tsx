@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 interface LiquorAgeGateProps {
@@ -23,15 +23,34 @@ export function LiquorAgeGate({ vendorId }: LiquorAgeGateProps) {
     }
   });
 
-  // Block scroll while modal is open and trap Escape
+  const acceptBtnRef = useRef<HTMLButtonElement>(null);
+  const declineBtnRef = useRef<HTMLButtonElement>(null);
+
+  // Block scroll, trap Escape, and trap Tab focus inside the modal
   useEffect(() => {
     if (!open) return;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    // Move focus into the modal
+    acceptBtnRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
+        return;
+      }
+      if (e.key === "Tab") {
+        // 2-element trap: cycle between accept and decline buttons
+        const accept = acceptBtnRef.current;
+        const decline = declineBtnRef.current;
+        if (!accept || !decline) return;
+        const active = document.activeElement;
+        e.preventDefault();
+        if (e.shiftKey) {
+          (active === accept ? decline : accept).focus();
+        } else {
+          (active === decline ? accept : decline).focus();
+        }
       }
     };
     window.addEventListener("keydown", onKey, true);
@@ -97,6 +116,7 @@ export function LiquorAgeGate({ vendorId }: LiquorAgeGateProps) {
 
         <div className="flex flex-col gap-3">
           <button
+            ref={acceptBtnRef}
             onClick={accept}
             className="w-full rounded-lg py-3 px-6 text-base font-medium transition-colors duration-300"
             style={{
@@ -107,6 +127,7 @@ export function LiquorAgeGate({ vendorId }: LiquorAgeGateProps) {
             Yes, I'm 18+
           </button>
           <button
+            ref={declineBtnRef}
             onClick={decline}
             className="w-full rounded-lg py-3 px-6 text-base font-medium border transition-colors duration-300"
             style={{

@@ -89,7 +89,7 @@ const MinimartPage = () => {
                 <ArrowLeft className="h-6 w-6" />
               </Button>
             </Link>
-            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight">
+            <h1 className="text-3xl sm:text-5xl md:text-7xl font-extrabold tracking-tight leading-tight">
               <span className="block text-gray-900">{vendor?.business_name}</span>
               <span className="block mt-2 text-gradient">Your Neighborhood Minimart.</span>
             </h1>

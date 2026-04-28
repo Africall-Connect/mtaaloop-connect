@@ -60,7 +60,7 @@ export function LiquorHero({ vendor }: LiquorHeroProps) {
       className="relative overflow-hidden rounded-2xl mb-8"
       style={{
         background: "var(--vendor-surface)",
-        minHeight: "320px",
+        minHeight: "240px",
       }}
     >
       {/* Radial gradient mood overlay */}
@@ -72,7 +72,7 @@ export function LiquorHero({ vendor }: LiquorHeroProps) {
         }}
       />
 
-      <div className="relative px-6 md:px-10 py-10 md:py-14">
+      <div className="relative px-5 sm:px-6 md:px-10 py-8 sm:py-10 md:py-14">
         {/* Logo */}
         {vendor.logo_url && (
           <div
@@ -92,7 +92,7 @@ export function LiquorHero({ vendor }: LiquorHeroProps) {
 
         {/* Vendor name */}
         <h1
-          className="text-4xl md:text-6xl mb-3 leading-[0.95]"
+          className="text-3xl sm:text-4xl md:text-6xl mb-3 leading-[0.95] break-words"
           style={{
             fontFamily: "var(--vendor-font-display)",
             fontWeight: 500,

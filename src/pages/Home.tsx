@@ -353,7 +353,7 @@ const Home = () => {
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors group"
                 >
                   <MapPin className="w-3 h-3 text-primary flex-shrink-0" />
-                  <span className="truncate max-w-[120px] sm:max-w-[180px] md:max-w-none font-medium">
+                  <span className="truncate max-w-[160px] sm:max-w-[200px] md:max-w-none font-medium">
                     {currentApartment?.name || "Select Location"}
                   </span>
                   <ChevronRight className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />

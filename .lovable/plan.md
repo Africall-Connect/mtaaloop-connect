@@ -1,108 +1,75 @@
-## Phase 1.3 — Lika Store Liquor Archetype
+# Project Audit — Bugs, Faults & Mobile Polish
 
-Goal: Transform Lika Store into a moody, brass-on-oxblood, occasion-driven liquor experience. Tsavo, Lisa Two, and LISA SERVICES remain pixel-identical.
+## Issues Found
 
-### Confirmed pre-state
-- Lika: `business_type='liquor-store'`, `operational_category='inventory'`, 127 products, brand tokens already seeded (#7B1E22 / #B08D57 / #1A0F0F, fraunces, hero 'moody'), `story` is NULL, `open_hours` is NULL.
-- `vendor_profiles.story` column exists (added in Phase 1.2). No need to re-add.
-- `products` has `symptom_category`, `requires_prescription`, `dosage_form`. No `occasion_tag` and no `abv` columns yet.
-- Currently Lika routes through `InventoryView` because `operational_category='inventory'`.
+### Critical (cause crashes / broken UX)
 
----
+1. **Bottom nav clips content on every page (mobile)** — `GlobalLayout` adds only `pb-16 md:pb-0`. The fixed `BottomNavigation` is `h-16` (64px) AND adds `safe-area-bottom`, so total height is ≥64px + iOS home indicator. Almost every page (`Home`, `Cart`, `Account`, `MtaaLoop`, `QuickServices`, `Inbox`, etc.) only has its own internal padding — last items, sticky CTAs, and FABs sit *behind* the nav on iPhones with a notch.
+2. **Liquor Hero overflow on small phones** — `LiquorHero` uses `px-6 py-10` and a `min-height: 320px` with no `text-` clamp; the `text-6xl/7xl` headline (in the title block below the snippet I read) overflows on 360px viewports.
+3. **MiniMart sticky basket bar collides with BottomNavigation** — `MiniMartView` renders `fixed bottom-0` basket on top of the global BottomNavigation. They overlap and the basket lacks `safe-area-inset-bottom`.
+4. **`vite.config.ts` already fixed** — earlier white-screen from missing `simple-peer` in `optimizeDeps.include` (resolved last turn).
 
-### STEP 1 — Database migration
+### High (mobile-specific layout)
 
-Add nullable columns to `products`:
-- `occasion_tag text` with CHECK constraint: `'friday-crew' | 'solo-wind-down' | 'last-minute-gift' | 'celebration' | 'cocktail-night' | 'beer-run' | 'other'`
-- `abv numeric(4,1)` (nullable, e.g. 5.0, 12.5, 40.0, 43.0)
+5. **Tables overflow on phones** — `AdminOrders`, `AdminBookings`, `AdminWallets`, `AdminDeliveries`, `CSROrders`, `ApplicationDetailsDialog` render `<table className="w-full text-sm">` with no horizontal scroll wrapper. On 375px screens the table forces page-level horizontal scroll.
+6. **Hero text never scales down** — `MtaaLoop`, `MinimartPage`, `MtaaLoopMart` use `text-6xl`/`text-7xl` headlines without an `xs`/`sm` smaller variant. They wrap awkwardly on 320–375px viewports.
+7. **Home header truncates location to 120px** — `max-w-[120px]` is too tight; estate names like "Riverside Apartments" get clipped to "Riverside Apar...".
+8. **Touch targets** — 401 instances of `Button size="icon"` or `size="sm"` (h-9/w-9 = 36px). Project memory mandates **44px min** touch targets on mobile.
+9. **Liquor Age Gate not focus-trapped** — Esc is blocked, but tab focus can still escape the modal; screen-reader users can interact with the page behind it.
 
-### STEP 2 — Backfill Lika data (insert/update)
+### Medium (code quality, no immediate bug)
 
-- `vendor_profiles.story` for Lika → "Run by James from inside Tsavo — the bar that knows your usual, even on a Tuesday."
-- `products.occasion_tag` for all 127 Lika products via SQL `CASE` on subcategory + name keywords:
-  - Local Beer / Imported Beer / Stout / Cider → `beer-run`
-  - Whiskey & Bourbon premium (price > 3000 or single malt / Macallan / McVoy / McLaren) → `solo-wind-down`
-  - Whiskey & Bourbon mid → `friday-crew`
-  - Vodka / Gin / Tequila / Rum / Liqueur → `friday-crew`
-  - Champagne / Sparkling / Prosecco / gift packs → `celebration`
-  - Sparkling Wine → `celebration`; other Wine / Red Wine / White Wine → `solo-wind-down`
-  - Mixers / Syrups / Bitters / Cocktail kits → `cocktail-night`
-  - Miniatures → `last-minute-gift`
-  - Tobacco / Lighters / accessories → `other`
-  - Default → `friday-crew`
-- `products.abv` backfill: beer ~5.0, stout ~5.5, cider ~4.5, wine ~12.0, sparkling ~11.5, spirits ~40.0, premium spirits ~43.0, liqueur ~17.0, miniatures match parent category. Tobacco/accessories left null.
+10. **Hardcoded colors** — `text-white`/`bg-white`/`bg-black` in `MtaaLoop` (28), `LaunchKit` (19), `Footer` (16), `VendorSpotlight` (12), `HeroSection` (8) — violate "use semantic tokens" core rule, break dark-mode parity.
+11. **Silent failures** — 16 `console.log` calls in `OrderTracking.tsx`, 8 each in several pages. These ship to production.
+12. **Tailwind warning** — `duration-[250ms]` is ambiguous (matches `transition-duration` and `animation-duration`); needs `duration-[250ms]` escaped or replaced with `duration-300`.
+13. **`rollup-plugin-polyfill-node`** still in `package.json` though we removed the import — orphan dep.
 
-### STEP 3 — Routing in `VendorHome.tsx`
+### Low
 
-In the "Render the correct view" block (around line 340):
-- Add: `business_type === 'liquor-store'` → render `<LiquorView />`.
-- Suppress generic hero banner for liquor archetype too (alongside pharmacy).
-- Suppress the sticky filter bar count for liquor (LiquorView uses occasion sections, not a flat product count). The Sort dropdown stays — restyled by VendorThemeProvider variables.
-- Lisa Two and LISA SERVICES (`living-essentials` / `groceries-essentials` / others) keep falling through to `InventoryView` exactly as today — pixel-identical.
-
-### STEP 4 — New components in `src/components/vendor/liquor/`
-
-**`LiquorAgeGate.tsx`** — Modal blocking storefront on first mount per vendor session. Uses `sessionStorage` key `liquor_age_verified_${vendorId}`. Not dismissible by Esc, outside click, or URL param. "Yes, I'm 18+" sets the flag; "No, take me back" navigates to `/home`. Background uses `--vendor-surface`, headline in Fraunces 500, primary button filled `--vendor-primary`, secondary outline `--vendor-accent`. Footer: "We do not sell to minors. ID may be required on delivery." at 60% opacity.
-
-**`LiquorHero.tsx`** — Dark hero with radial gradient from `--vendor-primary` 25% top-left fading to transparent. Vendor logo (brass tint), name in Fraunces 500 cream-white (#F5E6D3), tagline in italic brass-80%. Three trust pills with brass-50% borders: "ID checked on delivery", delivery_time, "{neighbours_served} on the block trust us" (uses same 90-day distinct customer count as PharmacyStory; hides if <10). Primary CTA "Browse the bar" smooth-scrolls to `#occasions`. Secondary "Build a custom order" → WhatsApp deep link with prefilled message. No product photography.
-
-**`LiquorStory.tsx`** — Story strip styled for dark theme. Background = `--vendor-surface` lifted 4% via `color-mix`. Top + bottom hairlines in brass 20%. Avatar + cream-white-90% story text. Right-aligned stat "Serving {n} neighbours" hidden if <10. Reads from `vendor.story`.
-
-**`LiquorProductCard.tsx`** — Card bg = `--vendor-surface` lifted 6%. Border 1px `--vendor-accent` 15% → 50% on hover, 300ms transition, no lift/scale/bounce. Full-bleed image with bottom dark vignette. Top-right: "18+" pill (primary bg, brass border, cream text). Bottom-left: occasion tag pill (brass 25% tint, brass text). Product name in Fraunces 500 cream-white. Price in tabular brass. ABV line beneath name at 60% opacity if present. "Reserve" button outline brass → fills brass on hover. `onAdd` calls `addItem` from CartContext (same shape as Pharmacy/Inventory).
-
-**`LiquorView.tsx`** — Mirrors PharmacyView structure. Renders `LiquorAgeGate` first, `LiquorHero`, `LiquorStory`, then occasion sections in this fixed order, skipping empty:
-- Friday Crew → Solo Wind-Down → Cocktail Night → Celebration → Beer Run → Last-Minute Gift → Other
-
-Each section header in Fraunces 500 italic cream-white with brass-30% hairline. Anchor `id="occasions"` before first section so hero CTA can scroll to it. Footer disclaimer at bottom (50% opacity): "Drink responsibly. Do not drink and drive. Sale of alcohol prohibited to persons under 18." Empty section copy: "Nothing here right now — check back Friday." Wrapper has dark background = `--vendor-surface` and forces text inheritance to cream-white locally (only inside LiquorView, not leaking).
-
-### STEP 5 — VendorNavbar restyle for liquor
-
-In `src/components/vendor/VendorNavbar.tsx`, extend the existing `isPharmacy` branch to also detect `isLiquor = vendor.business_type === 'liquor-store'`. When liquor:
-- nav background = `--vendor-surface`
-- text + icons = cream-white (#F5E6D3), brass on hover
-- cart icon and logo border = `--vendor-accent` (brass)
-Pharmacy styling unchanged. All other vendors render exactly as today.
-
-### STEP 6 — Voice pass (liquor-only, scoped to LiquorView)
-
-Inside LiquorView and LiquorProductCard only:
-- "Add to cart" → "Reserve"
-- Toast on add → `"Reserved"` / `"1x ${name} added to your reservation"`
-- Empty section → "Nothing here right now — check back Friday."
-- Empty cart message: not in scope here (FloatingCartButton lives outside), but the in-card button text is fully replaced.
-- No emoji anywhere in LiquorView components.
-
-> Note: cart drawer/checkout copy ("Your reservation") would require touching cart components which the prompt forbids modifying outside this scope. The card-level "Reserve" CTA satisfies the storefront acceptance — system-wide cart copy stays cart-default. Will document this scope decision in the completion note.
-
-### STEP 7 — Type updates
-
-In `src/types/database.ts`, extend the `Product` interface with optional `occasion_tag?: string | null` and `abv?: number | null`. The generated `src/integrations/supabase/types.ts` is auto-managed by Supabase — leave untouched.
+14. **TODO** in `Terms.tsx` (placeholder copy) and `RiderDashboard.tsx` (hardcoded mock).
+15. **`as any`** spread across ~10 files — biggest offender `lib/api/rider.ts` (17 instances).
 
 ---
 
-### Files created
-- `supabase/migrations/<ts>_liquor_archetype.sql` (schema only — adds `occasion_tag`, `abv`)
-- Data backfill via the insert tool (separate UPDATE statements for `vendor_profiles.story`, `products.occasion_tag`, `products.abv`)
-- `src/components/vendor/liquor/LiquorAgeGate.tsx`
-- `src/components/vendor/liquor/LiquorHero.tsx`
-- `src/components/vendor/liquor/LiquorStory.tsx`
-- `src/components/vendor/liquor/LiquorProductCard.tsx`
-- `src/pages/vendor/views/LiquorView.tsx`
+## Fix Plan (this round — only Critical + High)
 
-### Files edited
-- `src/pages/vendor/VendorHome.tsx` — add liquor routing branch + suppress hero banner for liquor
-- `src/components/vendor/VendorNavbar.tsx` — add liquor-archetype styling branch
-- `src/types/database.ts` — extend Product with `occasion_tag`, `abv`
+I'll group fixes to keep the change set surgical.
 
-### Files NOT touched (proof of containment)
-- `src/pages/vendor/views/InventoryView.tsx`
-- `src/pages/vendor/views/PharmacyView.tsx`
-- `src/pages/vendor/views/ServiceView.tsx`, `BookingView.tsx`
-- All cart, checkout, tracking, vendor portal, admin, customer Home files
+### Fix 1 — Global mobile bottom spacing
+- `GlobalLayout.tsx`: change `pb-16 md:pb-0` → `pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0` so safe-area is always reserved.
+- `BottomNavigation.tsx`: keep `safe-area-bottom`; ensure z-index doesn't trap clicks.
 
-### Acceptance verification plan
-- Lika storefront: age gate → moody hero → story → 6 occasion sections → disclaimer footer.
-- Tsavo storefront: still PharmacyView, identical to Phase 1.2.
-- Lisa Two & LISA SERVICES: still InventoryView, no visual change.
-- Customer home grid `/home`: VendorThemeProvider stays scoped to `VendorHome` only — no leak.
-- Reporting after run: counts per `occasion_tag`, count with `abv` set, products that fell into 'other'.
+### Fix 2 — Responsive headlines
+- `LiquorHero.tsx`: clamp display headline with `text-3xl sm:text-4xl md:text-6xl` and reduce `min-height` to `240px` on mobile.
+- `MtaaLoop.tsx`, `MinimartPage.tsx`, `MtaaLoopMart.tsx`: prepend smaller mobile sizes to oversized hero `text-*` classes.
+
+### Fix 3 — MiniMart sticky basket
+- `MiniMartView.tsx`: change `fixed bottom-0` → `fixed bottom-16 md:bottom-0` and add `pb-[env(safe-area-inset-bottom)]` so it stacks above the global nav.
+
+### Fix 4 — Tables horizontal scroll
+- Wrap each `<table>` in admin/CSR pages with `<div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">` so they scroll inside their card instead of pushing the page.
+
+### Fix 5 — Home header location width
+- `Home.tsx` line 356: `max-w-[120px]` → `max-w-[160px] sm:max-w-[200px]`.
+
+### Fix 6 — Liquor Age Gate focus trap
+- Add `tabIndex={-1}` ring trap and autofocus on the "I'm 18+" button.
+
+### Skipped this round (will list separately if you want them done)
+- Touch-target audit across 401 buttons (mechanical sweep, large diff).
+- Hardcoded color → semantic token migration (large diff, design call needed).
+- `console.log` cleanup, `as any` migration, Tailwind warning, orphan dep.
+
+## Technical Details
+- All changes are Tailwind class swaps + one wrapper div per table; no logic changes, no schema changes.
+- No new dependencies.
+- Verified: `safe-area-bottom` utility exists in `src/index.css` line 136. `env(safe-area-inset-bottom)` is supported in Tailwind via arbitrary values.
+
+## Done When
+- BottomNavigation never covers content on iPhone 12/13/14 (390×844) or small Android (360×800).
+- Liquor, MtaaLoop, Minimart hero headlines fit on 320px without overflow.
+- Admin/CSR tables scroll horizontally inside their cards.
+- MiniMart basket bar sits above the BottomNavigation, not under it.
+- Liquor age gate keeps keyboard focus inside the modal.
+
+Reply "go" to apply these fixes, or tell me which to drop / which from the "Skipped" list to add.
