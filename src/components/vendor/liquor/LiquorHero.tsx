@@ -72,7 +72,7 @@ export function LiquorHero({ vendor }: LiquorHeroProps) {
         }}
       />
 
-      <div className="relative px-6 md:px-10 py-10 md:py-14">
+      <div className="relative px-5 sm:px-6 md:px-10 py-8 sm:py-10 md:py-14">
         {/* Logo */}
         {vendor.logo_url && (
           <div
