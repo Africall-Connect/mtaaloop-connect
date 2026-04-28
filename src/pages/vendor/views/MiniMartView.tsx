@@ -162,7 +162,7 @@ export function MiniMartView({ vendor, products }: MiniMartViewProps) {
       {/* Sticky basket bar — only shown in list mode for fast checkout */}
       {listMode && cartCount > 0 && (
         <div
-          className="fixed bottom-0 left-0 right-0 z-40 px-4 py-3 flex items-center justify-between"
+          className="fixed bottom-16 md:bottom-0 left-0 right-0 z-40 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:pb-3 flex items-center justify-between"
           style={{
             background: BLACK,
             color: "var(--vendor-primary)",
