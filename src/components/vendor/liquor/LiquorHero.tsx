@@ -92,7 +92,7 @@ export function LiquorHero({ vendor }: LiquorHeroProps) {
 
         {/* Vendor name */}
         <h1
-          className="text-4xl md:text-6xl mb-3 leading-[0.95]"
+          className="text-3xl sm:text-4xl md:text-6xl mb-3 leading-[0.95] break-words"
           style={{
             fontFamily: "var(--vendor-font-display)",
             fontWeight: 500,
