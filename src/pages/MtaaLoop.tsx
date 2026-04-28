@@ -93,7 +93,7 @@ const MtaaLoop = () => {
             <Badge className="mb-6 bg-white/20 text-white border-white/30 hover:bg-white/30">
               ✨ Now in Beta
             </Badge>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-6">
               Meet Your Neighbors Before You Meet Them
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-white/95 max-w-3xl mx-auto">
