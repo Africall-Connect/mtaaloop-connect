@@ -113,7 +113,7 @@ const MtaaLoopMart = () => {
                 </Button>
               </Link>
               <div>
-                <h1 className="text-4xl md:text-5xl font-bold mb-2">Welcome to MtaaLoop Mart</h1>
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2">Welcome to MtaaLoop Mart</h1>
                 <p className="text-lg md:text-xl text-purple-200">Fast delivery of your favorite essentials, right to your doorstep.</p>
               </div>
             </div>
