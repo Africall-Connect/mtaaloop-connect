@@ -23,15 +23,34 @@ export function LiquorAgeGate({ vendorId }: LiquorAgeGateProps) {
     }
   });
 
-  // Block scroll while modal is open and trap Escape
+  const acceptBtnRef = useRef<HTMLButtonElement>(null);
+  const declineBtnRef = useRef<HTMLButtonElement>(null);
+
+  // Block scroll, trap Escape, and trap Tab focus inside the modal
   useEffect(() => {
     if (!open) return;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    // Move focus into the modal
+    acceptBtnRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
+        return;
+      }
+      if (e.key === "Tab") {
+        // 2-element trap: cycle between accept and decline buttons
+        const accept = acceptBtnRef.current;
+        const decline = declineBtnRef.current;
+        if (!accept || !decline) return;
+        const active = document.activeElement;
+        e.preventDefault();
+        if (e.shiftKey) {
+          (active === accept ? decline : accept).focus();
+        } else {
+          (active === decline ? accept : decline).focus();
+        }
       }
     };
     window.addEventListener("keydown", onKey, true);
