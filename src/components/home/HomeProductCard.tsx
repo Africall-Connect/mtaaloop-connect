@@ -2,8 +2,7 @@ import { Plus, Store } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
-const FALLBACK_IMG = "https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&h=300&fit=crop";
+import { resolveProductImage, productImageErrorHandler } from "@/lib/productImages";
 
 interface ProductWithVendor {
   id: string;
@@ -12,6 +11,7 @@ interface ProductWithVendor {
   image_url: string | null;
   is_available: boolean;
   category: string;
+  subcategory?: string | null;
   vendor_id: string;
   vendor: {
     business_name: string;
@@ -36,15 +36,16 @@ export const HomeProductCard = ({
   >
     <div className="aspect-[4/3] relative overflow-hidden bg-muted">
       <img
-        src={product.image_url && !product.image_url.includes('via.placeholder.com') ? product.image_url : FALLBACK_IMG}
+        src={resolveProductImage(product)}
         alt={product.name}
+        loading="lazy"
         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-        onError={(e) => { e.currentTarget.src = FALLBACK_IMG; }}
+        onError={productImageErrorHandler(product)}
       />
-      
+
       {/* Category Badge */}
-      <Badge 
-        variant="secondary" 
+      <Badge
+        variant="secondary"
         className="absolute top-2 left-2 text-[10px] bg-background/80 backdrop-blur-sm"
       >
         {product.category}
@@ -56,12 +57,12 @@ export const HomeProductCard = ({
         </div>
       )}
     </div>
-    
+
     <div className="p-2 sm:p-3">
       <h3 className="font-medium text-xs sm:text-sm line-clamp-1 group-hover:text-primary transition-colors mb-1">
         {product.name}
       </h3>
-      
+
       <div className="flex items-center justify-between">
         <span className="text-sm sm:text-base font-bold text-primary">
           KES {product.price.toLocaleString()}

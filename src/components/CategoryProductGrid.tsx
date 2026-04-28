@@ -5,6 +5,7 @@ import { ShoppingCart, Store, Plus } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { resolveProductImage, productImageErrorHandler } from "@/lib/productImages";
 
 interface Product {
   id: string;
@@ -90,17 +91,13 @@ export const CategoryProductGrid = ({
             onClick={() => handleProductClick(product)}
           >
             <div className="aspect-square relative overflow-hidden bg-muted">
-              {product.image_url ? (
-                <img
-                  src={product.image_url}
-                  alt={product.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-6xl">
-                  🍽️
-                </div>
-              )}
+              <img
+                src={resolveProductImage(product)}
+                alt={product.name}
+                loading="lazy"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                onError={productImageErrorHandler(product)}
+              />
               {!product.is_available && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                   <Badge variant="destructive">Out of Stock</Badge>

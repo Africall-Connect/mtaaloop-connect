@@ -300,7 +300,20 @@ export default function CategoryPage() {
     try {
       setProductsLoading(true);
 
-      // Build query for products
+      // Accept BOTH display names ("Liquor Store") and url slugs ("liquor-store")
+      // since products in the DB use either form depending on when they were seeded.
+      const slug = (category || '').toLowerCase();
+      const acceptedCategoryValues = Array.from(
+        new Set([
+          categoryName,
+          slug,
+          slug.replace(/-/g, ' '),
+          // common legacy alias
+          categoryName === 'Living Essentials' ? 'groceries-essentials' : '',
+          categoryName === 'Groceries & Food' ? 'groceries-essentials' : '',
+        ].filter(Boolean))
+      );
+
       let query = supabase
         .from('products')
         .select(`
@@ -315,7 +328,7 @@ export default function CategoryPage() {
           )
         `)
         .eq('is_available', true)
-        .eq('category', categoryName)
+        .in('category', acceptedCategoryValues)
         .eq('vendor.is_approved', true)
         .eq('vendor.is_active', true);
 
@@ -346,7 +359,7 @@ export default function CategoryPage() {
       // Merge with predefined subcategories from constants
       const constantSubcategories = SUBCATEGORY_OPTIONS[categoryName] || [];
       const allSubcategories = ['All', ...new Set([...constantSubcategories, ...Array.from(uniqueSubcategories)])];
-      
+
       setProductSubcategories(allSubcategories);
     } catch (error) {
       console.error('Error loading products:', error);
@@ -355,7 +368,7 @@ export default function CategoryPage() {
     } finally {
       setProductsLoading(false);
     }
-  }, [categoryName, currentApartment]);
+  }, [categoryName, category, currentApartment]);
 
   useEffect(() => {
     if (categoryName) {

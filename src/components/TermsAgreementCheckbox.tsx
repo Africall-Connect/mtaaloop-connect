@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Check } from "lucide-react";
+import { Check, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TermsAgreementCheckboxProps {
@@ -13,9 +13,13 @@ interface TermsAgreementCheckboxProps {
 
 /**
  * Large, unmistakable agreement control.
- * The entire box is a button — tapping anywhere toggles agreement.
- * Unchecked: bold dashed amber border + "Tap to agree" hint.
- * Checked:   solid green border + filled checkmark badge.
+ *
+ * Unchecked: amber dashed border, empty checkbox, "Tap to accept" CTA.
+ * Checked:   solid green PANEL, white check in filled circle, "AGREED" label.
+ *
+ * The checked vs unchecked states differ in border style, background fill,
+ * checkbox fill, icon visibility, label text AND label color — so the state
+ * is obvious even with reduced color vision.
  */
 export function TermsAgreementCheckbox({
   checked,
@@ -57,11 +61,11 @@ export function TermsAgreementCheckbox({
           className={cn(
             "mt-0.5 h-6 w-6 shrink-0 rounded-md border-2 flex items-center justify-center transition-colors",
             checked
-              ? "bg-primary border-primary text-primary-foreground"
+              ? "bg-emerald-600 border-emerald-600 text-white"
               : "bg-background border-foreground/60 hover:border-primary",
           )}
         >
-          {checked && <Check className="h-4 w-4" strokeWidth={3} />}
+          {checked && <Check className="h-4 w-4" strokeWidth={3.5} />}
         </div>
         <div onClick={handleLabelClick} className="text-sm leading-relaxed text-foreground flex-1">
           {children}
@@ -80,41 +84,55 @@ export function TermsAgreementCheckbox({
       onClick={toggle}
       onKeyDown={handleKeyDown}
       className={cn(
-        "w-full text-left rounded-xl border-2 p-4 sm:p-5 transition-all duration-200",
-        "flex items-start gap-4 min-h-[72px] cursor-pointer select-none",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+        "w-full text-left rounded-2xl border-2 p-4 sm:p-5 transition-all duration-200",
+        "flex items-center gap-4 min-h-[80px] cursor-pointer select-none",
+        "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300",
         checked
-          ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-500 shadow-sm"
-          : "bg-amber-50 dark:bg-amber-950/30 border-amber-500 border-dashed hover:bg-amber-100 dark:hover:bg-amber-950/50 animate-pulse-slow",
+          // CHECKED: bold solid green PANEL, white text — impossible to miss.
+          ? "bg-emerald-600 border-emerald-700 text-white shadow-lg shadow-emerald-500/30"
+          // UNCHECKED: amber dashed border with subtle pulse.
+          : "bg-amber-50 dark:bg-amber-950/30 border-amber-500 border-dashed text-foreground hover:bg-amber-100 dark:hover:bg-amber-950/50 animate-pulse",
       )}
     >
-      {/* Big visual checkbox */}
+      {/* Big visual checkbox / badge */}
       <div
         className={cn(
-          "h-8 w-8 sm:h-9 sm:w-9 shrink-0 rounded-lg border-2 flex items-center justify-center transition-all",
+          "h-12 w-12 sm:h-14 sm:w-14 shrink-0 rounded-full border-2 flex items-center justify-center transition-all",
           checked
-            ? "bg-emerald-500 border-emerald-500 text-white scale-100"
+            ? "bg-white border-white text-emerald-600 scale-110"
             : "bg-white border-amber-600 text-transparent",
         )}
       >
-        <Check className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={3.5} />
+        {checked ? (
+          <Check className="h-7 w-7 sm:h-8 sm:w-8" strokeWidth={4} />
+        ) : (
+          <ShieldCheck className="h-6 w-6 text-amber-500" strokeWidth={2.5} />
+        )}
       </div>
 
       <div className="flex-1 min-w-0">
         <div
           className={cn(
-            "text-xs font-bold uppercase tracking-wider mb-1",
-            checked ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400",
+            "text-xs sm:text-sm font-extrabold uppercase tracking-wider mb-1",
+            checked ? "text-white" : "text-amber-700 dark:text-amber-400",
           )}
         >
-          {checked ? "✓ Agreed" : "👆 Tap here to agree"}
+          {checked ? "✓ AGREED — Terms accepted" : "👆 Tap here to accept"}
         </div>
         <div
           onClick={handleLabelClick}
-          className="text-sm sm:text-base font-medium leading-relaxed text-foreground"
+          className={cn(
+            "text-sm sm:text-base font-medium leading-snug",
+            checked ? "text-white/95" : "text-foreground",
+          )}
         >
           {children}
         </div>
+        {checked && (
+          <div className="mt-1 text-[11px] sm:text-xs text-white/85 font-medium">
+            You can now place your order. Tap again to undo.
+          </div>
+        )}
       </div>
     </button>
   );

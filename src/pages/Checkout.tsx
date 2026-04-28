@@ -712,7 +712,7 @@ const Checkout = () => {
             </Button>
           ) : (
             <Button
-              className="flex-1 h-12 text-base font-bold rounded-lg bg-[#2563EB] text-white hover:bg-[#1E40AF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-300 shadow-lg disabled:opacity-60"
+              className="flex-1 h-12 text-base font-bold rounded-lg bg-[#2563EB] text-white hover:bg-[#1E40AF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-300 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
               size="lg"
               onClick={handlePlaceOrder}
               disabled={isProcessing || mpesaWaiting || !agreedToTerms}
@@ -721,6 +721,8 @@ const Checkout = () => {
                 <span className="flex items-center gap-2"><span className="animate-spin">⏳</span> Waiting for M-Pesa...</span>
               ) : isProcessing ? (
                 <span className="flex items-center gap-2"><span className="animate-spin">⏳</span> Processing...</span>
+              ) : !agreedToTerms ? (
+                "Accept Terms to Place Order"
               ) : (
                 `Place Order — KSh ${total}`
               )}

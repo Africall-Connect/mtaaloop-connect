@@ -1,63 +1,112 @@
-# Fix: Wrong product images & invisible Terms checkbox
+I hear you. The checkbox still fails because the checked state is not visually different enough in the actual checkout layout, and the product image work was too narrow. Here is the corrected plan.
 
-## What you're seeing
+## 1. Make the Terms agreement state impossible to miss
 
-**1. Wrong images per category**
-- **Mpal (Mobile Accessories)** — every product uses `loremflickr.com`, which returns a different random photo on every load. That's why phone holders show up as a cat statue, batteries as a hot dog, etc. Affected vendors in the database:
-  - Mpal — 24 products
-  - Ilora Flowers — 140 products
-  - MtaaLoop Butchery — 34 products
-- **Lika Store (Liquor)** — non-liquor items (Beef Jerky, Pretzels, Planters Mixed Nuts, Lays Chips, Bamba, Corn Nuts, Bic Lighter, Camel Cigarettes) all share the same generic snack/candy-bar photo. They should either get correct photos or be removed from the liquor occasion tiles.
+I will rebuild the checkout terms control so the checked state is unmistakable:
 
-**2. Invisible Terms & Conditions checkbox**
-On the Review step, the checkbox is rendered with a white background, white-ish border, and sits inside a white card — so it disappears against the page. Only the "I agree…" label is visible, with no obvious tap target.
+- Replace the current subtle green state with a high-contrast selected state:
+  - solid filled green panel
+  - large white check icon in a filled circle
+  - clear label: `AGREED - Terms accepted`
+  - optional secondary text: `You can now place your order`
+- Keep the unchecked state clearly different:
+  - warning/amber border
+  - empty checkbox square
+  - label: `Tap to accept Terms & Conditions`
+- Add a checked/unchecked text indicator beside the box so the state is visible even if color contrast is poor.
+- Ensure the whole card remains tappable on mobile with a minimum 44px touch target.
+- Update the sticky `Place Order` button label/state so it reinforces the checkbox state:
+  - unchecked: `Accept Terms to Place Order`
+  - checked: `Place Order — KSh ...`
 
-## Fixes
+## 2. Stop relying on weak image fallbacks
 
-### A. Replace `loremflickr` with deterministic images (per product)
+I will replace the current limited fallback logic with a centralized, product-name-aware image resolver.
 
-`loremflickr.com` is the root cause of the random/unrelated photos. Run a one-time SQL update that maps each product to a stable, on-topic image based on its name keywords. Use curated Unsplash URLs (already the project pattern) keyed by keyword:
+It will choose images using this order:
 
-- **Mpal** — power bank → power-bank photo, charger → charger photo, cable → cable, case → phone case, earbuds → earbuds, speaker → speaker, screen protector → screen protector, SD card → microSD, phone stand/mount → phone holder, battery → phone battery.
-- **Ilora Flowers** — roses, lilies, carnations, sunflowers, orchids, tulips, bouquet → matching flower photos.
-- **MtaaLoop Butchery** — beef, goat, chicken, mutton, sausage, liver, etc. → matching meat photos.
+```text
+product name keyword match
+  -> subcategory match
+  -> main category match
+  -> safe generic product fallback
+```
 
-Implemented as one SQL migration with `UPDATE products SET image_url = … WHERE vendor_id = … AND name ILIKE '%keyword%'` blocks. Fallback: products that match no keyword get the vendor's category default image instead of loremflickr.
+This means `Chicken Wings`, `Red Wine`, `Colgate Toothpaste`, `Power Bank`, `Roses`, `Panadol`, etc. will get images that match the actual item, not just the broad category.
 
-### B. Clean up Lika Store non-liquor items
+## 3. Apply image matching across all product grids/cards
 
-Two options for the snack/cigarette/lighter rows that all share the candy-bar photo:
-1. Give each its correct Unsplash photo (jerky, pretzels, peanuts, chips, lighter, cigarettes) — keeps them as legit "mixers/snacks at the liquor store".
-2. Hide them from the customer-facing Liquor view by setting `is_active = false`.
+I will update the UI components that display product images so every product card uses the same smart image logic:
 
-**Recommendation:** Option 1 — keep them, but with correct photos and ensure their `occasion_tag` is `friday-crew` so they group sensibly. (User feedback can decide later.)
+- `CategoryProductGrid`
+- `HomeProductCard`
+- any vendor/liquor product card still using raw/broken/random image behavior
 
-### C. Add a global image fallback to stop future loremflickr leaks
+The UI will no longer show huge base64 uploads, broken images, random placeholders, or unrelated fallback images when a better product/category match exists.
 
-In `src/lib/placeholderImages.ts` (or wherever images are resolved) add an `onError` handler on product `<img>` tags that swaps the broken/random image for a category-appropriate placeholder. This protects against any new loremflickr URLs sneaking in.
+## 4. Audit all current database categories, not only three
 
-### D. Fix the Terms & Conditions checkbox visibility
+I checked the live product categories and found data under all of these groups:
 
-In `src/components/ui/checkbox.tsx`:
-- Replace `bg-white border-primary` with theme-aware styling: a visible 2px slate/foreground border, a tinted background that contrasts against the white card, and a clear focus ring.
-- Bump size from `h-5 w-5` to `h-6 w-6` for an easier tap target on mobile (matches the 44px-touch-target rule).
+- Butchery
+- Flowers & Gifts
+- Groceries & Essentials
+- groceries-essentials
+- Liquor Store
+- liquor-store
+- Living Essentials
+- living-essentials
+- Mobile Accessories
+- Pharmacy
+- pharmacy
 
-In `src/components/TermsAgreementCheckbox.tsx` (`variant="card"`):
-- Strengthen the card border (`border-2 border-primary/60`) and add a subtle background tint so the checkbox stands out.
-- Ensure the entire card is clickable (wrap in a `label` or add `onClick` that toggles the checkbox), so users can tap anywhere on the row.
+I will cover all of them in the resolver, including slug and title-case variants.
+
+## 5. Normalize category route matching so products are not hidden by naming mismatch
+
+Some products use display names like `Liquor Store`, while others use slugs like `liquor-store`. The category page currently filters with exact category equality, so products can be missing or split incorrectly.
+
+I will update category product fetching/filtering so each category accepts both forms where needed:
+
+- `Liquor Store` and `liquor-store`
+- `Living Essentials` and `living-essentials`
+- `Groceries & Food`, `Groceries & Essentials`, and `groceries-essentials` where applicable
+- `Pharmacy` and `pharmacy`
+
+## 6. Database image cleanup for existing bad image data
+
+After the UI resolver is fixed, I will prepare a data update for existing products whose `image_url` is clearly bad or inappropriate:
+
+- replace `data:image/...` base64 product images with proper URLs
+- replace known mismatched generic product images where the product name clearly indicates a better image
+- keep vendor-uploaded images only when they are usable and not obviously random/broken
+
+This will be handled as data correction, not a schema migration.
 
 ## Technical details
 
-- **Files to edit**
-  - `src/components/ui/checkbox.tsx` — visible border + larger size
-  - `src/components/TermsAgreementCheckbox.tsx` — stronger card variant + clickable row
-  - `src/lib/placeholderImages.ts` — `onError` fallback helper (and apply it in `LiquorProductCard.tsx`, `HomeProductCard.tsx`, `VendorProductGrid.tsx`)
-- **New SQL migration** — bulk `UPDATE products` to replace all `loremflickr.com` URLs with curated Unsplash URLs grouped by vendor + keyword match.
-- **Verification** — after migration, run `SELECT count(*) FROM products WHERE image_url LIKE '%loremflickr%'` — expect `0`.
+Files expected to change:
 
-## Out of scope
+- `src/components/TermsAgreementCheckbox.tsx`
+- `src/pages/Checkout.tsx`
+- `src/lib/placeholderImages.ts` or a new shared image resolver module
+- `src/components/CategoryProductGrid.tsx`
+- `src/components/home/HomeProductCard.tsx`
+- relevant vendor product card components if they bypass the shared resolver
+- category page query/filter logic in `src/pages/categories/[category].tsx`
 
-- Re-shooting actual product photography (we use stock photos that match the product type, not the exact SKU).
-- Removing snacks/cigarettes from Lika Store entirely — happy to do this if you prefer, just say the word.
+Database work:
 
-Reply **"go"** to apply these fixes.
+- No schema changes.
+- Only product data corrections for existing `products.image_url` values that are base64, placeholder/random, broken, or obviously mismatched.
+
+## Acceptance checks
+
+Before I call it done, I will verify:
+
+- Terms checkbox unchecked and checked states look obviously different.
+- The checked state is readable without relying on a tiny checkmark only.
+- The sticky order button changes meaningfully after acceptance.
+- Each current product category has matching product imagery logic.
+- Category pages show both slug-format and display-name-format products where applicable.
+- Product cards fall back to product/subcategory/category images instead of unrelated placeholders.
