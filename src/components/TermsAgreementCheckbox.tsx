@@ -24,12 +24,21 @@ export function TermsAgreementCheckbox({
   const reactId = React.useId();
   const inputId = id ?? `terms-${reactId}`;
 
+  // Make the entire row clickable so users can tap anywhere — much easier on mobile.
+  const handleRowClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Don't double-toggle when clicking the actual checkbox or a link inside the label
+    const target = e.target as HTMLElement;
+    if (target.closest('a') || target.closest('button') || target.closest('[role="checkbox"]')) return;
+    onCheckedChange(!checked);
+  };
+
   return (
     <div
+      onClick={handleRowClick}
       className={cn(
-        "flex items-start gap-2",
+        "flex items-center gap-3 cursor-pointer select-none",
         variant === "card" &&
-          "px-3 py-3 border border-primary/30 bg-card rounded-lg shadow-sm md:px-4 md:py-4",
+          "px-4 py-4 border-2 border-primary/60 bg-primary/5 rounded-lg shadow-sm hover:bg-primary/10 transition-colors min-h-[56px]",
       )}
     >
       <Checkbox
@@ -40,7 +49,7 @@ export function TermsAgreementCheckbox({
       <Label
         htmlFor={inputId}
         className={cn(
-          "cursor-pointer leading-relaxed text-foreground",
+          "cursor-pointer leading-relaxed text-foreground flex-1",
           variant === "card" ? "text-base font-medium" : "text-sm",
         )}
       >
